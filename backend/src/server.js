@@ -89,6 +89,8 @@ app.get('/api/health', (req, res) => {
 // Serve static files from React build in production
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
+  const fs = require('fs');
+  
   // Try multiple possible locations for the frontend build
   const possiblePaths = [
     path.join(__dirname, '../frontend-build'),
@@ -96,10 +98,25 @@ if (process.env.NODE_ENV === 'production') {
     path.join(__dirname, './frontend-build')
   ];
   
+  console.log('🔍 Looking for frontend build files...');
+  possiblePaths.forEach(p => {
+    console.log(`  Checking: ${p}`);
+    try {
+      const stats = fs.statSync(p);
+      console.log(`  ✅ Found: ${p} (${stats.isDirectory() ? 'directory' : 'file'})`);
+      if (stats.isDirectory()) {
+        const files = fs.readdirSync(p);
+        console.log(`    Contents: ${files.join(', ')}`);
+      }
+    } catch (err) {
+      console.log(`  ❌ Not found: ${p}`);
+    }
+  });
+  
   let buildPath = null;
   for (const possiblePath of possiblePaths) {
     try {
-      require('fs').accessSync(possiblePath);
+      fs.accessSync(possiblePath);
       buildPath = possiblePath;
       break;
     } catch (err) {
@@ -113,6 +130,8 @@ if (process.env.NODE_ENV === 'production') {
   } else {
     console.log('⚠️  Frontend build not found, serving API only');
   }
+} else {
+  console.log('🔧 Development mode - not serving static files');
 }
 
 // API routes
@@ -224,6 +243,11 @@ async function startServer() {
     // Skip database initialization for demo
     console.log('⚠️  Running without database connection (demo mode)');
 
+    // Set production environment if running on Railway
+    if (process.env.RAILWAY_ENVIRONMENT || process.env.PORT) {
+      process.env.NODE_ENV = 'production';
+    }
+    
     const PORT = process.env.PORT || 8000;
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

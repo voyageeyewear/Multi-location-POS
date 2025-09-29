@@ -4,11 +4,10 @@
   "description": "Multi-location POS System with React frontend and Node.js backend",
   "private": true,
   "scripts": {
-    "build": "npm install && cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "build": "npm install && cd frontend && npm install && npm run build && cd ../backend && npm install && cp -r ../frontend/build ./frontend-build",
     "start": "cd backend && npm start",
     "dev": "concurrently \"cd frontend && npm start\" \"cd backend && npm start\"",
-    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "postbuild": "cp -r frontend/build backend/frontend-build"
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
   },
   "workspaces": [
     "frontend",
