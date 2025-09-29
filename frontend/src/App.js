@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { FiHome, FiShoppingBag, FiMapPin, FiTrendingUp, FiBarChart3, FiDatabase, FiUsers, FiShield, FiLogOut, FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiSearch, FiFilter, FiRefreshCw, FiX, FiShoppingCart, FiCreditCard, FiDollarSign, FiCheck } from 'react-icons/fi';
+import axios from 'axios';
+import Cookies from 'js-cookie';
+import toast from 'react-hot-toast';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
