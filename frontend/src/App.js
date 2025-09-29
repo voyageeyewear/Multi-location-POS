@@ -113,24 +113,29 @@ function App() {
   };
 
   const loadSalesData = () => {
-    // Start with empty sales data - only real orders from POS will appear
-    const emptySalesData = {
-      orders: [],
-      stats: {
-        totalOrders: 0,
-        completedOrders: 0,
-        defectedOrders: 0,
-        totalRevenue: 0,
-        defectedRevenue: 0,
-        averageOrderValue: 0
-      }
-    };
-    
-    setSalesData(emptySalesData);
+    // Only load empty data if no sales data exists yet
+    if (!salesData) {
+      const emptySalesData = {
+        orders: [],
+        stats: {
+          totalOrders: 0,
+          completedOrders: 0,
+          defectedOrders: 0,
+          totalRevenue: 0,
+          defectedRevenue: 0,
+          averageOrderValue: 0
+        }
+      };
+      
+      setSalesData(emptySalesData);
+    }
+    // If salesData already exists, don't reset it
   };
 
   const refreshSalesData = () => {
-    loadSalesData();
+    // Refresh doesn't reset data, just forces a re-render
+    // The sales data is already up-to-date with POS orders
+    console.log('Sales data refreshed:', salesData);
   };
 
   const loadUsersData = () => {
@@ -820,7 +825,25 @@ function App() {
           averageOrderValue: (salesData.stats.totalRevenue + getCartTotal()) / (salesData.stats.totalOrders + 1)
         }
       };
+      console.log('Adding new order to sales data:', newOrder);
+      console.log('Updated sales data:', updatedSalesData);
       setSalesData(updatedSalesData);
+    } else {
+      // If no sales data exists, create initial data with this order
+      const initialSalesData = {
+        orders: [newOrder],
+        stats: {
+          totalOrders: 1,
+          completedOrders: 1,
+          defectedOrders: 0,
+          totalRevenue: getCartTotal(),
+          defectedRevenue: 0,
+          averageOrderValue: getCartTotal()
+        }
+      };
+      console.log('Creating initial sales data with first order:', newOrder);
+      console.log('Initial sales data:', initialSalesData);
+      setSalesData(initialSalesData);
     }
 
     // Show success message
@@ -1252,6 +1275,14 @@ function App() {
                       <span className="defect-amount">₹{salesData.stats.defectedRevenue.toLocaleString()}</span>
                     </div>
                   </div>
+
+                  {salesData.orders.length === 0 && (
+                    <div className="no-orders-message">
+                      <h3>📋 No Orders Yet</h3>
+                      <p>Orders created through the POS system will appear here.</p>
+                      <p>Try creating a sale as a client user to see orders here!</p>
+                    </div>
+                  )}
 
                   <div className="orders-list">
                     <h2>📋 Orders ({getFilteredOrders().length})</h2>

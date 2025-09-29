@@ -2186,6 +2186,28 @@ body {
   background: #2563eb;
 }
 
+/* No Orders Message */
+.no-orders-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8fafc;
+  border-radius: 1rem;
+  border: 2px dashed #cbd5e1;
+  margin: 2rem 0;
+}
+
+.no-orders-message h3 {
+  color: #64748b;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.no-orders-message p {
+  color: #64748b;
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
 /* POS Styles restored to original */
 .pos-screen {
   background: #f8fafc;
