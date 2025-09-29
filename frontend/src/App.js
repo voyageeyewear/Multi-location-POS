@@ -113,7 +113,20 @@ function App() {
   };
 
   const loadSalesData = () => {
-    // Only load empty data if no sales data exists yet
+    // Try to load from localStorage first
+    try {
+      const savedSalesData = localStorage.getItem('pos-sales-data');
+      if (savedSalesData) {
+        const parsedData = JSON.parse(savedSalesData);
+        console.log('Loaded sales data from localStorage:', parsedData);
+        setSalesData(parsedData);
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading sales data from localStorage:', error);
+    }
+
+    // Only load empty data if no sales data exists yet and nothing in localStorage
     if (!salesData) {
       const emptySalesData = {
         orders: [],
@@ -129,13 +142,40 @@ function App() {
       
       setSalesData(emptySalesData);
     }
-    // If salesData already exists, don't reset it
+  };
+
+  const saveSalesData = (data) => {
+    try {
+      localStorage.setItem('pos-sales-data', JSON.stringify(data));
+      console.log('Sales data saved to localStorage:', data);
+    } catch (error) {
+      console.error('Error saving sales data to localStorage:', error);
+    }
   };
 
   const refreshSalesData = () => {
     // Refresh doesn't reset data, just forces a re-render
     // The sales data is already up-to-date with POS orders
     console.log('Sales data refreshed:', salesData);
+  };
+
+  const clearAllOrders = () => {
+    if (window.confirm('Are you sure you want to clear all orders? This action cannot be undone.')) {
+      const emptySalesData = {
+        orders: [],
+        stats: {
+          totalOrders: 0,
+          completedOrders: 0,
+          defectedOrders: 0,
+          totalRevenue: 0,
+          defectedRevenue: 0,
+          averageOrderValue: 0
+        }
+      };
+      setSalesData(emptySalesData);
+      saveSalesData(emptySalesData);
+      console.log('All orders cleared');
+    }
   };
 
   const loadUsersData = () => {
@@ -402,7 +442,12 @@ function App() {
     if (currentPage === 'pos' && posProducts.length === 0) {
       loadPosProducts();
     }
-  }, [currentPage, posProducts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPage, posProducts.length]);
+
+  // Load sales data on component mount
+  useEffect(() => {
+    loadSalesData();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter and search functions for sales
   const getFilteredOrders = () => {
@@ -828,6 +873,7 @@ function App() {
       console.log('Adding new order to sales data:', newOrder);
       console.log('Updated sales data:', updatedSalesData);
       setSalesData(updatedSalesData);
+      saveSalesData(updatedSalesData);
     } else {
       // If no sales data exists, create initial data with this order
       const initialSalesData = {
@@ -844,6 +890,7 @@ function App() {
       console.log('Creating initial sales data with first order:', newOrder);
       console.log('Initial sales data:', initialSalesData);
       setSalesData(initialSalesData);
+      saveSalesData(initialSalesData);
     }
 
     // Show success message
@@ -1207,13 +1254,24 @@ function App() {
             <div className="content-header">
               <h1>🛒 Sales & Orders Management</h1>
               <p>View and manage all orders, customers, and defected items</p>
-              <button 
-                className="refresh-btn"
-                onClick={refreshSalesData}
-                title="Refresh sales data"
-              >
-                🔄 Refresh
-              </button>
+              <div className="sales-actions">
+                <button 
+                  className="refresh-btn"
+                  onClick={refreshSalesData}
+                  title="Refresh sales data"
+                >
+                  🔄 Refresh
+                </button>
+                {salesData && salesData.orders.length > 0 && (
+                  <button 
+                    className="clear-orders-btn"
+                    onClick={clearAllOrders}
+                    title="Clear all orders"
+                  >
+                    🗑️ Clear All Orders
+                  </button>
+                )}
+              </div>
               
               <div className="sales-filters">
                 <div className="filter-group">

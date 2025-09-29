@@ -2186,6 +2186,29 @@ body {
   background: #2563eb;
 }
 
+/* Sales Actions */
+.sales-actions {
+  display: flex;
+  gap: 1rem;
+  margin-left: 1rem;
+}
+
+.clear-orders-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.clear-orders-btn:hover {
+  background: #b91c1c;
+}
+
 /* No Orders Message */
 .no-orders-message {
   text-align: center;
