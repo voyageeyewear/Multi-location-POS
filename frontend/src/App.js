@@ -13,6 +13,7 @@ function App() {
   const [customDate, setCustomDate] = useState('');
   const [salesData, setSalesData] = useState(null);
   const [salesFilter, setSalesFilter] = useState('all'); // all, defected, completed
+  const [cityFilter, setCityFilter] = useState('all'); // all, or specific city
   const [searchTerm, setSearchTerm] = useState('');
   const [usersData, setUsersData] = useState(null);
   const [userFilter, setUserFilter] = useState('all'); // all, admin, client
@@ -175,6 +176,12 @@ function App() {
       saveSalesData(emptySalesData);
       console.log('All orders cleared');
     }
+  };
+
+  const getUniqueCities = () => {
+    if (!salesData || !salesData.orders) return [];
+    const cities = salesData.orders.map(order => order.location.city).filter((city, index, self) => self.indexOf(city) === index);
+    return cities.sort();
   };
 
   const loadUsersData = () => {
@@ -455,6 +462,11 @@ function App() {
       filtered = filtered.filter(order => order.status === 'defected');
     } else if (salesFilter === 'completed') {
       filtered = filtered.filter(order => order.status === 'completed');
+    }
+
+    // Apply city filter
+    if (cityFilter !== 'all') {
+      filtered = filtered.filter(order => order.location.city === cityFilter);
     }
     
     // Apply search filter
@@ -820,12 +832,16 @@ function App() {
       role: user.role.name
     };
 
-    // Generate location info (in real app, this would come from user's assigned locations)
-    const locationInfo = {
-      state: 'Maharashtra',
-      city: 'Mumbai',
-      address: '123 Business District, Mumbai'
-    };
+      // Generate location info (in real app, this would come from user's assigned locations)
+      const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
+      const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
+      const randomIndex = Math.floor(Math.random() * cities.length);
+      
+      const locationInfo = {
+        state: states[randomIndex],
+        city: cities[randomIndex],
+        address: `123 Business District, ${cities[randomIndex]}`
+      };
 
     const newOrder = {
       id: orderId,
@@ -1241,6 +1257,22 @@ function App() {
                     </button>
                   </div>
                 </div>
+
+                <div className="filter-group">
+                  <label>Filter by City:</label>
+                  <select 
+                    className="city-filter-select"
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                  >
+                    <option value="all">All Cities ({getUniqueCities().length})</option>
+                    {getUniqueCities().map(city => (
+                      <option key={city} value={city}>
+                        {city} ({salesData?.orders?.filter(o => o.location.city === city).length || 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 
                 <div className="search-group">
                   <label>Search:</label>
@@ -1291,19 +1323,22 @@ function App() {
                     <div className="orders-table">
                       {getFilteredOrders().map((order) => (
                         <div key={order.id} className={`order-card ${order.status}`}>
-                          <div className="order-header">
-                            <div className="order-info">
-                              <h3>{order.id}</h3>
-                              <span className="order-date">{new Date(order.orderDate).toLocaleDateString()}</span>
-                              <span className={`status-badge ${order.status}`}>
-                                {order.status === 'defected' ? '🚨 Defected' : '✅ Completed'}
-                              </span>
+                            <div className="order-header">
+                              <div className="order-info">
+                                <h3>{order.id}</h3>
+                                <span className="order-date">{new Date(order.orderDate).toLocaleDateString()}</span>
+                                <span className={`status-badge ${order.status}`}>
+                                  {order.status === 'defected' ? '🚨 Defected' : '✅ Completed'}
+                                </span>
+                                <span className="location-badge">
+                                  📍 {order.location.city}, {order.location.state}
+                                </span>
+                              </div>
+                              <div className="order-amount">
+                                <span className="amount">₹{order.totalAmount.toLocaleString()}</span>
+                                <span className="payment-method">{order.paymentMethod}</span>
+                              </div>
                             </div>
-                            <div className="order-amount">
-                              <span className="amount">₹{order.totalAmount.toLocaleString()}</span>
-                              <span className="payment-method">{order.paymentMethod}</span>
-                            </div>
-                          </div>
                           
                           <div className="customer-info">
                             <div className="customer-details">
