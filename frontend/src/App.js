@@ -19,6 +19,9 @@ function App() {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [editingLocation, setEditingLocation] = useState(undefined);
+  const [posProducts, setPosProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [posLoading, setPosLoading] = useState(false);
 
   const handleLogin = (role = 'admin') => {
     let demoUser;
@@ -529,7 +532,14 @@ function App() {
     if (currentPage === 'locations' && selectedDate) {
       loadLocationData();
     }
-  }, [selectedDate, customDate, currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedDate, customDate, currentPage]);
+
+  // Load POS products when POS page is accessed
+  useEffect(() => {
+    if (currentPage === 'pos' && posProducts.length === 0) {
+      loadPosProducts();
+    }
+  }, [currentPage, posProducts.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter and search functions for sales
   const getFilteredOrders = () => {
@@ -760,6 +770,128 @@ function App() {
       console.error('Error loading products:', error);
       setLoading(false);
     }
+  };
+
+  const loadPosProducts = async () => {
+    setPosLoading(true);
+    try {
+      // Try to fetch from real Shopify API first
+      const response = await fetch('http://localhost:8000/api/shopify/products', {
+        headers: {
+          'Authorization': 'Bearer demo-token',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('POS Shopify API Response:', data);
+        
+        if (data.success && data.data && data.data.products) {
+          const transformedProducts = data.data.products.map(product => ({
+            id: product.id,
+            name: product.title,
+            description: product.body_html || '',
+            price: product.variants && product.variants[0] ? parseFloat(product.variants[0].price) : 0,
+            image: product.images && product.images[0] ? product.images[0].src : '🕶️',
+            vendor: product.vendor || 'Voyage Eyewear',
+            sku: product.variants && product.variants[0] ? product.variants[0].sku : '',
+            inventory: product.variants && product.variants[0] ? (product.variants[0].inventory_quantity || 0) : 0
+          }));
+          
+          console.log('POS Transformed Products:', transformedProducts);
+          setPosProducts(transformedProducts);
+          setPosLoading(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching POS Shopify products:', error);
+    }
+
+    // Fallback to demo products if Shopify API fails
+    const demoProducts = [
+      {
+        id: 1,
+        name: "Designer Sunglasses",
+        description: "Premium designer sunglasses with UV protection",
+        price: 2999,
+        image: "🕶️",
+        vendor: "Voyage Eyewear",
+        sku: "DES-SUN-001",
+        inventory: 50
+      },
+      {
+        id: 2,
+        name: "Sports Eyewear",
+        description: "Durable sports eyewear for active lifestyle",
+        price: 1799,
+        image: "🥽",
+        vendor: "Voyage Eyewear",
+        sku: "SPO-EYE-002",
+        inventory: 30
+      },
+      {
+        id: 3,
+        name: "Reading Glasses",
+        description: "Comfortable reading glasses with blue light filter",
+        price: 999,
+        image: "👓",
+        vendor: "Voyage Eyewear",
+        sku: "REA-GLA-003",
+        inventory: 25
+      },
+      {
+        id: 4,
+        name: "Sunglasses",
+        description: "Classic sunglasses for everyday wear",
+        price: 1299,
+        image: "🌞",
+        vendor: "Voyage Eyewear",
+        sku: "SUN-CLA-004",
+        inventory: 40
+      }
+    ];
+    
+    setPosProducts(demoProducts);
+    setPosLoading(false);
+  };
+
+  const addToCart = (product) => {
+    const existingItem = cart.find(item => item.id === product.id);
+    if (existingItem) {
+      setCart(cart.map(item => 
+        item.id === product.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCart([...cart, { ...product, quantity: 1 }]);
+    }
+  };
+
+  const removeFromCart = (productId) => {
+    setCart(cart.filter(item => item.id !== productId));
+  };
+
+  const updateQuantity = (productId, quantity) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+    } else {
+      setCart(cart.map(item => 
+        item.id === productId 
+          ? { ...item, quantity }
+          : item
+      ));
+    }
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
+  const clearCart = () => {
+    setCart([]);
   };
 
   if (!isLoggedIn) {
@@ -1437,19 +1569,43 @@ function App() {
                   <h2>Sales Terminal</h2>
                   <div className="cart-section">
                     <h3>Shopping Cart</h3>
-                    <div className="cart-items">
-                      <div className="cart-item">
-                        <span>Designer Sunglasses</span>
-                        <span>₹2,999</span>
+                    {cart.length === 0 ? (
+                      <div className="empty-cart">
+                        <p>Cart is empty</p>
+                        <p>Add products to start a sale</p>
                       </div>
-                      <div className="cart-item">
-                        <span>Sports Eyewear</span>
-                        <span>₹1,799</span>
-                      </div>
-                    </div>
-                    <div className="cart-total">
-                      <strong>Total: ₹4,798</strong>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="cart-items">
+                          {cart.map((item) => (
+                            <div key={item.id} className="cart-item">
+                              <div className="cart-item-info">
+                                <span className="cart-item-name">{item.name}</span>
+                                <div className="cart-item-controls">
+                                  <button 
+                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                    className="quantity-btn"
+                                  >-</button>
+                                  <span className="quantity">{item.quantity}</span>
+                                  <button 
+                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                    className="quantity-btn"
+                                  >+</button>
+                                  <button 
+                                    onClick={() => removeFromCart(item.id)}
+                                    className="remove-btn"
+                                  >×</button>
+                                </div>
+                              </div>
+                              <span className="cart-item-price">₹{(item.price * item.quantity).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="cart-total">
+                          <strong>Total: ₹{getCartTotal().toLocaleString()}</strong>
+                        </div>
+                      </>
+                    )}
                   </div>
                   
                   <div className="payment-section">
@@ -1459,38 +1615,48 @@ function App() {
                       <button className="payment-btn card">Card</button>
                       <button className="payment-btn upi">UPI</button>
                     </div>
-                    <button className="complete-sale-btn">Complete Sale</button>
+                      <button 
+                        className="complete-sale-btn"
+                        onClick={clearCart}
+                        disabled={cart.length === 0}
+                      >
+                        Complete Sale
+                      </button>
                   </div>
                 </div>
 
                 <div className="pos-products">
                   <h3>Products</h3>
-                  <div className="product-grid">
-                    <div className="product-item">
-                      <div className="product-image">🕶️</div>
-                      <div className="product-name">Designer Sunglasses</div>
-                      <div className="product-price">₹2,999</div>
-                      <button className="add-to-cart">Add to Cart</button>
+                  {posLoading ? (
+                    <div className="loading-products">
+                      <p>Loading products from Shopify...</p>
                     </div>
-                    <div className="product-item">
-                      <div className="product-image">🥽</div>
-                      <div className="product-name">Sports Eyewear</div>
-                      <div className="product-price">₹1,799</div>
-                      <button className="add-to-cart">Add to Cart</button>
+                  ) : (
+                    <div className="product-grid">
+                      {posProducts.map((product) => (
+                        <div key={product.id} className="product-item">
+                          <div className="product-image">
+                            {product.image.startsWith('http') ? (
+                              <img src={product.image} alt={product.name} />
+                            ) : (
+                              product.image
+                            )}
+                          </div>
+                          <div className="product-name">{product.name}</div>
+                          <div className="product-price">₹{product.price.toLocaleString()}</div>
+                          <div className="product-sku">SKU: {product.sku}</div>
+                          <div className="product-inventory">Stock: {product.inventory}</div>
+                          <button 
+                            className="add-to-cart"
+                            onClick={() => addToCart(product)}
+                            disabled={product.inventory <= 0}
+                          >
+                            {product.inventory <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <div className="product-item">
-                      <div className="product-image">👓</div>
-                      <div className="product-name">Reading Glasses</div>
-                      <div className="product-price">₹999</div>
-                      <button className="add-to-cart">Add to Cart</button>
-                    </div>
-                    <div className="product-item">
-                      <div className="product-image">🌞</div>
-                      <div className="product-name">Sunglasses</div>
-                      <div className="product-price">₹1,299</div>
-                      <button className="add-to-cart">Add to Cart</button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
