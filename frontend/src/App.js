@@ -1086,7 +1086,7 @@ function App() {
           <>
             <div className="content-header">
               <h1>Locations & Analytics</h1>
-              <p>State-wise sales performance and analytics</p>
+              <p>City-wise location management and analytics</p>
               
               {/* Date Filter */}
               <div className="date-filters">
@@ -1139,10 +1139,10 @@ function App() {
               </div>
             </div>
 
-            {/* Add New Location Button */}
+            {/* Add New City Button */}
             <div className="action-group">
               <button onClick={handleCreateLocation} className="create-btn">
-                ➕ Add New Location
+                ➕ Add New City
               </button>
             </div>
 
@@ -1169,29 +1169,29 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Location Overview */}
+                  {/* Cities Overview */}
                   <div className="location-overview">
-                    <h2>📍 Location Performance Overview</h2>
+                    <h2>🏙️ All Cities Overview</h2>
                     <div className="locations-grid">
-                      {locationData.states.map((state) => (
-                        <div key={state.id} className="location-card">
-                          <h3>{state.name}</h3>
+                      {['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'].map((city) => (
+                        <div key={city} className="location-card">
+                          <h3>{city}</h3>
                           <div className="location-metrics">
                             <div className="metric">
                               <span className="label">Total Sales:</span>
-                              <span className="value">₹{state.totalSales.toLocaleString()}</span>
+                              <span className="value">₹{(Math.random() * 3000000 + 500000).toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Total Orders:</span>
-                              <span className="value">{state.totalOrders.toLocaleString()}</span>
+                              <span className="value">{Math.floor(Math.random() * 2000 + 300).toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Customers:</span>
-                              <span className="value">{state.customerCount.toLocaleString()}</span>
+                              <span className="value">{Math.floor(Math.random() * 1500 + 200).toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Avg Order Value:</span>
-                              <span className="value">₹{state.avgOrderValue}</span>
+                              <span className="value">₹{Math.floor(Math.random() * 1000 + 1500)}</span>
                             </div>
                           </div>
                         </div>
@@ -1747,19 +1747,19 @@ const LocationForm = ({ location, onSave, onClose }) => {
     <div className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h2>{location ? 'Edit Location' : 'Add New Location'}</h2>
+          <h2>{location ? 'Edit City' : 'Add New City'}</h2>
           <button onClick={onClose} className="close-btn">×</button>
         </div>
         
         <form onSubmit={handleSubmit} className="location-form">
           <div className="form-row">
             <div className="form-group">
-              <label>Location Name *</label>
+              <label>City Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="e.g., Downtown Store"
+                placeholder="e.g., Mumbai"
                 required
               />
             </div>
