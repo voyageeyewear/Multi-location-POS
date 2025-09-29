@@ -72,8 +72,7 @@ function App() {
     if (page === 'products') {
       loadShopifyProducts();
     } else if (page === 'locations') {
-      // Reset state selection and load data
-      setSelectedState(null);
+      // Load location data
       setTimeout(() => {
         loadLocationData();
       }, 100);
