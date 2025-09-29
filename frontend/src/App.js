@@ -318,91 +318,79 @@ function App() {
   const loadLocationData = () => {
     const { dateLabel, multiplier } = generateDateSpecificData(selectedDate);
     
-    // Demo location data with state-wise sales analytics
+    // Demo location data with city-wise sales analytics
     const demoLocationData = {
-      states: [
+      cities: [
         {
-          id: 'maharashtra',
-          name: 'Maharashtra',
-          cities: ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
+          id: 'mumbai',
+          name: 'Mumbai',
           totalSales: Math.round(2450000 * multiplier),
           totalOrders: Math.round(1250 * multiplier),
           avgOrderValue: 1960,
-          topProducts: [
-            { name: 'Voyage Wayfarer Eyeglasses', sales: Math.round(450000 * multiplier), units: Math.round(230 * multiplier) },
-            { name: 'Celeste Silver Sunglasses', sales: Math.round(380000 * multiplier), units: Math.round(195 * multiplier) },
-            { name: 'Hexagonal Polarized Sunglasses', sales: Math.round(320000 * multiplier), units: Math.round(165 * multiplier) }
-          ],
-          monthlyGrowth: 12.5,
           customerCount: Math.round(890 * multiplier)
-        },
-        {
-          id: 'karnataka',
-          name: 'Karnataka',
-          cities: ['Bangalore', 'Mysore', 'Hubli', 'Mangalore'],
-          totalSales: Math.round(1890000 * multiplier),
-          totalOrders: Math.round(980 * multiplier),
-          avgOrderValue: 1928,
-          topProducts: [
-            { name: 'Rimless Sunglasses', sales: Math.round(320000 * multiplier), units: Math.round(165 * multiplier) },
-            { name: 'Blue Light Glasses', sales: Math.round(280000 * multiplier), units: Math.round(145 * multiplier) },
-            { name: 'Voyage Black Rectangle', sales: Math.round(250000 * multiplier), units: Math.round(128 * multiplier) }
-          ],
-          monthlyGrowth: 8.3,
-          customerCount: Math.round(720 * multiplier)
-        },
-        {
-          id: 'tamil-nadu',
-          name: 'Tamil Nadu',
-          cities: ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli'],
-          totalSales: Math.round(1560000 * multiplier),
-          totalOrders: Math.round(820 * multiplier),
-          avgOrderValue: 1902,
-          topProducts: [
-            { name: 'Sable Silver Oval Sunglasses', sales: Math.round(290000 * multiplier), units: Math.round(150 * multiplier) },
-            { name: 'Reading Glasses', sales: Math.round(260000 * multiplier), units: Math.round(135 * multiplier) },
-            { name: 'Designer Sunglasses', sales: Math.round(240000 * multiplier), units: Math.round(125 * multiplier) }
-          ],
-          monthlyGrowth: 15.2,
-          customerCount: Math.round(650 * multiplier)
-        },
-        {
-          id: 'gujarat',
-          name: 'Gujarat',
-          cities: ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot'],
-          totalSales: Math.round(1320000 * multiplier),
-          totalOrders: Math.round(680 * multiplier),
-          avgOrderValue: 1941,
-          topProducts: [
-            { name: 'Sports Eyewear', sales: Math.round(280000 * multiplier), units: Math.round(145 * multiplier) },
-            { name: 'Classic Eyewear Frame', sales: Math.round(240000 * multiplier), units: Math.round(125 * multiplier) },
-            { name: 'Premium Sunglasses', sales: Math.round(220000 * multiplier), units: Math.round(115 * multiplier) }
-          ],
-          monthlyGrowth: 9.8,
-          customerCount: Math.round(580 * multiplier)
         },
         {
           id: 'delhi',
           name: 'Delhi',
-          cities: ['New Delhi', 'Central Delhi', 'East Delhi', 'West Delhi'],
           totalSales: Math.round(2100000 * multiplier),
           totalOrders: Math.round(1150 * multiplier),
           avgOrderValue: 1826,
-          topProducts: [
-            { name: 'Voyage Wayfarer Eyeglasses', sales: Math.round(420000 * multiplier), units: Math.round(215 * multiplier) },
-            { name: 'Celeste Silver Sunglasses', sales: Math.round(380000 * multiplier), units: Math.round(195 * multiplier) },
-            { name: 'Hexagonal Polarized Sunglasses', sales: Math.round(340000 * multiplier), units: Math.round(175 * multiplier) }
-          ],
-          monthlyGrowth: 18.7,
           customerCount: Math.round(920 * multiplier)
+        },
+        {
+          id: 'bangalore',
+          name: 'Bangalore',
+          totalSales: Math.round(1890000 * multiplier),
+          totalOrders: Math.round(980 * multiplier),
+          avgOrderValue: 1928,
+          customerCount: Math.round(720 * multiplier)
+        },
+        {
+          id: 'chennai',
+          name: 'Chennai',
+          totalSales: Math.round(1560000 * multiplier),
+          totalOrders: Math.round(820 * multiplier),
+          avgOrderValue: 1902,
+          customerCount: Math.round(650 * multiplier)
+        },
+        {
+          id: 'kolkata',
+          name: 'Kolkata',
+          totalSales: Math.round(1450000 * multiplier),
+          totalOrders: Math.round(750 * multiplier),
+          avgOrderValue: 1933,
+          customerCount: Math.round(620 * multiplier)
+        },
+        {
+          id: 'hyderabad',
+          name: 'Hyderabad',
+          totalSales: Math.round(1380000 * multiplier),
+          totalOrders: Math.round(710 * multiplier),
+          avgOrderValue: 1944,
+          customerCount: Math.round(590 * multiplier)
+        },
+        {
+          id: 'pune',
+          name: 'Pune',
+          totalSales: Math.round(1320000 * multiplier),
+          totalOrders: Math.round(680 * multiplier),
+          avgOrderValue: 1941,
+          customerCount: Math.round(580 * multiplier)
+        },
+        {
+          id: 'ahmedabad',
+          name: 'Ahmedabad',
+          totalSales: Math.round(1250000 * multiplier),
+          totalOrders: Math.round(640 * multiplier),
+          avgOrderValue: 1953,
+          customerCount: Math.round(550 * multiplier)
         }
       ],
       totalStats: {
         totalSales: Math.round(9320000 * multiplier),
         totalOrders: Math.round(4880 * multiplier),
         totalCustomers: Math.round(3760 * multiplier),
-        avgOrderValue: 1909,
-        monthlyGrowth: 12.9
+        avgOrderValue: 1909
       },
       dateInfo: {
         label: dateLabel,
@@ -1173,25 +1161,25 @@ function App() {
                   <div className="location-overview">
                     <h2>🏙️ All Cities Overview</h2>
                     <div className="locations-grid">
-                      {['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'].map((city) => (
-                        <div key={city} className="location-card">
-                          <h3>{city}</h3>
+                      {locationData.cities.map((city) => (
+                        <div key={city.id} className="location-card">
+                          <h3>{city.name}</h3>
                           <div className="location-metrics">
                             <div className="metric">
                               <span className="label">Total Sales:</span>
-                              <span className="value">₹{(Math.random() * 3000000 + 500000).toLocaleString()}</span>
+                              <span className="value">₹{city.totalSales.toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Total Orders:</span>
-                              <span className="value">{Math.floor(Math.random() * 2000 + 300).toLocaleString()}</span>
+                              <span className="value">{city.totalOrders.toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Customers:</span>
-                              <span className="value">{Math.floor(Math.random() * 1500 + 200).toLocaleString()}</span>
+                              <span className="value">{city.customerCount.toLocaleString()}</span>
                             </div>
                             <div className="metric">
                               <span className="label">Avg Order Value:</span>
-                              <span className="value">₹{Math.floor(Math.random() * 1000 + 1500)}</span>
+                              <span className="value">₹{city.avgOrderValue}</span>
                             </div>
                           </div>
                         </div>
