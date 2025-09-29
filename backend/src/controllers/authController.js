@@ -113,23 +113,40 @@ class AuthController {
     try {
       const { email, password } = req.body;
 
-      // Find user with relations
-      const userRepository = AppDataSource.getRepository('User');
-      const user = await userRepository.findOne({
-        where: { email },
-        relations: ['role', 'company', 'userLocations', 'userLocations.location']
-      });
+      // Demo users for testing without database
+      const demoUsers = {
+        'superadmin@possystem.com': {
+          id: '1',
+          firstName: 'Super',
+          lastName: 'Admin',
+          email: 'superadmin@possystem.com',
+          role: { name: 'super_admin', permissions: { users: { create: true, read: true, update: true, delete: true } } },
+          company: { id: '1', name: 'Default Company' },
+          userLocations: []
+        },
+        'admin@defaultcompany.com': {
+          id: '2',
+          firstName: 'Company',
+          lastName: 'Admin',
+          email: 'admin@defaultcompany.com',
+          role: { name: 'admin', permissions: { users: { create: true, read: true, update: true, delete: false } } },
+          company: { id: '1', name: 'Default Company' },
+          userLocations: []
+        },
+        'cashier@defaultcompany.com': {
+          id: '3',
+          firstName: 'John',
+          lastName: 'Cashier',
+          email: 'cashier@defaultcompany.com',
+          role: { name: 'cashier', permissions: { sales: { create: true, read: true, update: false, delete: false } } },
+          company: { id: '1', name: 'Default Company' },
+          userLocations: []
+        }
+      };
 
-      if (!user || !user.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid credentials'
-        });
-      }
-
-      // Verify password
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
+      // Check if user exists in demo data
+      const user = demoUsers[email];
+      if (!user || password !== 'admin123') {
         return res.status(401).json({
           success: false,
           message: 'Invalid credentials'
@@ -137,50 +154,29 @@ class AuthController {
       }
 
       // Generate JWT tokens
-      const accessToken = jwt.sign(
-        { 
-          userId: user.id, 
-          email: user.email, 
-          roleId: user.roleId,
-          companyId: user.companyId 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-      );
+        const jwtSecret = process.env.JWT_SECRET || 'demo-secret';
+        const accessToken = jwt.sign(
+          {
+            userId: user.id,
+            email: user.email,
+            roleId: user.role.name,
+            companyId: user.company.id
+          },
+          jwtSecret,
+          { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+        );
 
-      const refreshToken = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-      );
-
-      // Update user with refresh token and last login
-      await userRepository.update(user.id, { 
-        refreshToken,
-        lastLoginAt: new Date()
-      });
-
-      // Remove sensitive data from response
-      const userResponse = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        avatar: user.avatar,
-        isActive: user.isActive,
-        emailVerified: user.emailVerified,
-        lastLoginAt: user.lastLoginAt,
-        role: user.role,
-        company: user.company,
-        userLocations: user.userLocations
-      };
+        const refreshToken = jwt.sign(
+          { userId: user.id },
+          jwtSecret,
+          { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+        );
 
       res.json({
         success: true,
         message: 'Login successful',
         data: {
-          user: userResponse,
+          user,
           tokens: {
             accessToken,
             refreshToken
@@ -268,13 +264,39 @@ class AuthController {
   // Get current user profile
   static async getProfile(req, res, next) {
     try {
-      const userRepository = AppDataSource.getRepository('User');
-      const user = await userRepository.findOne({
-        where: { id: req.userId },
-        relations: ['role', 'company', 'userLocations', 'userLocations.location'],
-        select: ['id', 'firstName', 'lastName', 'email', 'phone', 'avatar', 'isActive', 'emailVerified', 'lastLoginAt', 'createdAt']
-      });
+      // Demo users for testing without database
+      const demoUsers = {
+        '1': {
+          id: '1',
+          firstName: 'Super',
+          lastName: 'Admin',
+          email: 'superadmin@possystem.com',
+          role: { name: 'super_admin', permissions: { users: { create: true, read: true, update: true, delete: true } } },
+          company: { id: '1', name: 'Default Company' },
+          userLocations: []
+        },
+        '2': {
+          id: '2',
+          firstName: 'Company',
+          lastName: 'Admin',
+          email: 'admin@defaultcompany.com',
+          role: { name: 'admin', permissions: { users: { create: true, read: true, update: true, delete: false } } },
+          company: { id: '1', name: 'Default Company' },
+          userLocations: []
+        },
+        '3': {
+          id: '3',
+          firstName: 'John',
+          lastName: 'Cashier',
+          email: 'cashier@defaultcompany.com',
+          role: { name: 'cashier', permissions: { sales: { create: true, read: true, update: false, delete: false } } },
+          company: { id: '1', name: 'Default Company' },
+          userLocations: []
+        }
+      };
 
+      // Get user from demo data
+      const user = demoUsers[req.userId];
       if (!user) {
         return res.status(404).json({
           success: false,

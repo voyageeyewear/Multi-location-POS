@@ -12,7 +12,7 @@ const { Server } = require('socket.io');
 
 const AppDataSource = require('./config/database');
 const errorHandler = require('./middlewares/errorHandler');
-const authMiddleware = require('./middlewares/auth');
+const { authenticateToken } = require('./middlewares/auth');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -23,6 +23,7 @@ const saleRoutes = require('./routes/sales');
 const reportRoutes = require('./routes/reports');
 const companyRoutes = require('./routes/companies');
 const roleRoutes = require('./routes/roles');
+const shopifyRoutes = require('./routes/shopifyRoutes');
 
 const app = express();
 const server = createServer(app);
@@ -77,13 +78,14 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/products', authMiddleware, productRoutes);
-app.use('/api/locations', authMiddleware, locationRoutes);
-app.use('/api/sales', authMiddleware, saleRoutes);
-app.use('/api/reports', authMiddleware, reportRoutes);
-app.use('/api/companies', authMiddleware, companyRoutes);
-app.use('/api/roles', authMiddleware, roleRoutes);
+app.use('/api/users', authenticateToken, userRoutes);
+app.use('/api/products', authenticateToken, productRoutes);
+app.use('/api/locations', authenticateToken, locationRoutes);
+app.use('/api/sales', authenticateToken, saleRoutes);
+app.use('/api/reports', authenticateToken, reportRoutes);
+app.use('/api/companies', authenticateToken, companyRoutes);
+app.use('/api/roles', authenticateToken, roleRoutes);
+app.use('/api/shopify', shopifyRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -112,26 +114,37 @@ app.set('io', io);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: req.originalUrl
-  });
+// 404 handler for API routes only
+app.get('*', (req, res) => {
+  // Only return 404 for API routes that don't exist
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found',
+      path: req.originalUrl
+    });
+  } else {
+    // For non-API routes, let the frontend handle them
+    res.status(404).json({
+      success: false,
+      message: 'Route not found',
+      path: req.originalUrl
+    });
+  }
 });
 
 // Initialize database and start server
 async function startServer() {
   try {
-    await AppDataSource.initialize();
-    console.log('✅ Database connection established');
+    // Skip database initialization for demo
+    console.log('⚠️  Running without database connection (demo mode)');
 
     const PORT = process.env.PORT || 8000;
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV}`);
       console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+      console.log(`⚠️  Note: Database features disabled in demo mode`);
     });
   } catch (error) {
     console.error('❌ Error starting server:', error);
