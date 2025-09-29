@@ -37,6 +37,9 @@ router.delete('/:id',
 // Get location statistics
 router.get('/:id/stats', LocationController.getLocationStats);
 
+// Get comprehensive location analytics (all locations)
+router.get('/analytics/overview', LocationController.getLocationStats);
+
 // Get location users
 router.get('/:id/users', LocationController.getLocationUsers);
 

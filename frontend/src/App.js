@@ -315,90 +315,120 @@ function App() {
     setUsersData(demoUsersData);
   };
 
-  const loadLocationData = () => {
-    const { dateLabel, multiplier } = generateDateSpecificData(selectedDate);
-    
-    // Demo location data with city-wise sales analytics
-    const demoLocationData = {
-      cities: [
-        {
-          id: 'mumbai',
-          name: 'Mumbai',
-          totalSales: Math.round(2450000 * multiplier),
-          totalOrders: Math.round(1250 * multiplier),
-          avgOrderValue: 1960,
-          customerCount: Math.round(890 * multiplier)
-        },
-        {
-          id: 'delhi',
-          name: 'Delhi',
-          totalSales: Math.round(2100000 * multiplier),
-          totalOrders: Math.round(1150 * multiplier),
-          avgOrderValue: 1826,
-          customerCount: Math.round(920 * multiplier)
-        },
-        {
-          id: 'bangalore',
-          name: 'Bangalore',
-          totalSales: Math.round(1890000 * multiplier),
-          totalOrders: Math.round(980 * multiplier),
-          avgOrderValue: 1928,
-          customerCount: Math.round(720 * multiplier)
-        },
-        {
-          id: 'chennai',
-          name: 'Chennai',
-          totalSales: Math.round(1560000 * multiplier),
-          totalOrders: Math.round(820 * multiplier),
-          avgOrderValue: 1902,
-          customerCount: Math.round(650 * multiplier)
-        },
-        {
-          id: 'kolkata',
-          name: 'Kolkata',
-          totalSales: Math.round(1450000 * multiplier),
-          totalOrders: Math.round(750 * multiplier),
-          avgOrderValue: 1933,
-          customerCount: Math.round(620 * multiplier)
-        },
-        {
-          id: 'hyderabad',
-          name: 'Hyderabad',
-          totalSales: Math.round(1380000 * multiplier),
-          totalOrders: Math.round(710 * multiplier),
-          avgOrderValue: 1944,
-          customerCount: Math.round(590 * multiplier)
-        },
-        {
-          id: 'pune',
-          name: 'Pune',
-          totalSales: Math.round(1320000 * multiplier),
-          totalOrders: Math.round(680 * multiplier),
-          avgOrderValue: 1941,
-          customerCount: Math.round(580 * multiplier)
-        },
-        {
-          id: 'ahmedabad',
-          name: 'Ahmedabad',
-          totalSales: Math.round(1250000 * multiplier),
-          totalOrders: Math.round(640 * multiplier),
-          avgOrderValue: 1953,
-          customerCount: Math.round(550 * multiplier)
+  const loadLocationData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch real data from API
+      const response = await fetch(`http://localhost:8000/api/locations/analytics/overview?date=${selectedDate}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || 'demo-token'}`,
+          'Content-Type': 'application/json'
         }
-      ],
-      totalStats: {
-        totalSales: Math.round(9320000 * multiplier),
-        totalOrders: Math.round(4880 * multiplier),
-        totalCustomers: Math.round(3760 * multiplier),
-        avgOrderValue: 1909
-      },
-      dateInfo: {
-        label: dateLabel,
-        type: selectedDate
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
-    
-    setLocationData(demoLocationData);
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Fetched location data from API:', result.data);
+        setLocationData(result.data);
+      } else {
+        throw new Error(result.message || 'Failed to fetch location data');
+      }
+    } catch (error) {
+      console.error('Error fetching location data:', error);
+      
+      // Fallback to demo data if API fails
+      const { dateLabel, multiplier } = generateDateSpecificData(selectedDate);
+      
+      const demoLocationData = {
+        cities: [
+          {
+            id: 'mumbai',
+            name: 'Mumbai',
+            totalSales: Math.round(2450000 * multiplier),
+            totalOrders: Math.round(1250 * multiplier),
+            avgOrderValue: 1960,
+            customerCount: Math.round(890 * multiplier)
+          },
+          {
+            id: 'delhi',
+            name: 'Delhi',
+            totalSales: Math.round(2100000 * multiplier),
+            totalOrders: Math.round(1150 * multiplier),
+            avgOrderValue: 1826,
+            customerCount: Math.round(920 * multiplier)
+          },
+          {
+            id: 'bangalore',
+            name: 'Bangalore',
+            totalSales: Math.round(1890000 * multiplier),
+            totalOrders: Math.round(980 * multiplier),
+            avgOrderValue: 1928,
+            customerCount: Math.round(720 * multiplier)
+          },
+          {
+            id: 'chennai',
+            name: 'Chennai',
+            totalSales: Math.round(1560000 * multiplier),
+            totalOrders: Math.round(820 * multiplier),
+            avgOrderValue: 1902,
+            customerCount: Math.round(650 * multiplier)
+          },
+          {
+            id: 'kolkata',
+            name: 'Kolkata',
+            totalSales: Math.round(1450000 * multiplier),
+            totalOrders: Math.round(750 * multiplier),
+            avgOrderValue: 1933,
+            customerCount: Math.round(620 * multiplier)
+          },
+          {
+            id: 'hyderabad',
+            name: 'Hyderabad',
+            totalSales: Math.round(1380000 * multiplier),
+            totalOrders: Math.round(710 * multiplier),
+            avgOrderValue: 1944,
+            customerCount: Math.round(590 * multiplier)
+          },
+          {
+            id: 'pune',
+            name: 'Pune',
+            totalSales: Math.round(1320000 * multiplier),
+            totalOrders: Math.round(680 * multiplier),
+            avgOrderValue: 1941,
+            customerCount: Math.round(580 * multiplier)
+          },
+          {
+            id: 'ahmedabad',
+            name: 'Ahmedabad',
+            totalSales: Math.round(1250000 * multiplier),
+            totalOrders: Math.round(640 * multiplier),
+            avgOrderValue: 1953,
+            customerCount: Math.round(550 * multiplier)
+          }
+        ],
+        totalStats: {
+          totalSales: Math.round(9320000 * multiplier),
+          totalOrders: Math.round(4880 * multiplier),
+          totalCustomers: Math.round(3760 * multiplier),
+          avgOrderValue: 1909
+        },
+        dateInfo: {
+          label: dateLabel,
+          type: selectedDate
+        }
+      };
+      
+      setLocationData(demoLocationData);
+      toast.error('Using demo data - API connection failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Removed handleStateSelection since we're not showing detailed analytics anymore
