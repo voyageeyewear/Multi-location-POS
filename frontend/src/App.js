@@ -7,7 +7,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedState, setSelectedState] = useState(null);
+  // Removed selectedState since we're not showing detailed analytics anymore
   const [locationData, setLocationData] = useState(null);
   const [selectedDate, setSelectedDate] = useState('today');
   const [customDate, setCustomDate] = useState('');
@@ -407,13 +407,10 @@ function App() {
     setLocationData(demoLocationData);
   };
 
-  const handleStateSelection = (state) => {
-    setSelectedState(state);
-  };
+  // Removed handleStateSelection since we're not showing detailed analytics anymore
 
   const handleDateChange = (dateType) => {
     setSelectedDate(dateType);
-    setSelectedState(null); // Reset state selection when date changes
     // Force reload data with new date
     setTimeout(() => {
       loadLocationData();
@@ -423,7 +420,6 @@ function App() {
   const handleCustomDateChange = (date) => {
     setCustomDate(date);
     if (selectedDate === 'custom') {
-      setSelectedState(null);
       setTimeout(() => {
         loadLocationData();
       }, 100);
@@ -1158,86 +1154,35 @@ function App() {
                     </div>
                   </div>
 
-                  {/* State Selection */}
-                  <div className="state-selection">
-                    <h2>Select State to View Detailed Analytics</h2>
-                    <div className="states-grid">
+                  {/* Location Overview */}
+                  <div className="location-overview">
+                    <h2>📍 Location Performance Overview</h2>
+                    <div className="locations-grid">
                       {locationData.states.map((state) => (
-                        <div
-                          key={state.id}
-                          className={`state-card ${selectedState?.id === state.id ? 'selected' : ''}`}
-                          onClick={() => handleStateSelection(state)}
-                        >
+                        <div key={state.id} className="location-card">
                           <h3>{state.name}</h3>
-                          <p>₹{state.totalSales.toLocaleString()} sales</p>
-                          <p>{state.totalOrders} orders</p>
-                          <p>{state.customerCount} customers</p>
+                          <div className="location-metrics">
+                            <div className="metric">
+                              <span className="label">Total Sales:</span>
+                              <span className="value">₹{state.totalSales.toLocaleString()}</span>
+                            </div>
+                            <div className="metric">
+                              <span className="label">Total Orders:</span>
+                              <span className="value">{state.totalOrders.toLocaleString()}</span>
+                            </div>
+                            <div className="metric">
+                              <span className="label">Customers:</span>
+                              <span className="value">{state.customerCount.toLocaleString()}</span>
+                            </div>
+                            <div className="metric">
+                              <span className="label">Avg Order Value:</span>
+                              <span className="value">₹{state.avgOrderValue}</span>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
-
-                  {/* State Details */}
-                  {selectedState && (
-                    <div className="state-details">
-                      <div className="state-header">
-                        <h2>{selectedState.name} Analytics</h2>
-                        <div className="growth-badge">
-                          <span className="growth-text">+{selectedState.monthlyGrowth}% Monthly Growth</span>
-                        </div>
-                      </div>
-
-                      <div className="state-stats">
-                        <div className="stat-card">
-                          <h4>Total Sales</h4>
-                          <p className="stat-value">₹{selectedState.totalSales.toLocaleString()}</p>
-                        </div>
-                        <div className="stat-card">
-                          <h4>Total Orders</h4>
-                          <p className="stat-value">{selectedState.totalOrders.toLocaleString()}</p>
-                        </div>
-                        <div className="stat-card">
-                          <h4>Avg Order Value</h4>
-                          <p className="stat-value">₹{selectedState.avgOrderValue}</p>
-                        </div>
-                        <div className="stat-card">
-                          <h4>Total Customers</h4>
-                          <p className="stat-value">{selectedState.customerCount.toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      <div className="state-info-grid">
-                        <div className="info-card">
-                          <h3>Major Cities</h3>
-                          <ul className="cities-list">
-                            {selectedState.cities.map((city, index) => (
-                              <li key={index}>{city}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="info-card">
-                          <h3>Top Performing Products</h3>
-                          <div className="top-products">
-                            {selectedState.topProducts.map((product, index) => (
-                              <div key={index} className="product-performance">
-                                <div className="product-info">
-                                  <h4>{product.name}</h4>
-                                  <p>₹{product.sales.toLocaleString()} • {product.units} units</p>
-                                </div>
-                                <div className="performance-bar">
-                                  <div 
-                                    className="performance-fill" 
-                                    style={{width: `${(product.sales / selectedState.topProducts[0].sales) * 100}%`}}
-                                  ></div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </>
               ) : (
                 <div className="loading-container">
