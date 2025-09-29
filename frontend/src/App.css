@@ -1922,6 +1922,42 @@ body {
   color: #7c3aed;
 }
 
+.payment-btn.selected {
+  border-color: #3b82f6;
+  background: #dbeafe;
+  font-weight: 700;
+}
+
+.payment-btn.selected.cash {
+  background: #d1fae5;
+  border-color: #059669;
+}
+
+.payment-btn.selected.card {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+.payment-btn.selected.upi {
+  background: #ede9fe;
+  border-color: #7c3aed;
+}
+
+.selected-payment {
+  text-align: center;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: #f0f9ff;
+  border-radius: 0.5rem;
+  border: 1px solid #0ea5e9;
+}
+
+.selected-payment p {
+  margin: 0;
+  color: #0369a1;
+  font-size: 0.9rem;
+}
+
 .complete-sale-btn {
   width: 100%;
   padding: 1rem;
@@ -2130,6 +2166,24 @@ body {
   text-align: center;
   padding: 2rem;
   color: #6b7280;
+}
+
+/* Refresh Button */
+.refresh-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  margin-left: 1rem;
+}
+
+.refresh-btn:hover {
+  background: #2563eb;
 }
 
 /* POS Styles restored to original */

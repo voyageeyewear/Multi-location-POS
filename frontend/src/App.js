@@ -22,6 +22,7 @@ function App() {
   const [posProducts, setPosProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [posLoading, setPosLoading] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
   const handleLogin = (role = 'admin') => {
     let demoUser;
@@ -273,6 +274,10 @@ function App() {
     };
     
     setSalesData(demoSalesData);
+  };
+
+  const refreshSalesData = () => {
+    loadSalesData();
   };
 
   const loadUsersData = () => {
@@ -892,6 +897,84 @@ function App() {
 
   const clearCart = () => {
     setCart([]);
+    setSelectedPaymentMethod(null);
+  };
+
+  const completeSale = () => {
+    if (cart.length === 0) {
+      alert('Cart is empty!');
+      return;
+    }
+
+    if (!selectedPaymentMethod) {
+      alert('Please select a payment method!');
+      return;
+    }
+
+    // Create new order
+    const orderId = `ORD-${Date.now()}`;
+    const currentTime = new Date();
+    
+    // Generate client info (in real app, this would come from user profile)
+    const clientInfo = {
+      name: user.firstName + ' ' + user.lastName,
+      email: user.email,
+      role: user.role.name
+    };
+
+    // Generate location info (in real app, this would come from user's assigned locations)
+    const locationInfo = {
+      state: 'Maharashtra',
+      city: 'Mumbai',
+      address: '123 Business District, Mumbai'
+    };
+
+    const newOrder = {
+      id: orderId,
+      customerName: clientInfo.name,
+      customerEmail: clientInfo.email,
+      customerPhone: '+91 98765 43210', // Demo phone
+      orderDate: currentTime.toISOString().split('T')[0], // Format: YYYY-MM-DD
+      status: 'completed',
+      totalAmount: getCartTotal(),
+      items: cart.map(item => ({
+        id: `ITEM-${Date.now()}-${item.id}`,
+        productName: item.name,
+        sku: item.sku || 'N/A',
+        price: item.price,
+        quantity: item.quantity,
+        isDefected: false,
+        defectReason: null
+      })),
+      invoiceNumber: `INV-POS-${Date.now()}`,
+      paymentMethod: selectedPaymentMethod,
+      location: locationInfo,
+      notes: `Order created via POS by ${clientInfo.role}`,
+      createdBy: clientInfo.name,
+      createdAt: currentTime.toISOString()
+    };
+
+    // Add to existing sales data
+    if (salesData && salesData.orders) {
+      const updatedSalesData = {
+        ...salesData,
+        orders: [newOrder, ...salesData.orders],
+        summary: {
+          ...salesData.summary,
+          totalOrders: salesData.summary.totalOrders + 1,
+          totalRevenue: salesData.summary.totalRevenue + getCartTotal(),
+          completedOrders: salesData.summary.completedOrders + 1,
+          averageOrderValue: (salesData.summary.totalRevenue + getCartTotal()) / (salesData.summary.totalOrders + 1)
+        }
+      };
+      setSalesData(updatedSalesData);
+    }
+
+    // Show success message
+    alert(`Sale completed successfully!\nOrder ID: ${orderId}\nTotal: ₹${getCartTotal().toLocaleString()}\nPayment: ${selectedPaymentMethod}`);
+
+    // Clear cart and reset payment method
+    clearCart();
   };
 
   if (!isLoggedIn) {
@@ -1248,6 +1331,13 @@ function App() {
             <div className="content-header">
               <h1>🛒 Sales & Orders Management</h1>
               <p>View and manage all orders, customers, and defected items</p>
+              <button 
+                className="refresh-btn"
+                onClick={refreshSalesData}
+                title="Refresh sales data"
+              >
+                🔄 Refresh
+              </button>
               
               <div className="sales-filters">
                 <div className="filter-group">
@@ -1611,14 +1701,34 @@ function App() {
                   <div className="payment-section">
                     <h3>Payment</h3>
                     <div className="payment-methods">
-                      <button className="payment-btn cash">Cash</button>
-                      <button className="payment-btn card">Card</button>
-                      <button className="payment-btn upi">UPI</button>
+                      <button 
+                        className={`payment-btn cash ${selectedPaymentMethod === 'cash' ? 'selected' : ''}`}
+                        onClick={() => setSelectedPaymentMethod('cash')}
+                      >
+                        Cash
+                      </button>
+                      <button 
+                        className={`payment-btn card ${selectedPaymentMethod === 'card' ? 'selected' : ''}`}
+                        onClick={() => setSelectedPaymentMethod('card')}
+                      >
+                        Card
+                      </button>
+                      <button 
+                        className={`payment-btn upi ${selectedPaymentMethod === 'upi' ? 'selected' : ''}`}
+                        onClick={() => setSelectedPaymentMethod('upi')}
+                      >
+                        UPI
+                      </button>
                     </div>
+                    {selectedPaymentMethod && (
+                      <div className="selected-payment">
+                        <p>Selected: <strong>{selectedPaymentMethod.toUpperCase()}</strong></p>
+                      </div>
+                    )}
                       <button 
                         className="complete-sale-btn"
-                        onClick={clearCart}
-                        disabled={cart.length === 0}
+                        onClick={completeSale}
+                        disabled={cart.length === 0 || !selectedPaymentMethod}
                       >
                         Complete Sale
                       </button>
