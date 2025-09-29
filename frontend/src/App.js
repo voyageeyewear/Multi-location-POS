@@ -113,167 +113,20 @@ function App() {
   };
 
   const loadSalesData = () => {
-    // Demo sales data with orders, customers, and defected items
-    const demoSalesData = {
-      orders: [
-        {
-          id: 'ORD-001',
-          customerName: 'Rajesh Kumar',
-          customerEmail: 'rajesh.kumar@email.com',
-          customerPhone: '+91-9876543210',
-          orderDate: '2024-09-29',
-          status: 'completed',
-          totalAmount: 2599,
-          items: [
-            {
-              id: 'ITEM-001',
-              productName: 'Voyage Wayfarer Eyeglasses',
-              sku: 'VW-EYE-001',
-              price: 1599,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            },
-            {
-              id: 'ITEM-002',
-              productName: 'Premium Lens Coating',
-              sku: 'PLC-001',
-              price: 1000,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            }
-          ],
-          invoiceNumber: 'INV-2024-001',
-          paymentMethod: 'Credit Card'
-        },
-        {
-          id: 'ORD-002',
-          customerName: 'Priya Sharma',
-          customerEmail: 'priya.sharma@email.com',
-          customerPhone: '+91-9876543211',
-          orderDate: '2024-09-28',
-          status: 'defected',
-          totalAmount: 3999,
-          items: [
-            {
-              id: 'ITEM-003',
-              productName: 'Celeste Silver Sunglasses',
-              sku: 'CS-SUN-002',
-              price: 2999,
-              quantity: 1,
-              isDefected: true,
-              defectReason: 'Scratched lens surface'
-            },
-            {
-              id: 'ITEM-004',
-              productName: 'Premium Case',
-              sku: 'PC-002',
-              price: 1000,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            }
-          ],
-          invoiceNumber: 'INV-2024-002',
-          paymentMethod: 'UPI'
-        },
-        {
-          id: 'ORD-003',
-          customerName: 'Amit Singh',
-          customerEmail: 'amit.singh@email.com',
-          customerPhone: '+91-9876543212',
-          orderDate: '2024-09-27',
-          status: 'completed',
-          totalAmount: 4599,
-          items: [
-            {
-              id: 'ITEM-005',
-              productName: 'Hexagonal Polarized Sunglasses',
-              sku: 'HP-SUN-003',
-              price: 3599,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            },
-            {
-              id: 'ITEM-006',
-              productName: 'Anti-Reflective Coating',
-              sku: 'ARC-003',
-              price: 1000,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            }
-          ],
-          invoiceNumber: 'INV-2024-003',
-          paymentMethod: 'Cash'
-        },
-        {
-          id: 'ORD-004',
-          customerName: 'Sneha Patel',
-          customerEmail: 'sneha.patel@email.com',
-          customerPhone: '+91-9876543213',
-          orderDate: '2024-09-26',
-          status: 'defected',
-          totalAmount: 1999,
-          items: [
-            {
-              id: 'ITEM-007',
-              productName: 'Classic Black Eyeglasses',
-              sku: 'CB-EYE-004',
-              price: 1999,
-              quantity: 1,
-              isDefected: true,
-              defectReason: 'Frame misalignment'
-            }
-          ],
-          invoiceNumber: 'INV-2024-004',
-          paymentMethod: 'Credit Card'
-        },
-        {
-          id: 'ORD-005',
-          customerName: 'Vikram Joshi',
-          customerEmail: 'vikram.joshi@email.com',
-          customerPhone: '+91-9876543214',
-          orderDate: '2024-09-25',
-          status: 'completed',
-          totalAmount: 7999,
-          items: [
-            {
-              id: 'ITEM-008',
-              productName: 'Premium Gold Sunglasses',
-              sku: 'PG-SUN-005',
-              price: 6999,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            },
-            {
-              id: 'ITEM-009',
-              productName: 'Premium Case + Cleaning Kit',
-              sku: 'PCK-005',
-              price: 1000,
-              quantity: 1,
-              isDefected: false,
-              defectReason: null
-            }
-          ],
-          invoiceNumber: 'INV-2024-005',
-          paymentMethod: 'UPI'
-        }
-      ],
+    // Start with empty sales data - only real orders from POS will appear
+    const emptySalesData = {
+      orders: [],
       stats: {
-        totalOrders: 5,
-        completedOrders: 3,
-        defectedOrders: 2,
-        totalRevenue: 21195,
-        defectedRevenue: 5998,
-        averageOrderValue: 4239
+        totalOrders: 0,
+        completedOrders: 0,
+        defectedOrders: 0,
+        totalRevenue: 0,
+        defectedRevenue: 0,
+        averageOrderValue: 0
       }
     };
     
-    setSalesData(demoSalesData);
+    setSalesData(emptySalesData);
   };
 
   const refreshSalesData = () => {
@@ -959,12 +812,12 @@ function App() {
       const updatedSalesData = {
         ...salesData,
         orders: [newOrder, ...salesData.orders],
-        summary: {
-          ...salesData.summary,
-          totalOrders: salesData.summary.totalOrders + 1,
-          totalRevenue: salesData.summary.totalRevenue + getCartTotal(),
-          completedOrders: salesData.summary.completedOrders + 1,
-          averageOrderValue: (salesData.summary.totalRevenue + getCartTotal()) / (salesData.summary.totalOrders + 1)
+        stats: {
+          ...salesData.stats,
+          totalOrders: salesData.stats.totalOrders + 1,
+          totalRevenue: salesData.stats.totalRevenue + getCartTotal(),
+          completedOrders: salesData.stats.completedOrders + 1,
+          averageOrderValue: (salesData.stats.totalRevenue + getCartTotal()) / (salesData.stats.totalOrders + 1)
         }
       };
       setSalesData(updatedSalesData);
