@@ -240,7 +240,13 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
-  await AppDataSource.destroy();
+  try {
+    if (AppDataSource && AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
+  } catch (error) {
+    console.log('Database already disconnected');
+  }
   server.close(() => {
     console.log('Process terminated');
   });
@@ -248,7 +254,13 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
-  await AppDataSource.destroy();
+  try {
+    if (AppDataSource && AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
+  } catch (error) {
+    console.log('Database already disconnected');
+  }
   server.close(() => {
     console.log('Process terminated');
   });
