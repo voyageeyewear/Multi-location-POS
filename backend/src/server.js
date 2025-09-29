@@ -76,6 +76,45 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    version: process.env.npm_package_version || '1.0.0'
+  });
+});
+
+// Serve static files from React build in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  // Try multiple possible locations for the frontend build
+  const possiblePaths = [
+    path.join(__dirname, '../frontend-build'),
+    path.join(__dirname, '../../frontend/build'),
+    path.join(__dirname, './frontend-build')
+  ];
+  
+  let buildPath = null;
+  for (const possiblePath of possiblePaths) {
+    try {
+      require('fs').accessSync(possiblePath);
+      buildPath = possiblePath;
+      break;
+    } catch (err) {
+      // Path doesn't exist, try next one
+    }
+  }
+  
+  if (buildPath) {
+    app.use(express.static(buildPath));
+    console.log(`📁 Serving frontend from: ${buildPath}`);
+  } else {
+    console.log('⚠️  Frontend build not found, serving API only');
+  }
+}
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
@@ -114,24 +153,70 @@ app.set('io', io);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// 404 handler for API routes only
-app.get('*', (req, res) => {
-  // Only return 404 for API routes that don't exist
-  if (req.path.startsWith('/api/')) {
-    res.status(404).json({
-      success: false,
-      message: 'Route not found',
-      path: req.originalUrl
-    });
-  } else {
-    // For non-API routes, let the frontend handle them
-    res.status(404).json({
-      success: false,
-      message: 'Route not found',
-      path: req.originalUrl
-    });
-  }
-});
+// Catch-all handler: Send back React's index.html file for client-side routing
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    // Only return 404 for API routes that don't exist
+    if (req.path.startsWith('/api/')) {
+      res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.originalUrl
+      });
+    } else {
+      // Serve React app for all non-API routes
+      const path = require('path');
+      const fs = require('fs');
+      
+      // Try multiple possible locations for index.html
+      const possiblePaths = [
+        path.join(__dirname, '../frontend-build', 'index.html'),
+        path.join(__dirname, '../../frontend/build', 'index.html'),
+        path.join(__dirname, './frontend-build', 'index.html')
+      ];
+      
+      let indexPath = null;
+      for (const possiblePath of possiblePaths) {
+        try {
+          fs.accessSync(possiblePath);
+          indexPath = possiblePath;
+          break;
+        } catch (err) {
+          // Path doesn't exist, try next one
+        }
+      }
+      
+      if (indexPath) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).json({
+          success: false,
+          message: 'Frontend not found',
+          path: req.originalUrl
+        });
+      }
+    }
+  });
+} else {
+  // 404 handler for API routes only in development
+  app.get('*', (req, res) => {
+    // Only return 404 for API routes that don't exist
+    if (req.path.startsWith('/api/')) {
+      res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.originalUrl
+      });
+    } else {
+      // For non-API routes, let the frontend handle them
+      res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.originalUrl
+      });
+    }
+  });
+}
 
 // Initialize database and start server
 async function startServer() {

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "build": "echo 'Backend build completed'",
     "migrate": "typeorm migration:run",
     "migrate:generate": "typeorm migration:generate",
     "migrate:revert": "typeorm migration:revert",
