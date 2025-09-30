@@ -987,6 +987,7 @@ function App() {
           {user?.role?.name === 'admin' && (
             <>
               <button onClick={() => handleNavigation('products')} className={`nav-item ${currentPage === 'products' ? 'active' : ''}`}>Products</button>
+              <button onClick={() => handleNavigation('inventory')} className={`nav-item ${currentPage === 'inventory' ? 'active' : ''}`}>Inventory</button>
               <button onClick={() => handleNavigation('locations')} className={`nav-item ${currentPage === 'locations' ? 'active' : ''}`}>Locations</button>
               <button onClick={() => handleNavigation('sales')} className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}>Sales</button>
               <button onClick={() => handleNavigation('reports')} className={`nav-item ${currentPage === 'reports' ? 'active' : ''}`}>Reports</button>
@@ -997,6 +998,7 @@ function App() {
           
           {user?.role?.name === 'client' && (
             <>
+              <button onClick={() => handleNavigation('inventory')} className={`nav-item ${currentPage === 'inventory' ? 'active' : ''}`}>Inventory</button>
               <button onClick={() => handleNavigation('sales')} className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}>Sales</button>
               <button onClick={() => handleNavigation('pos')} className={`nav-item ${currentPage === 'pos' ? 'active' : ''}`}>POS</button>
             </>
@@ -1035,6 +1037,7 @@ function App() {
                 <p>Use the sidebar menu to navigate to different sections:</p>
                 <div className="action-tags">
                   <span className="tag">Products</span>
+                  <span className="tag">Inventory</span>
                   <span className="tag">Locations</span>
                   <span className="tag">Sales</span>
                   <span className="tag">Reports</span>
@@ -1094,6 +1097,133 @@ function App() {
                     <div className="empty-state">
                       <h3>No products found</h3>
                       <p>Click "Sync from Shopify" to load your products</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {currentPage === 'inventory' && (
+          <>
+            <div className="content-header">
+              <h1>📦 Inventory Management</h1>
+              <p>Track stock levels, manage inventory, and monitor product availability</p>
+              <button onClick={loadShopifyProducts} className="sync-btn" disabled={loading}>
+                {loading ? 'Syncing...' : '🔄 Refresh Stock'}
+              </button>
+            </div>
+
+            <div className="inventory-content">
+              {loading ? (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <p>Loading inventory data...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="inventory-stats">
+                    <div className="stat-card">
+                      <h3>Total Products</h3>
+                      <p className="stat-value">{products.length}</p>
+                    </div>
+                    <div className="stat-card">
+                      <h3>In Stock</h3>
+                      <p className="stat-value">{products.filter(p => p.inventory > 0).length}</p>
+                    </div>
+                    <div className="stat-card">
+                      <h3>Out of Stock</h3>
+                      <p className="stat-value">{products.filter(p => p.inventory === 0).length}</p>
+                    </div>
+                    <div className="stat-card">
+                      <h3>Low Stock</h3>
+                      <p className="stat-value">{products.filter(p => p.inventory > 0 && p.inventory <= 10).length}</p>
+                    </div>
+                  </div>
+
+                  <div className="inventory-filters">
+                    <div className="filter-group">
+                      <label>Filter by Stock Status:</label>
+                      <div className="filter-buttons">
+                        <button className="filter-btn active">All</button>
+                        <button className="filter-btn">In Stock</button>
+                        <button className="filter-btn">Low Stock</button>
+                        <button className="filter-btn">Out of Stock</button>
+                      </div>
+                    </div>
+                    <div className="filter-group">
+                      <label>Search Products:</label>
+                      <input
+                        type="text"
+                        placeholder="Search by product name, vendor, or SKU..."
+                        className="search-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="inventory-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>SKU</th>
+                          <th>Vendor</th>
+                          <th>Current Stock</th>
+                          <th>Status</th>
+                          <th>Last Updated</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map((product) => {
+                          const stockStatus = product.inventory === 0 ? 'out-of-stock' : 
+                                            product.inventory <= 10 ? 'low-stock' : 'in-stock';
+                          const statusText = product.inventory === 0 ? 'Out of Stock' : 
+                                           product.inventory <= 10 ? 'Low Stock' : 'In Stock';
+                          
+                          return (
+                            <tr key={product.id} className={`inventory-row ${stockStatus}`}>
+                              <td>
+                                <div className="product-info">
+                                  <img src={product.image} alt={product.title} className="product-thumbnail" />
+                                  <div>
+                                    <div className="product-name">{product.title}</div>
+                                    <div className="product-type">{product.product_type}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>{product.sku || 'N/A'}</td>
+                              <td>{product.vendor}</td>
+                              <td>
+                                <span className={`stock-quantity ${stockStatus}`}>
+                                  {product.inventory}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`status-badge ${stockStatus}`}>
+                                  {stockStatus === 'in-stock' ? '✅' : 
+                                   stockStatus === 'low-stock' ? '⚠️' : '❌'} {statusText}
+                                </span>
+                              </td>
+                              <td>{new Date().toLocaleDateString()}</td>
+                              <td>
+                                <div className="action-buttons">
+                                  <button className="btn-edit">✏️ Edit</button>
+                                  <button className="btn-adjust">📦 Adjust</button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {products.length === 0 && (
+                    <div className="empty-state">
+                      <h3>No inventory data available</h3>
+                      <p>Click "Refresh Stock" to load inventory from Shopify</p>
                     </div>
                   )}
                 </>
