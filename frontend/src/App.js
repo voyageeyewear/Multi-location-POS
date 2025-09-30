@@ -992,7 +992,6 @@ function App() {
               <button onClick={() => handleNavigation('reports')} className={`nav-item ${currentPage === 'reports' ? 'active' : ''}`}>Reports</button>
               <button onClick={() => handleNavigation('data')} className={`nav-item ${currentPage === 'data' ? 'active' : ''}`}>Data Management</button>
               <button onClick={() => handleNavigation('users')} className={`nav-item ${currentPage === 'users' ? 'active' : ''}`}>Users</button>
-              <button onClick={() => handleNavigation('roles')} className={`nav-item ${currentPage === 'roles' ? 'active' : ''}`}>Roles</button>
             </>
           )}
           
@@ -1040,7 +1039,6 @@ function App() {
                   <span className="tag">Sales</span>
                   <span className="tag">Reports</span>
                   <span className="tag">Data Management</span>
-                  <span className="tag">Roles</span>
                 </div>
               </div>
             </div>
