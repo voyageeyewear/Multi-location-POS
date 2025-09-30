@@ -998,7 +998,6 @@ function App() {
           
           {user?.role?.name === 'client' && (
             <>
-              <button onClick={() => handleNavigation('inventory')} className={`nav-item ${currentPage === 'inventory' ? 'active' : ''}`}>Inventory</button>
               <button onClick={() => handleNavigation('sales')} className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}>Sales</button>
               <button onClick={() => handleNavigation('pos')} className={`nav-item ${currentPage === 'pos' ? 'active' : ''}`}>POS</button>
             </>
