@@ -61,4 +61,7 @@ router.get('/stats/top-products', SaleController.getTopSellingProducts);
 // Get sales summary by location
 router.get('/stats/by-location', SaleController.getSalesByLocation);
 
+// Get invoices for locations page
+router.get('/invoices', SaleController.getInvoicesForLocations);
+
 module.exports = router;

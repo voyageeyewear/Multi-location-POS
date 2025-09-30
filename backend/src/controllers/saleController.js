@@ -191,6 +191,114 @@ class SaleController {
       next(error);
     }
   }
+
+  static async getInvoicesForLocations(req, res, next) {
+    try {
+      // For demo mode, return sample invoice data
+      const sampleInvoices = [
+        {
+          id: 'INV-001',
+          clientName: 'John Smith',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          paymentMethod: 'Card',
+          createdAt: new Date().toISOString(),
+          items: [
+            { title: 'Classic Aviator Sunglasses', quantity: 1, price: 2500 },
+            { title: 'Modern Round Frame Glasses', quantity: 2, price: 1800 }
+          ],
+          subtotal: 6100,
+          tax: 610,
+          total: 6710
+        },
+        {
+          id: 'INV-002',
+          clientName: 'Sarah Johnson',
+          city: 'Delhi',
+          state: 'Delhi',
+          paymentMethod: 'UPI',
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+          items: [
+            { title: 'Stylish Wayfarer Shades', quantity: 1, price: 3200 }
+          ],
+          subtotal: 3200,
+          tax: 320,
+          total: 3520
+        },
+        {
+          id: 'INV-003',
+          clientName: 'Mike Wilson',
+          city: 'Bangalore',
+          state: 'Karnataka',
+          paymentMethod: 'Cash',
+          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+          items: [
+            { title: 'Sporty Wrap-Around Sunglasses', quantity: 1, price: 2800 },
+            { title: 'Blue Light Blocking Glasses', quantity: 1, price: 1500 }
+          ],
+          subtotal: 4300,
+          tax: 430,
+          total: 4730
+        },
+        {
+          id: 'INV-004',
+          clientName: 'Emily Davis',
+          city: 'Chennai',
+          state: 'Tamil Nadu',
+          paymentMethod: 'Card',
+          createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+          items: [
+            { title: 'Vintage Cat-Eye Glasses', quantity: 1, price: 2200 },
+            { title: 'Minimalist Square Sunglasses', quantity: 1, price: 1900 },
+            { title: 'Kids Funky Sunglasses', quantity: 1, price: 1200 }
+          ],
+          subtotal: 5300,
+          tax: 530,
+          total: 5830
+        },
+        {
+          id: 'INV-005',
+          clientName: 'David Brown',
+          city: 'Kolkata',
+          state: 'West Bengal',
+          paymentMethod: 'UPI',
+          createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+          items: [
+            { title: 'Oversized Fashion Sunglasses', quantity: 2, price: 3500 }
+          ],
+          subtotal: 7000,
+          tax: 700,
+          total: 7700
+        },
+        {
+          id: 'INV-006',
+          clientName: 'Lisa Anderson',
+          city: 'Hyderabad',
+          state: 'Telangana',
+          paymentMethod: 'Cash',
+          createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), // 10 hours ago
+          items: [
+            { title: 'Gradient Lens Sunglasses', quantity: 1, price: 2900 },
+            { title: 'Classic Aviator Sunglasses', quantity: 1, price: 2500 }
+          ],
+          subtotal: 5400,
+          tax: 540,
+          total: 5940
+        }
+      ];
+
+      const totalRevenue = sampleInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
+
+      res.json({
+        success: true,
+        invoices: sampleInvoices,
+        totalRevenue: totalRevenue,
+        totalOrders: sampleInvoices.length
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = SaleController;

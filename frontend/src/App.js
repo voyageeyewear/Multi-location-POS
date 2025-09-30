@@ -30,6 +30,10 @@ function App() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [selectedLocationForAnalytics, setSelectedLocationForAnalytics] = useState('');
   const [locationAnalyticsData, setLocationAnalyticsData] = useState(null);
+  const [expandedInvoice, setExpandedInvoice] = useState(null);
+  
+  // State for city filter on locations page
+  const [selectedCity, setSelectedCity] = useState('all');
 
   const handleLogin = (role = 'admin') => {
     let demoUser;
@@ -121,7 +125,7 @@ function App() {
   const loadSalesData = () => {
     // Try to load from localStorage first
     try {
-      const savedSalesData = localStorage.getItem('pos-sales-data');
+      const savedSalesData = localStorage.getItem('pos_sales_data');
       if (savedSalesData) {
         const parsedData = JSON.parse(savedSalesData);
         console.log('Loaded sales data from localStorage:', parsedData);
@@ -152,7 +156,7 @@ function App() {
 
   const saveSalesData = (data) => {
     try {
-      localStorage.setItem('pos-sales-data', JSON.stringify(data));
+      localStorage.setItem('pos_sales_data', JSON.stringify(data));
       console.log('Sales data saved to localStorage:', data);
     } catch (error) {
       console.error('Error saving sales data to localStorage:', error);
@@ -184,11 +188,6 @@ function App() {
     }
   };
 
-  const getUniqueCities = () => {
-    if (!salesData || !salesData.orders) return [];
-    const cities = salesData.orders.map(order => order.location.city).filter((city, index, self) => self.indexOf(city) === index);
-    return cities.sort();
-  };
 
   const loadUsersData = () => {
     // Demo users data with different roles and permissions
@@ -325,30 +324,7 @@ function App() {
     try {
       setLoading(true);
       
-      // Fetch real data from API
-      const response = await fetch(`http://localhost:8000/api/locations/analytics/overview?date=${selectedDate}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || 'demo-token'}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('Fetched location data from API:', result.data);
-        setLocationData(result.data);
-      } else {
-        throw new Error(result.message || 'Failed to fetch location data');
-      }
-    } catch (error) {
-      console.error('Error fetching location data:', error);
-      
-      // Fallback to demo data if API fails
+      // Load demo data locally (no API calls to avoid 404 errors)
       const { dateLabel, multiplier } = generateDateSpecificData(selectedDate);
       
       const demoLocationData = {
@@ -431,7 +407,10 @@ function App() {
       };
       
       setLocationData(demoLocationData);
-      toast.error('Using demo data - API connection failed');
+      console.log('Location data loaded successfully:', demoLocationData);
+    } catch (error) {
+      console.error('Error loading location data:', error);
+      toast.error('Failed to load location data');
     } finally {
       setLoading(false);
     }
@@ -477,6 +456,51 @@ function App() {
     }
   };
 
+  const loadRealInvoiceData = async () => {
+    try {
+      // Only load real POS transactions from localStorage
+      const savedSalesData = localStorage.getItem('pos_sales_data');
+      if (savedSalesData) {
+        const parsedData = JSON.parse(savedSalesData);
+        if (parsedData.orders && parsedData.orders.length > 0) {
+          setSalesData(parsedData);
+          console.log('Loaded real POS transactions:', parsedData);
+        } else {
+          // No real transactions yet, show empty state
+          setSalesData({ 
+            orders: [], 
+            stats: {
+              totalOrders: 0,
+              completedOrders: 0,
+              defectedOrders: 0,
+              totalRevenue: 0,
+              defectedRevenue: 0,
+              averageOrderValue: 0
+            }
+          });
+          console.log('No real POS transactions found');
+        }
+      } else {
+        // No saved data, show empty state
+        setSalesData({ 
+          orders: [], 
+          stats: {
+            totalOrders: 0,
+            completedOrders: 0,
+            defectedOrders: 0,
+            totalRevenue: 0,
+            defectedRevenue: 0,
+            averageOrderValue: 0
+          }
+        });
+        console.log('No saved POS transactions found');
+      }
+    } catch (error) {
+      console.error('Error loading real invoice data:', error);
+      toast.error('Could not load real invoice data');
+    }
+  };
+
   // Removed handleStateSelection since we're not showing detailed analytics anymore
 
   const handleDateChange = (dateType) => {
@@ -510,10 +534,41 @@ function App() {
     }
   }, [currentPage, posProducts.length]);
 
+  // Load location data when Location Analytics page is accessed
+  useEffect(() => {
+    if (currentPage === 'location-analytics' && !locationData) {
+      loadLocationData();
+    }
+  }, [currentPage, locationData]);
+
   // Load sales data on component mount
   useEffect(() => {
     loadSalesData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load real invoice data when locations page is accessed
+  useEffect(() => {
+    if (currentPage === 'locations') {
+      loadRealInvoiceData();
+    }
+  }, [currentPage]);
+
+  // Clear any demo data on component mount
+  useEffect(() => {
+    // Clear any existing demo data to start fresh
+    const savedData = localStorage.getItem('pos_sales_data');
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      // Check if it contains demo data (John Smith, Sarah Johnson, etc.)
+      const hasDemoData = parsed.orders?.some(order => 
+        ['John Smith', 'Sarah Johnson', 'Mike Wilson', 'Emily Davis', 'David Brown', 'Lisa Anderson'].includes(order.clientName)
+      );
+      if (hasDemoData) {
+        localStorage.removeItem('pos_sales_data');
+        console.log('Cleared demo data from localStorage');
+      }
+    }
+  }, []);
 
   // Filter and search functions for sales
   const getFilteredOrders = () => {
@@ -646,38 +701,78 @@ function App() {
   const loadShopifyProducts = async () => {
     setLoading(true);
     try {
-      // Try to fetch from real Shopify API first
+      // Fetch real products from backend Shopify API (proxy)
+      console.log('Fetching products from backend Shopify API...');
+      
       const response = await fetch('http://localhost:8000/api/shopify/products', {
+        method: 'GET',
         headers: {
-          'Authorization': 'Bearer demo-token',
+          'Authorization': 'Bearer demo-token', // Using demo token for now
           'Content-Type': 'application/json'
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data.products) {
-          console.log(`Successfully loaded ${data.data.count} products from Shopify!`);
-          // Transform Shopify products to our format
-          const transformedProducts = data.data.products.map(product => ({
-            id: product.id,
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Backend Shopify API Response:', data);
+
+      if (data.success && data.data && data.data.products && data.data.products.length > 0) {
+        // Transform Shopify products to our format
+        const transformedProducts = data.data.products.map(product => {
+          const variant = product.variants && product.variants[0];
+          const image = product.images && product.images[0];
+          
+          return {
+            id: product.id.toString(),
             title: product.title,
             vendor: product.vendor || 'Voyage Eyewear',
             product_type: product.product_type || 'Eyewear',
             status: product.status,
-            price: product.variants && product.variants[0] ? `₹${parseFloat(product.variants[0].price).toFixed(2)}` : '₹0.00',
-            inventory: product.variants && product.variants[0] ? product.variants[0].inventory_quantity || 0 : 0,
-            image: product.images && product.images[0] ? product.images[0].src : 'https://via.placeholder.com/200x200/3b82f6/ffffff?text=Eyewear'
-          }));
-          
-          setProducts(transformedProducts);
-          setLoading(false);
-          return;
-        }
+            price: variant ? `₹${parseFloat(variant.price).toFixed(2)}` : '₹0.00',
+            inventory: variant ? (variant.inventory_quantity || 0) : 0,
+            image: image ? image.src : 'https://picsum.photos/200/200?random=' + product.id,
+            sku: variant ? variant.sku : '',
+            weight: variant ? variant.weight : 0,
+            weight_unit: variant ? variant.weight_unit : 'kg',
+            barcode: variant ? variant.barcode : '',
+            requires_shipping: variant ? variant.requires_shipping : true,
+            taxable: variant ? variant.taxable : true,
+            created_at: product.created_at,
+            updated_at: product.updated_at,
+            published_at: product.published_at,
+            tags: product.tags,
+            body_html: product.body_html
+          };
+        });
+
+        setProducts(transformedProducts);
+        console.log(`Successfully loaded ${transformedProducts.length} products from Shopify!`, transformedProducts);
+        toast.success(`Loaded ${transformedProducts.length} products from Shopify!`);
+      } else {
+        console.log('No products found in Shopify store');
+        toast('No products found in your Shopify store');
+      }
+    } catch (error) {
+      console.error('Error fetching Shopify products:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      let errorMessage = 'Failed to fetch products from Shopify: ' + error.message;
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = 'CORS error: Cannot fetch from Shopify API. This is likely due to browser security restrictions.';
       }
       
-      // Fallback to demo products if API fails
-      console.log('Using demo products - Shopify API not available');
+      toast.error(errorMessage);
+      
+      // Fallback to demo products if Shopify API fails
       const demoProducts = [
         {
           id: '1',
@@ -687,7 +782,7 @@ function App() {
           status: 'active',
           price: '$129.99',
           inventory: 25,
-          image: 'https://via.placeholder.com/200x200/3b82f6/ffffff?text=Eyewear'
+          image: 'https://picsum.photos/200/200?random=1'
         },
         {
           id: '2',
@@ -697,7 +792,7 @@ function App() {
           status: 'active',
           price: '$199.99',
           inventory: 15,
-          image: 'https://via.placeholder.com/200x200/10b981/ffffff?text=Sunglasses'
+          image: 'https://picsum.photos/200/200?random=2'
         },
         {
           id: '3',
@@ -707,7 +802,7 @@ function App() {
           status: 'active',
           price: '$89.99',
           inventory: 30,
-          image: 'https://via.placeholder.com/200x200/8b5cf6/ffffff?text=Blue+Light'
+          image: 'https://picsum.photos/200/200?random=3'
         },
         {
           id: '4',
@@ -717,7 +812,7 @@ function App() {
           status: 'active',
           price: '$59.99',
           inventory: 20,
-          image: 'https://via.placeholder.com/200x200/f59e0b/ffffff?text=Reading'
+          image: 'https://picsum.photos/200/200?random=4'
         },
         {
           id: '5',
@@ -727,7 +822,7 @@ function App() {
           status: 'active',
           price: '$299.99',
           inventory: 8,
-          image: 'https://via.placeholder.com/200x200/ec4899/ffffff?text=Designer'
+          image: 'https://picsum.photos/200/200?random=5'
         },
         {
           id: '6',
@@ -737,16 +832,14 @@ function App() {
           status: 'active',
           price: '$179.99',
           inventory: 12,
-          image: 'https://via.placeholder.com/200x200/06b6d4/ffffff?text=Sports'
+          image: 'https://picsum.photos/200/200?random=6'
         }
       ];
       
-      setTimeout(() => {
-        setProducts(demoProducts);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error loading products:', error);
+      setProducts(demoProducts);
+      console.log('Using demo products - Shopify API failed');
+      toast('Using demo products - Shopify connection failed');
+    } finally {
       setLoading(false);
     }
   };
@@ -754,86 +847,99 @@ function App() {
   const loadPosProducts = async () => {
     setPosLoading(true);
     try {
-      // Try to fetch from real Shopify API first
+      // Fetch real products from backend Shopify API for POS
+      console.log('Fetching POS products from backend Shopify API...');
+      
       const response = await fetch('http://localhost:8000/api/shopify/products', {
+        method: 'GET',
         headers: {
-          'Authorization': 'Bearer demo-token',
+          'Authorization': 'Bearer demo-token', // Using demo token for now
           'Content-Type': 'application/json'
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('POS Shopify API Response:', data);
-        
-        if (data.success && data.data && data.data.products) {
-          const transformedProducts = data.data.products.map(product => ({
+      if (!response.ok) {
+        throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('POS Backend Shopify API Response:', data);
+
+      if (data.success && data.data && data.data.products && data.data.products.length > 0) {
+        // Transform Shopify products to POS format
+        const transformedProducts = data.data.products.map(product => {
+          const variant = product.variants && product.variants[0];
+          const image = product.images && product.images[0];
+          
+          return {
             id: product.id,
             name: product.title,
-            description: product.body_html || '',
-            price: product.variants && product.variants[0] ? parseFloat(product.variants[0].price) : 0,
-            image: product.images && product.images[0] ? product.images[0].src : '🕶️',
+            description: product.body_html ? product.body_html.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : 'Premium eyewear product',
+            price: variant ? parseFloat(variant.price) : 0,
+            image: image ? image.src : '🕶️',
             vendor: product.vendor || 'Voyage Eyewear',
-            sku: product.variants && product.variants[0] ? product.variants[0].sku : '',
-            inventory: product.variants && product.variants[0] ? (product.variants[0].inventory_quantity || 0) : 0
-          }));
-          
-          console.log('POS Transformed Products:', transformedProducts);
-          setPosProducts(transformedProducts);
-          setPosLoading(false);
-          return;
-        }
+            sku: variant ? variant.sku : '',
+            inventory: variant ? (variant.inventory_quantity || 0) : 0
+          };
+        });
+
+        setPosProducts(transformedProducts);
+        console.log(`Successfully loaded ${transformedProducts.length} POS products from Shopify!`, transformedProducts);
+      } else {
+        console.log('No products found in Shopify store for POS');
       }
     } catch (error) {
       console.error('Error fetching POS Shopify products:', error);
+      
+      // Fallback to demo products if Shopify API fails
+      const demoProducts = [
+        {
+          id: 1,
+          name: "Designer Sunglasses",
+          description: "Premium designer sunglasses with UV protection",
+          price: 2999,
+          image: "🕶️",
+          vendor: "Voyage Eyewear",
+          sku: "DES-SUN-001",
+          inventory: 50
+        },
+        {
+          id: 2,
+          name: "Sports Eyewear",
+          description: "Durable sports eyewear for active lifestyle",
+          price: 1799,
+          image: "🥽",
+          vendor: "Voyage Eyewear",
+          sku: "SPO-EYE-002",
+          inventory: 30
+        },
+        {
+          id: 3,
+          name: "Reading Glasses",
+          description: "Comfortable reading glasses with blue light filter",
+          price: 999,
+          image: "👓",
+          vendor: "Voyage Eyewear",
+          sku: "REA-GLA-003",
+          inventory: 25
+        },
+        {
+          id: 4,
+          name: "Sunglasses",
+          description: "Classic sunglasses for everyday wear",
+          price: 1299,
+          image: "🌞",
+          vendor: "Voyage Eyewear",
+          sku: "SUN-CLA-004",
+          inventory: 40
+        }
+      ];
+      
+      setPosProducts(demoProducts);
+      console.log('Using demo POS products - Shopify API failed');
+    } finally {
+      setPosLoading(false);
     }
-
-    // Fallback to demo products if Shopify API fails
-    const demoProducts = [
-      {
-        id: 1,
-        name: "Designer Sunglasses",
-        description: "Premium designer sunglasses with UV protection",
-        price: 2999,
-        image: "🕶️",
-        vendor: "Voyage Eyewear",
-        sku: "DES-SUN-001",
-        inventory: 50
-      },
-      {
-        id: 2,
-        name: "Sports Eyewear",
-        description: "Durable sports eyewear for active lifestyle",
-        price: 1799,
-        image: "🥽",
-        vendor: "Voyage Eyewear",
-        sku: "SPO-EYE-002",
-        inventory: 30
-      },
-      {
-        id: 3,
-        name: "Reading Glasses",
-        description: "Comfortable reading glasses with blue light filter",
-        price: 999,
-        image: "👓",
-        vendor: "Voyage Eyewear",
-        sku: "REA-GLA-003",
-        inventory: 25
-      },
-      {
-        id: 4,
-        name: "Sunglasses",
-        description: "Classic sunglasses for everyday wear",
-        price: 1299,
-        image: "🌞",
-        vendor: "Voyage Eyewear",
-        sku: "SUN-CLA-004",
-        inventory: 40
-      }
-    ];
-    
-    setPosProducts(demoProducts);
-    setPosLoading(false);
   };
 
   const addToCart = (product) => {
@@ -874,6 +980,125 @@ function App() {
     setSelectedPaymentMethod(null);
   };
 
+  const toggleInvoiceExpansion = (invoiceId) => {
+    setExpandedInvoice(expandedInvoice === invoiceId ? null : invoiceId);
+  };
+
+  // Get unique cities from sales data for filter
+  const getUniqueCities = () => {
+    if (!salesData || !salesData.orders) return [];
+    const cities = [...new Set(salesData.orders.map(order => order.city))];
+    return cities.filter(city => city && city !== 'Unknown City').sort();
+  };
+
+  // Filter invoices by selected city
+  const getFilteredInvoices = () => {
+    if (!salesData || !salesData.orders) return [];
+    if (selectedCity === 'all') return salesData.orders;
+    return salesData.orders.filter(order => order.city === selectedCity);
+  };
+
+  const downloadInvoice = (order) => {
+    try {
+      // Create invoice HTML content
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice ${order.id}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #10b981; }
+            .invoice-title { font-size: 20px; margin: 10px 0; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+            .client-info, .invoice-info { width: 48%; }
+            .section-title { font-weight: bold; color: #374151; margin-bottom: 10px; }
+            .info-row { margin: 5px 0; }
+            .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .items-table th, .items-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            .items-table th { background-color: #f8fafc; font-weight: bold; }
+            .total-section { text-align: right; margin-top: 20px; }
+            .total-row { margin: 5px 0; }
+            .grand-total { font-size: 18px; font-weight: bold; color: #10b981; }
+            .footer { margin-top: 40px; text-align: center; color: #6b7280; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">VOYAGE EYEWEAR</div>
+            <div class="invoice-title">INVOICE</div>
+            <div style="color: #6b7280;">Invoice #${order.id}</div>
+          </div>
+          
+          <div class="invoice-details">
+            <div class="client-info">
+              <div class="section-title">Bill To:</div>
+              <div class="info-row"><strong>Client:</strong> ${order.clientName}</div>
+              <div class="info-row"><strong>Location:</strong> ${order.city}, ${order.state}</div>
+              <div class="info-row"><strong>Payment:</strong> ${order.paymentMethod}</div>
+            </div>
+            <div class="invoice-info">
+              <div class="section-title">Invoice Details:</div>
+              <div class="info-row"><strong>Date:</strong> ${new Date(order.timestamp).toLocaleDateString()}</div>
+              <div class="info-row"><strong>Time:</strong> ${new Date(order.timestamp).toLocaleTimeString()}</div>
+              <div class="info-row"><strong>Status:</strong> Completed</div>
+            </div>
+          </div>
+          
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map(item => `
+                <tr>
+                  <td>${item.title}</td>
+                  <td>${item.quantity}</td>
+                  <td>₹${item.price.toLocaleString()}</td>
+                  <td>₹${(item.price * item.quantity).toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="total-section">
+            <div class="total-row">Subtotal: ₹${order.subtotal.toLocaleString()}</div>
+            <div class="total-row">Tax: ₹${order.tax.toLocaleString()}</div>
+            <div class="total-row grand-total">Total: ₹${order.total.toLocaleString()}</div>
+          </div>
+          
+          <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Create blob and download
+      const blob = new Blob([invoiceHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Invoice_${order.id}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Invoice ${order.id} downloaded successfully!`);
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Failed to download invoice');
+    }
+  };
+
   const completeSale = () => {
     if (cart.length === 0) {
       alert('Cart is empty!');
@@ -885,10 +1110,6 @@ function App() {
       return;
     }
 
-    // Create new order
-    const orderId = `ORD-${Date.now()}`;
-    const currentTime = new Date();
-    
     // Generate client info (in real app, this would come from user profile)
     const clientInfo = {
       name: user.firstName + ' ' + user.lastName,
@@ -896,37 +1117,60 @@ function App() {
       role: user.role.name
     };
 
-      // Generate location info (in real app, this would come from user's assigned locations)
-      const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
-      const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
-      const randomIndex = Math.floor(Math.random() * cities.length);
+    // Generate location info (in real app, this would come from user's assigned locations)
+    const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
+    const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
+    const randomIndex = Math.floor(Math.random() * cities.length);
+    
+    const locationInfo = {
+      state: states[randomIndex],
+      city: cities[randomIndex],
+      address: `123 Business District, ${cities[randomIndex]}`
+    };
+
+    // Generate location-based invoice number
+    const generateLocationInvoiceNumber = (city) => {
+      // Get city prefix (first 4 letters, uppercase)
+      const cityPrefix = city.substring(0, 4).toUpperCase();
+      const companySuffix = 'VOYA'; // Voyage Eyewear
       
-      const locationInfo = {
-        state: states[randomIndex],
-        city: cities[randomIndex],
-        address: `123 Business District, ${cities[randomIndex]}`
-      };
+      // Get or create sequence counter for this city
+      const locationKey = `invoice_seq_${city.toLowerCase()}`;
+      let sequenceNumber = parseInt(localStorage.getItem(locationKey) || '0');
+      sequenceNumber += 1;
+      
+      // Save updated sequence
+      localStorage.setItem(locationKey, sequenceNumber.toString());
+      
+      // Format as: CITY + VOYA + 5-digit sequence
+      const invoiceNumber = `${cityPrefix}${companySuffix}-${sequenceNumber.toString().padStart(5, '0')}`;
+      return invoiceNumber;
+    };
+
+    const invoiceNumber = generateLocationInvoiceNumber(locationInfo.city);
+    const orderId = invoiceNumber;
+    const currentTime = new Date();
 
     const newOrder = {
       id: orderId,
-      customerName: clientInfo.name,
-      customerEmail: clientInfo.email,
-      customerPhone: '+91 98765 43210', // Demo phone
-      orderDate: currentTime.toISOString().split('T')[0], // Format: YYYY-MM-DD
-      status: 'completed',
-      totalAmount: getCartTotal(),
-      items: cart.map(item => ({
-        id: `ITEM-${Date.now()}-${item.id}`,
-        productName: item.name,
-        sku: item.sku || 'N/A',
-        price: item.price,
-        quantity: item.quantity,
-        isDefected: false,
-        defectReason: null
-      })),
-      invoiceNumber: `INV-POS-${Date.now()}`,
+      clientName: clientInfo.name,
+      city: locationInfo.city,
+      state: locationInfo.state,
       paymentMethod: selectedPaymentMethod,
-      location: locationInfo,
+      timestamp: currentTime.toISOString(),
+      items: cart.map(item => ({
+        title: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        sku: item.sku || 'N/A'
+      })),
+      subtotal: getCartTotal() * 0.9, // 90% of total (before tax)
+      tax: getCartTotal() * 0.1, // 10% tax
+      total: getCartTotal(),
+      customerEmail: clientInfo.email,
+      customerPhone: '+91 98765 43210',
+      status: 'completed',
+      invoiceNumber: invoiceNumber,
       notes: `Order created via POS by ${clientInfo.role}`,
       createdBy: clientInfo.name,
       createdAt: currentTime.toISOString()
@@ -938,11 +1182,12 @@ function App() {
         ...salesData,
         orders: [newOrder, ...salesData.orders],
         stats: {
-          ...salesData.stats,
-          totalOrders: salesData.stats.totalOrders + 1,
-          totalRevenue: salesData.stats.totalRevenue + getCartTotal(),
-          completedOrders: salesData.stats.completedOrders + 1,
-          averageOrderValue: (salesData.stats.totalRevenue + getCartTotal()) / (salesData.stats.totalOrders + 1)
+          totalOrders: (salesData.stats?.totalOrders || 0) + 1,
+          completedOrders: (salesData.stats?.completedOrders || 0) + 1,
+          defectedOrders: salesData.stats?.defectedOrders || 0,
+          totalRevenue: (salesData.stats?.totalRevenue || 0) + getCartTotal(),
+          defectedRevenue: salesData.stats?.defectedRevenue || 0,
+          averageOrderValue: ((salesData.stats?.totalRevenue || 0) + getCartTotal()) / ((salesData.stats?.totalOrders || 0) + 1)
         }
       };
       console.log('Adding new order to sales data:', newOrder);
@@ -969,7 +1214,7 @@ function App() {
     }
 
     // Show success message
-    alert(`Sale completed successfully!\nOrder ID: ${orderId}\nTotal: ₹${getCartTotal().toLocaleString()}\nPayment: ${selectedPaymentMethod}`);
+    alert(`Sale completed successfully!\nInvoice: ${invoiceNumber}\nLocation: ${locationInfo.city}\nTotal: ₹${getCartTotal().toLocaleString()}\nPayment: ${selectedPaymentMethod}`);
 
     // Clear cart and reset payment method
     clearCart();
@@ -1154,126 +1399,297 @@ function App() {
         {currentPage === 'locations' && (
           <>
             <div className="content-header">
-              <h1>Locations & Analytics</h1>
-              <p>City-wise location management and analytics</p>
-              
-              {/* Date Filter */}
-              <div className="date-filters">
-                <div className="filter-group">
-                  <label>Filter by Date:</label>
-                  <div className="date-buttons">
-                    <button 
-                      className={`date-btn ${selectedDate === 'yesterday' ? 'active' : ''}`}
-                      onClick={() => handleDateChange('yesterday')}
-                    >
-                      Yesterday
-                    </button>
-                    <button 
-                      className={`date-btn ${selectedDate === 'today' ? 'active' : ''}`}
-                      onClick={() => handleDateChange('today')}
-                    >
-                      Today
-                    </button>
-                    <button 
-                      className={`date-btn ${selectedDate === 'custom' ? 'active' : ''}`}
-                      onClick={() => handleDateChange('custom')}
-                    >
-                      Custom Date
-                    </button>
-                  </div>
-                </div>
-                
-                {selectedDate === 'custom' && (
-                  <div className="custom-date-group">
-                    <label>Select Date:</label>
-                    <input
-                      type="date"
-                      value={customDate}
-                      onChange={(e) => handleCustomDateChange(e.target.value)}
-                      className="date-input"
-                    />
-                  </div>
-                )}
-                
-                {locationData && (
-                  <div className="current-date-display">
-                    <span className="date-badge">
-                      📅 Showing data for: <strong>{locationData.dateInfo.label}</strong>
-                    </span>
-                    <span className="debug-info" style={{fontSize: '0.75rem', color: '#6b7280', marginLeft: '1rem'}}>
-                      (Selected: {selectedDate})
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Add New City Button */}
-            <div className="action-group">
-              <button onClick={handleCreateLocation} className="create-btn">
-                ➕ Add New City
-              </button>
+              <h1>📍 Kiosk Locations & Invoices</h1>
+              <p>View kiosk locations and client invoices</p>
             </div>
 
             <div className="locations-content">
-              {locationData ? (
-                <>
-                  {/* Overall Stats */}
-                  <div className="overall-stats">
-                    <div className="stat-card">
-                      <h3>Total Sales</h3>
-                      <p className="stat-value">₹{locationData.totalStats.totalSales.toLocaleString()}</p>
-                    </div>
-                    <div className="stat-card">
-                      <h3>Total Orders</h3>
-                      <p className="stat-value">{locationData.totalStats.totalOrders.toLocaleString()}</p>
-                    </div>
-                    <div className="stat-card">
-                      <h3>Total Customers</h3>
-                      <p className="stat-value">{locationData.totalStats.totalCustomers.toLocaleString()}</p>
-                    </div>
-                    <div className="stat-card">
-                      <h3>Avg Order Value</h3>
-                      <p className="stat-value">₹{locationData.totalStats.avgOrderValue}</p>
-                    </div>
+              {/* Recent Invoices Section */}
+              <div className="invoices-section">
+                <div className="invoices-header">
+                  <h2>🧾 Recent Client Invoices</h2>
+                  <div className="city-filter">
+                    <label htmlFor="cityFilter">Filter by City:</label>
+                    <select 
+                      id="cityFilter"
+                      value={selectedCity} 
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      className="city-filter-select"
+                    >
+                      <option value="all">All Cities</option>
+                      {getUniqueCities().map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+                {getFilteredInvoices().length > 0 ? (
+                  <div className="invoices-grid">
+                    {getFilteredInvoices().slice(0, 6).map((order) => {
+                    // Ensure we have valid data
+                    const safeOrder = {
+                      id: order.id || `ORD-${Date.now()}`,
+                      clientName: order.clientName || 'Unknown Client',
+                      city: order.city || 'Unknown City',
+                      state: order.state || 'Unknown State',
+                      paymentMethod: order.paymentMethod || 'Cash',
+                      timestamp: order.timestamp || new Date().toISOString(),
+                      items: Array.isArray(order.items) ? order.items : [],
+                      total: order.total || 0
+                    };
 
-                  {/* Cities Overview */}
-                  <div className="location-overview">
-                    <h2>🏙️ All Cities Overview</h2>
-                    <div className="locations-grid">
-                      {locationData.cities.map((city) => (
-                        <div key={city.id} className="location-card">
-                          <h3>{city.name}</h3>
-                          <div className="location-metrics">
-                            <div className="metric">
-                              <span className="label">Total Sales:</span>
-                              <span className="value">₹{city.totalSales.toLocaleString()}</span>
+                    // Format date and time safely
+                    let formattedDate = 'Invalid Date';
+                    let formattedTime = 'Invalid Time';
+                    
+                    try {
+                      const date = new Date(safeOrder.timestamp);
+                      if (!isNaN(date.getTime())) {
+                        formattedDate = date.toLocaleDateString('en-IN');
+                        formattedTime = date.toLocaleTimeString('en-IN', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Date formatting error:', error);
+                    }
+
+                    return (
+                      <div key={safeOrder.id} className={`invoice-card ${expandedInvoice === safeOrder.id ? 'expanded' : ''}`}>
+                        <div 
+                          className="invoice-header clickable-header" 
+                          onClick={() => toggleInvoiceExpansion(safeOrder.id)}
+                        >
+                          <div className="header-content">
+                            <h3>Invoice #{safeOrder.id}</h3>
+                            <span className="invoice-status">✅ Completed</span>
+                          </div>
+                          <div className="expand-icon">
+                            {expandedInvoice === safeOrder.id ? '▲' : '▼'}
+                          </div>
+                        </div>
+                        
+                        {/* Collapsible Content */}
+                        <div className={`invoice-content ${expandedInvoice === safeOrder.id ? 'expanded' : 'collapsed'}`}>
+                          {/* Main Info Section */}
+                          <div className="invoice-main-info">
+                            <div className="info-grid">
+                            <div className="info-item">
+                              <div className="info-label">👤 Client Name</div>
+                              <div className="info-value">{safeOrder.clientName}</div>
                             </div>
-                            <div className="metric">
-                              <span className="label">Total Orders:</span>
-                              <span className="value">{city.totalOrders.toLocaleString()}</span>
+                            <div className="info-item">
+                              <div className="info-label">📍 Location</div>
+                              <div className="info-value">{safeOrder.city}, {safeOrder.state}</div>
                             </div>
-                            <div className="metric">
-                              <span className="label">Customers:</span>
-                              <span className="value">{city.customerCount.toLocaleString()}</span>
+                            <div className="info-item">
+                              <div className="info-label">📅 Date</div>
+                              <div className="info-value">{formattedDate}</div>
                             </div>
-                            <div className="metric">
-                              <span className="label">Avg Order Value:</span>
-                              <span className="value">₹{city.avgOrderValue}</span>
+                            <div className="info-item">
+                              <div className="info-label">🕐 Time</div>
+                              <div className="info-value">{formattedTime}</div>
+                            </div>
+                            <div className="info-item">
+                              <div className="info-label">💳 Payment</div>
+                              <div className="info-value">
+                                <span className="payment-badge">{safeOrder.paymentMethod}</span>
+                              </div>
+                            </div>
+                            <div className="info-item download-section">
+                              <div className="info-label">📄 Invoice</div>
+                              <div className="info-value">
+                                <button 
+                                  className="download-invoice-btn"
+                                  onClick={() => downloadInvoice(safeOrder)}
+                                  title="Download Invoice PDF"
+                                >
+                                  📥 Download
+                                </button>
+                              </div>
+                            </div>
+                            <div className="info-item total-highlight">
+                              <div className="info-label">💰 Total Amount</div>
+                              <div className="info-value total-amount">₹{safeOrder.total}</div>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        
+                        {/* Items Summary */}
+                        <div className="invoice-items-summary">
+                          <div className="items-header">
+                            <span className="items-count">📦 {safeOrder.items.length} Items</span>
+                            <span className="items-preview">
+                              {safeOrder.items.length > 0 ? (
+                                <>
+                                  {safeOrder.items.slice(0, 2).map((item, index) => (
+                                    <span key={index} className="item-preview">
+                                      {item.title || item.name || 'Unknown Item'} ({item.quantity || 1})
+                                    </span>
+                                  ))}
+                                  {safeOrder.items.length > 2 && ` +${safeOrder.items.length - 2} more`}
+                                </>
+                              ) : (
+                                <span className="no-items">No items available</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        </div> {/* End of collapsible content */}
+                      </div>
+                    );
+                  })}
                   </div>
-                </>
-              ) : (
-                <div className="loading-container">
-                  <div className="loading-spinner"></div>
-                  <p>Loading location data...</p>
+                ) : (
+                  <div className="empty-invoices-state">
+                    <div className="empty-state-icon">📋</div>
+                    <h3>
+                      {selectedCity === 'all' 
+                        ? 'No POS Transactions Yet' 
+                        : `No Transactions Found for ${selectedCity}`
+                      }
+                    </h3>
+                    <p>
+                      {selectedCity === 'all' 
+                        ? 'Client invoices will appear here when customers make purchases through the POS system.'
+                        : `No invoices found for ${selectedCity}. Try selecting a different city or "All Cities" to see all transactions.`
+                      }
+                    </p>
+                    {selectedCity === 'all' && (
+                      <div className="empty-state-tip">
+                        <strong>💡 Tip:</strong> Have clients use the POS system to make purchases and their invoices will show up here automatically.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Kiosk Locations Section */}
+              <div className="kiosks-section">
+                <h2>📍 Kiosk Locations</h2>
+                <div className="kiosks-grid">
+                  {[
+                    {
+                      id: 'k1',
+                      name: 'Mumbai Central Kiosk',
+                      address: '123 MG Road, Near Central Station, Mumbai - 400001',
+                      phone: '+91 98765 43210',
+                      billing: {
+                        gst: '27ABCDE1234F1Z5',
+                        address: 'Voyage Eyewear Pvt Ltd, 123 MG Road, Mumbai - 400001',
+                        invoicePrefix: 'VE/MUM/'
+                      },
+                      status: 'active'
+                    },
+                    {
+                      id: 'k2',
+                      name: 'Delhi Metro Kiosk',
+                      address: '456 Connaught Place, New Delhi - 110001',
+                      phone: '+91 98765 43211',
+                      billing: {
+                        gst: '07ABCDE1234F1Z6',
+                        address: 'Voyage Eyewear Pvt Ltd, 456 Connaught Place, New Delhi - 110001',
+                        invoicePrefix: 'VE/DEL/'
+                      },
+                      status: 'active'
+                    },
+                    {
+                      id: 'k3',
+                      name: 'Bangalore Mall Kiosk',
+                      address: '789 Brigade Road, Bangalore - 560001',
+                      phone: '+91 98765 43212',
+                      billing: {
+                        gst: '29ABCDE1234F1Z7',
+                        address: 'Voyage Eyewear Pvt Ltd, 789 Brigade Road, Bangalore - 560001',
+                        invoicePrefix: 'VE/BNG/'
+                      },
+                      status: 'active'
+                    },
+                    {
+                      id: 'k4',
+                      name: 'Chennai Airport Kiosk',
+                      address: '321 Anna Salai, Chennai - 600002',
+                      phone: '+91 98765 43213',
+                      billing: {
+                        gst: '33ABCDE1234F1Z8',
+                        address: 'Voyage Eyewear Pvt Ltd, 321 Anna Salai, Chennai - 600002',
+                        invoicePrefix: 'VE/CHE/'
+                      },
+                      status: 'active'
+                    },
+                    {
+                      id: 'k5',
+                      name: 'Kolkata Station Kiosk',
+                      address: '654 Park Street, Kolkata - 700016',
+                      phone: '+91 98765 43214',
+                      billing: {
+                        gst: '19ABCDE1234F1Z9',
+                        address: 'Voyage Eyewear Pvt Ltd, 654 Park Street, Kolkata - 700016',
+                        invoicePrefix: 'VE/KOL/'
+                      },
+                      status: 'active'
+                    },
+                    {
+                      id: 'k6',
+                      name: 'Hyderabad Plaza Kiosk',
+                      address: '987 Banjara Hills, Hyderabad - 500034',
+                      phone: '+91 98765 43215',
+                      billing: {
+                        gst: '36ABCDE1234F1Z0',
+                        address: 'Voyage Eyewear Pvt Ltd, 987 Banjara Hills, Hyderabad - 500034',
+                        invoicePrefix: 'VE/HYD/'
+                      },
+                      status: 'active'
+                    }
+                  ].map((kiosk) => (
+                    <div key={kiosk.id} className="kiosk-card">
+                      <div className="kiosk-header">
+                        <h3>{kiosk.name}</h3>
+                        <span className={`status-badge ${kiosk.status}`}>
+                          {kiosk.status === 'active' ? '✅ Active' : '❌ Inactive'}
+                        </span>
+                      </div>
+                      
+                      <div className="kiosk-info">
+                        <div className="info-section">
+                          <h4>📍 Address</h4>
+                          <p>{kiosk.address}</p>
+                        </div>
+                        
+                        <div className="info-section">
+                          <h4>📞 Phone</h4>
+                          <p>{kiosk.phone}</p>
+                        </div>
+                        
+                        <div className="info-section">
+                          <h4>🧾 Billing Details</h4>
+                          <div className="billing-details">
+                            <div className="billing-item">
+                              <strong>GST Number:</strong>
+                              <span>{kiosk.billing.gst}</span>
+                            </div>
+                            <div className="billing-item">
+                              <strong>Billing Address:</strong>
+                              <span>{kiosk.billing.address}</span>
+                            </div>
+                            <div className="billing-item">
+                              <strong>Invoice Prefix:</strong>
+                              <span>{kiosk.billing.invoicePrefix}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="kiosk-actions">
+                        <button className="view-btn">
+                          👁️ View Details
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </>
         )}
@@ -1895,7 +2311,7 @@ function App() {
           </>
         )}
 
-        {currentPage !== 'dashboard' && currentPage !== 'products' && currentPage !== 'locations' && currentPage !== 'sales' && currentPage !== 'users' && currentPage !== 'pos' && (
+        {currentPage !== 'dashboard' && currentPage !== 'products' && currentPage !== 'locations' && currentPage !== 'location-analytics' && currentPage !== 'sales' && currentPage !== 'users' && currentPage !== 'pos' && (
           <div className="content-header">
             <h1>{currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</h1>
             <p>This section is coming soon...</p>
@@ -1919,26 +2335,38 @@ function App() {
 const LocationForm = ({ location, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: location?.name || '',
-    state: location?.state || '',
-    city: location?.city || '',
     address: location?.address || '',
-    pincode: location?.pincode || '',
     phone: location?.phone || '',
-    manager: location?.manager || '',
-    status: location?.status || 'active'
+    status: location?.status || 'active',
+    billing: {
+      gst: location?.billing?.gst || '',
+      address: location?.billing?.address || '',
+      invoicePrefix: location?.billing?.invoicePrefix || ''
+    }
   });
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field.startsWith('billing.')) {
+      const billingField = field.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        billing: {
+          ...prev.billing,
+          [billingField]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.state.trim() || !formData.city.trim()) {
-      alert('Please fill in all required fields (Name, State, City)');
+    if (!formData.name.trim() || !formData.address.trim() || !formData.phone.trim()) {
+      alert('Please fill in all required fields (Kiosk Name, Address, Phone)');
       return;
     }
     onSave(formData);
@@ -1946,109 +2374,97 @@ const LocationForm = ({ location, onSave, onClose }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal">
+      <div className="modal kiosk-modal">
         <div className="modal-header">
-          <h2>{location ? 'Edit City' : 'Add New City'}</h2>
+          <h2>{location ? 'Edit Kiosk' : 'Add New Kiosk'}</h2>
           <button onClick={onClose} className="close-btn">×</button>
         </div>
         
         <form onSubmit={handleSubmit} className="location-form">
-          <div className="form-row">
+          <div className="form-section">
+            <h3>📍 Kiosk Information</h3>
+            
             <div className="form-group">
-              <label>City Name *</label>
+              <label>Kiosk Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="e.g., Mumbai"
+                placeholder="e.g., Mumbai Central Kiosk"
                 required
               />
             </div>
-            <div className="form-group">
-              <label>State *</label>
-              <select
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                required
-              >
-                <option value="">Select State</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Karnataka">Karnataka</option>
-                <option value="Tamil Nadu">Tamil Nadu</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Rajasthan">Rajasthan</option>
-                <option value="West Bengal">West Bengal</option>
-                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                <option value="Punjab">Punjab</option>
-                <option value="Haryana">Haryana</option>
-              </select>
-            </div>
-          </div>
 
-          <div className="form-row">
             <div className="form-group">
-              <label>City *</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="e.g., Mumbai"
+              <label>Address *</label>
+              <textarea
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="Complete address of the kiosk"
+                rows="3"
                 required
               />
             </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Phone Number *</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+91 98765 43210"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="maintenance">Under Maintenance</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>🧾 Billing Details</h3>
+            
             <div className="form-group">
-              <label>Pincode</label>
+              <label>GST Number</label>
               <input
                 type="text"
-                value={formData.pincode}
-                onChange={(e) => handleInputChange('pincode', e.target.value)}
-                placeholder="e.g., 400001"
+                value={formData.billing.gst}
+                onChange={(e) => handleInputChange('billing.gst', e.target.value)}
+                placeholder="27ABCDE1234F1Z5"
+                maxLength="15"
               />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>Address</label>
-            <textarea
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="Complete address of the location"
-              rows="3"
-            />
-          </div>
-
-          <div className="form-row">
             <div className="form-group">
-              <label>Manager Name</label>
+              <label>Billing Address</label>
+              <textarea
+                value={formData.billing.address}
+                onChange={(e) => handleInputChange('billing.address', e.target.value)}
+                placeholder="Complete billing address"
+                rows="3"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Invoice Prefix</label>
               <input
                 type="text"
-                value={formData.manager}
-                onChange={(e) => handleInputChange('manager', e.target.value)}
-                placeholder="Store manager name"
+                value={formData.billing.invoicePrefix}
+                onChange={(e) => handleInputChange('billing.invoicePrefix', e.target.value)}
+                placeholder="VE/MUM/"
+                maxLength="20"
               />
             </div>
-            <div className="form-group">
-              <label>Phone Number</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Contact number"
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="maintenance">Under Maintenance</option>
-            </select>
           </div>
 
           <div className="form-actions">
@@ -2056,7 +2472,7 @@ const LocationForm = ({ location, onSave, onClose }) => {
               Cancel
             </button>
             <button type="submit" className="save-btn">
-              {location ? 'Update Location' : 'Create Location'}
+              {location ? 'Update Kiosk' : 'Create Kiosk'}
             </button>
           </div>
         </form>
