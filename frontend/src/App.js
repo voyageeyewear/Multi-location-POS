@@ -28,6 +28,8 @@ function App() {
   const [cart, setCart] = useState([]);
   const [posLoading, setPosLoading] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+  const [selectedLocationForAnalytics, setSelectedLocationForAnalytics] = useState('');
+  const [locationAnalyticsData, setLocationAnalyticsData] = useState(null);
 
   const handleLogin = (role = 'admin') => {
     let demoUser;
@@ -432,6 +434,46 @@ function App() {
       toast.error('Using demo data - API connection failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLocationAnalyticsData = async (locationId) => {
+    if (!locationId) {
+      setLocationAnalyticsData(null);
+      return;
+    }
+
+    try {
+      // For demo purposes, generate location-specific product sales data
+      const demoProducts = [
+        { id: 'p1', title: 'Classic Aviator Sunglasses', sales: Math.floor(Math.random() * 150) + 50, revenue: Math.floor(Math.random() * 200000) + 50000 },
+        { id: 'p2', title: 'Stylish Wayfarer Shades', sales: Math.floor(Math.random() * 120) + 40, revenue: Math.floor(Math.random() * 180000) + 40000 },
+        { id: 'p3', title: 'Modern Round Frame Glasses', sales: Math.floor(Math.random() * 100) + 30, revenue: Math.floor(Math.random() * 160000) + 30000 },
+        { id: 'p4', title: 'Sporty Wrap-Around Sunglasses', sales: Math.floor(Math.random() * 90) + 25, revenue: Math.floor(Math.random() * 140000) + 25000 },
+        { id: 'p5', title: 'Vintage Cat-Eye Glasses', sales: Math.floor(Math.random() * 80) + 20, revenue: Math.floor(Math.random() * 120000) + 20000 },
+        { id: 'p6', title: 'Minimalist Square Sunglasses', sales: Math.floor(Math.random() * 70) + 15, revenue: Math.floor(Math.random() * 100000) + 15000 },
+        { id: 'p7', title: 'Oversized Fashion Sunglasses', sales: Math.floor(Math.random() * 60) + 10, revenue: Math.floor(Math.random() * 80000) + 10000 },
+        { id: 'p8', title: 'Blue Light Blocking Glasses', sales: Math.floor(Math.random() * 50) + 5, revenue: Math.floor(Math.random() * 60000) + 5000 },
+        { id: 'p9', title: 'Kids Funky Sunglasses', sales: Math.floor(Math.random() * 40) + 3, revenue: Math.floor(Math.random() * 40000) + 3000 },
+        { id: 'p10', title: 'Gradient Lens Sunglasses', sales: Math.floor(Math.random() * 30) + 2, revenue: Math.floor(Math.random() * 20000) + 2000 }
+      ];
+
+      // Sort by sales to get top and bottom performers
+      const sortedProducts = [...demoProducts].sort((a, b) => b.sales - a.sales);
+      
+      const analyticsData = {
+        location: locationData?.cities?.find(city => city.id === locationId) || { name: locationId },
+        topSellingProducts: sortedProducts.slice(0, 5),
+        leastSellingProducts: sortedProducts.slice(-5).reverse(),
+        totalProducts: demoProducts.length,
+        totalSales: sortedProducts.reduce((sum, product) => sum + product.sales, 0),
+        totalRevenue: sortedProducts.reduce((sum, product) => sum + product.revenue, 0)
+      };
+
+      setLocationAnalyticsData(analyticsData);
+    } catch (error) {
+      console.error('Error loading location analytics data:', error);
+      toast.error('Failed to load location analytics data');
     }
   };
 
@@ -989,6 +1031,7 @@ function App() {
               <button onClick={() => handleNavigation('products')} className={`nav-item ${currentPage === 'products' ? 'active' : ''}`}>Products</button>
               <button onClick={() => handleNavigation('inventory')} className={`nav-item ${currentPage === 'inventory' ? 'active' : ''}`}>Inventory</button>
               <button onClick={() => handleNavigation('locations')} className={`nav-item ${currentPage === 'locations' ? 'active' : ''}`}>Locations</button>
+              <button onClick={() => handleNavigation('location-analytics')} className={`nav-item ${currentPage === 'location-analytics' ? 'active' : ''}`}>Location Analytics</button>
               <button onClick={() => handleNavigation('sales')} className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}>Sales</button>
               <button onClick={() => handleNavigation('reports')} className={`nav-item ${currentPage === 'reports' ? 'active' : ''}`}>Reports</button>
               <button onClick={() => handleNavigation('data')} className={`nav-item ${currentPage === 'data' ? 'active' : ''}`}>Data Management</button>
@@ -1356,6 +1399,138 @@ function App() {
                 <div className="loading-container">
                   <div className="loading-spinner"></div>
                   <p>Loading location data...</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {currentPage === 'location-analytics' && (
+          <>
+            <div className="content-header">
+              <h1>📍 Location Analytics</h1>
+              <p>Analyze product performance by location - see which items sell most and least at each location</p>
+            </div>
+
+            <div className="location-analytics-content">
+              {/* Location Selector */}
+              <div className="location-selector-section">
+                <h2>Select Location</h2>
+                <div className="location-dropdown">
+                  <select 
+                    value={selectedLocationForAnalytics} 
+                    onChange={(e) => {
+                      setSelectedLocationForAnalytics(e.target.value);
+                      loadLocationAnalyticsData(e.target.value);
+                    }}
+                    className="location-select"
+                  >
+                    <option value="">Choose a location...</option>
+                    {locationData?.cities?.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name} - ₹{(city.totalSales / 100000).toFixed(1)}L sales
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Analytics Display */}
+              {selectedLocationForAnalytics && locationAnalyticsData && (
+                <div className="analytics-results">
+                  <div className="analytics-header">
+                    <h2>📊 Analytics for {locationAnalyticsData.location.name}</h2>
+                    <div className="location-summary">
+                      <div className="summary-card">
+                        <h3>{locationAnalyticsData.totalProducts}</h3>
+                        <p>Total Products</p>
+                      </div>
+                      <div className="summary-card">
+                        <h3>{locationAnalyticsData.totalSales}</h3>
+                        <p>Total Sales</p>
+                      </div>
+                      <div className="summary-card">
+                        <h3>₹{(locationAnalyticsData.totalRevenue / 100000).toFixed(1)}L</h3>
+                        <p>Total Revenue</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="analytics-grid">
+                    {/* Top Selling Products */}
+                    <div className="analytics-section top-selling">
+                      <h3>🏆 Top Selling Products</h3>
+                      <div className="product-list">
+                        {locationAnalyticsData.topSellingProducts.map((product, index) => (
+                          <div key={product.id} className="product-rank-item">
+                            <div className="rank-number">{index + 1}</div>
+                            <div className="product-info">
+                              <h4>{product.title}</h4>
+                              <div className="product-stats">
+                                <span className="sales-count">{product.sales} sales</span>
+                                <span className="revenue">₹{(product.revenue / 1000).toFixed(0)}K</span>
+                              </div>
+                            </div>
+                            <div className="performance-indicator high">📈</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Least Selling Products */}
+                    <div className="analytics-section least-selling">
+                      <h3>📉 Least Selling Products</h3>
+                      <div className="product-list">
+                        {locationAnalyticsData.leastSellingProducts.map((product, index) => (
+                          <div key={product.id} className="product-rank-item">
+                            <div className="rank-number">{locationAnalyticsData.totalProducts - index}</div>
+                            <div className="product-info">
+                              <h4>{product.title}</h4>
+                              <div className="product-stats">
+                                <span className="sales-count">{product.sales} sales</span>
+                                <span className="revenue">₹{(product.revenue / 1000).toFixed(0)}K</span>
+                              </div>
+                            </div>
+                            <div className="performance-indicator low">📉</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="analytics-insights">
+                    <h3>💡 Insights & Recommendations</h3>
+                    <div className="insights-grid">
+                      <div className="insight-card">
+                        <h4>Best Performer</h4>
+                        <p>{locationAnalyticsData.topSellingProducts[0]?.title}</p>
+                        <span className="insight-value">{locationAnalyticsData.topSellingProducts[0]?.sales} sales</span>
+                      </div>
+                      <div className="insight-card">
+                        <h4>Needs Attention</h4>
+                        <p>{locationAnalyticsData.leastSellingProducts[0]?.title}</p>
+                        <span className="insight-value">{locationAnalyticsData.leastSellingProducts[0]?.sales} sales</span>
+                      </div>
+                      <div className="insight-card">
+                        <h4>Revenue Leader</h4>
+                        <p>{locationAnalyticsData.topSellingProducts[0]?.title}</p>
+                        <span className="insight-value">₹{(locationAnalyticsData.topSellingProducts[0]?.revenue / 1000).toFixed(0)}K</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedLocationForAnalytics && !locationAnalyticsData && (
+                <div className="loading-state">
+                  <p>Loading analytics data...</p>
+                </div>
+              )}
+
+              {!selectedLocationForAnalytics && (
+                <div className="empty-state">
+                  <h3>📍 Select a location to view analytics</h3>
+                  <p>Choose a location from the dropdown above to see detailed product performance analytics</p>
                 </div>
               )}
             </div>
