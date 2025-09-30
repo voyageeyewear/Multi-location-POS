@@ -372,7 +372,6 @@ body {
 .product-image {
   position: relative;
   height: 280px;
-  width: 100%;
   overflow: hidden;
   background: #f8fafc;
   display: flex;
@@ -381,30 +380,26 @@ body {
 }
 
 .product-image img {
-  min-width: 100%;
-  min-height: 100%;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  filter: none;
+  -webkit-filter: none;
 }
 
-.product-image img {
-  transition: transform 0.3s ease;
-  filter: none !important;
-  -webkit-filter: none !important;
-  border-radius: 0;
-  display: block;
-}
 
 .product-image:hover img {
   transform: scale(1.05);
 }
 
 .product-image::before {
-  content: "";
+  content: "📦";
   position: absolute;
+  font-size: 3rem;
+  color: #d1d5db;
   z-index: 1;
+  opacity: 0.3;
 }
 
 .product-image img {
@@ -2248,7 +2243,12 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Removed conflicting product image sizing - using main grid styles instead */
+.product-image img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
 
 .loading-products {
   text-align: center;

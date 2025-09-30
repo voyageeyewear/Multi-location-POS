@@ -1077,19 +1077,7 @@ function App() {
                     {products.map((product) => (
                       <div key={product.id} className="product-card">
                         <div className="product-image">
-                          <img 
-                            src={product.image} 
-                            alt={product.title}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = `
-                                <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 3rem; color: #d1d5db;">
-                                  🕶️
-                                </div>
-                                <div class="product-status">${product.status}</div>
-                              `;
-                            }}
-                          />
+                          <img src={product.image} alt={product.title} />
                           <div className="product-status">{product.status}</div>
                         </div>
                         <div className="product-info">
