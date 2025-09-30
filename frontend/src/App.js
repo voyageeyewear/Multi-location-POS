@@ -1081,9 +1081,13 @@ function App() {
                           <div className="product-status">{product.status}</div>
                         </div>
                         <div className="product-info">
-                          <h3 className="product-title">{product.title}</h3>
-                          <p className="product-vendor">{product.vendor}</p>
-                          <p className="product-type">{product.product_type}</p>
+                          <div>
+                            <h3 className="product-title">{product.title}</h3>
+                            <div className="product-meta">
+                              <p className="product-vendor">{product.vendor}</p>
+                              <p className="product-type">{product.product_type}</p>
+                            </div>
+                          </div>
                           <div className="product-details">
                             <span className="product-price">{product.price}</span>
                             <span className="product-inventory">Stock: {product.inventory}</span>
