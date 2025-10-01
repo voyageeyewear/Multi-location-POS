@@ -167,6 +167,125 @@ class ShopifyService {
     }
   }
 
+  // Create order in Shopify
+  async createOrder(orderData) {
+    try {
+      // Split customer name properly
+      const nameParts = orderData.customerName.trim().split(' ');
+      const firstName = nameParts[0] || 'Customer';
+      const lastName = nameParts.slice(1).join(' ') || 'User'; // Default to 'User' if no last name
+      
+      // Format phone number for Shopify - only accept perfectly formatted numbers
+      let formattedPhone = null;
+      if (orderData.customerPhone) {
+        let phone = orderData.customerPhone.toString().replace(/[\s\-\(\)\+]/g, '');
+        // Only accept if it's exactly 10 digits
+        if (phone.length === 10 && /^\d{10}$/.test(phone)) {
+          formattedPhone = '+91' + phone;
+        }
+        // If not exactly 10 digits, we skip adding phone number entirely
+      }
+      
+      // Format order data for Shopify API
+      const shopifyOrder = {
+        line_items: orderData.items.map(item => ({
+          title: item.title,
+          price: item.price.toString(),
+          quantity: item.quantity,
+          sku: item.sku || '',
+          requires_shipping: false,
+          taxable: true,
+          tax_lines: item.gstRate ? [{
+            title: `GST ${item.gstRate}%`,
+            price: (item.price * item.quantity * (item.gstRate / 100)).toFixed(2),
+            rate: (item.gstRate / 100).toFixed(4)
+          }] : []
+        })),
+        customer: (() => {
+          const customer = {
+            first_name: firstName,
+            last_name: lastName,
+            email: orderData.customerEmail || 'customer@possystem.com',
+            verified_email: false
+          };
+          // Only add phone if it's valid
+          if (formattedPhone) {
+            customer.phone = formattedPhone;
+          }
+          return customer;
+        })(),
+        billing_address: orderData.billingAddress ? (() => {
+          const address = {
+            first_name: firstName,
+            last_name: lastName,
+            address1: orderData.billingAddress.address1 || orderData.customerAddress || '',
+            city: orderData.billingAddress.city || orderData.location?.city || '',
+            province: orderData.billingAddress.province || orderData.location?.state || '',
+            country: orderData.billingAddress.country || 'IN',
+            zip: orderData.billingAddress.zip || ''
+          };
+          if (formattedPhone) address.phone = formattedPhone;
+          return address;
+        })() : undefined,
+        shipping_address: orderData.shippingAddress ? (() => {
+          const address = {
+            first_name: firstName,
+            last_name: lastName,
+            address1: orderData.shippingAddress.address1 || orderData.customerAddress || '',
+            city: orderData.shippingAddress.city || orderData.location?.city || '',
+            province: orderData.shippingAddress.province || orderData.location?.state || '',
+            country: orderData.shippingAddress.country || 'IN',
+            zip: orderData.shippingAddress.zip || ''
+          };
+          if (formattedPhone) address.phone = formattedPhone;
+          return address;
+        })() : undefined,
+        financial_status: 'paid',
+        fulfillment_status: null,
+        note: orderData.notes || `Order created via POS System - Invoice: ${orderData.invoiceNumber}`,
+        note_attributes: [
+          { name: 'POS Invoice Number', value: orderData.invoiceNumber },
+          { name: 'Payment Method', value: orderData.paymentMethod },
+          { name: 'Location', value: `${orderData.location?.city}, ${orderData.location?.state}` },
+          { name: 'Created By', value: orderData.createdBy }
+        ],
+        tags: 'POS, ' + (orderData.location?.city || ''),
+        currency: 'INR',
+        total_price: orderData.total.toString(),
+        subtotal_price: orderData.subtotal.toString(),
+        total_tax: orderData.tax.toString(),
+        transactions: [{
+          kind: 'sale',
+          status: 'success',
+          amount: orderData.total.toString(),
+          gateway: orderData.paymentMethod || 'cash'
+        }],
+        processed_at: new Date().toISOString(),
+        send_receipt: false,
+        send_fulfillment_receipt: false
+      };
+
+      const response = await axios.post(`${this.adminAPIURL}/orders.json`, {
+        order: shopifyOrder
+      }, {
+        headers: this.getAdminHeaders()
+      });
+
+      return {
+        success: true,
+        order: response.data.order,
+        message: 'Order created successfully in Shopify'
+      };
+    } catch (error) {
+      console.error('Error creating order in Shopify:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.errors || error.message,
+        details: error.response?.data
+      };
+    }
+  }
+
   // Get shop information
   async getShopInfo() {
     try {

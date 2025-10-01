@@ -132,6 +132,7 @@ const schemas = {
   // Location schemas
   location: {
     create: Joi.object({
+      id: Joi.any().optional(), // Allow id field but ignore it
       name: Joi.string().min(2).max(255).required(),
       address: Joi.string().optional(),
       city: Joi.string().max(100).optional(),
@@ -140,7 +141,11 @@ const schemas = {
       country: Joi.string().max(100).optional(),
       phone: Joi.string().max(20).optional(),
       email: Joi.string().email().optional(),
+      gstNumber: Joi.string().max(15).uppercase().optional(),
       type: Joi.string().valid('store', 'kiosk', 'warehouse', 'office').optional(),
+      isActive: Joi.boolean().optional(),
+      assignToUserId: Joi.string().allow('').optional(), // User assignment - allow empty string
+      createUserAccount: Joi.boolean().optional(), // Auto-create user flag
       settings: Joi.object().optional()
     }),
     
@@ -153,7 +158,10 @@ const schemas = {
       country: Joi.string().max(100).optional(),
       phone: Joi.string().max(20).optional(),
       email: Joi.string().email().optional(),
+      gstNumber: Joi.string().max(15).uppercase().optional(),
       type: Joi.string().valid('store', 'kiosk', 'warehouse', 'office').optional(),
+      assignToUserId: Joi.string().allow('').optional(), // User assignment - allow empty string
+      createUserAccount: Joi.boolean().optional(), // Auto-create user flag
       settings: Joi.object().optional(),
       isActive: Joi.boolean().optional()
     })

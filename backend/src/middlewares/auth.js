@@ -21,7 +21,16 @@ const authenticateToken = async (req, res, next) => {
         firstName: 'Super',
         lastName: 'Admin',
         email: 'superadmin@possystem.com',
-        role: { name: 'super_admin', permissions: { users: { create: true, read: true, update: true, delete: true } } },
+        role: { 
+          name: 'super_admin', 
+          permissions: { 
+            users: { create: true, read: true, update: true, delete: true },
+            locations: { create: true, read: true, update: true, delete: true },
+            products: { create: true, read: true, update: true, delete: true },
+            sales: { create: true, read: true, update: true, delete: true },
+            reports: { create: true, read: true, update: true, delete: true }
+          } 
+        },
         company: { id: '1', name: 'Default Company' },
         userLocations: [],
         isActive: true,
@@ -45,7 +54,16 @@ const authenticateToken = async (req, res, next) => {
         firstName: 'Super',
         lastName: 'Admin',
         email: 'superadmin@possystem.com',
-        role: { name: 'super_admin', permissions: { users: { create: true, read: true, update: true, delete: true } } },
+        role: { 
+          name: 'super_admin', 
+          permissions: { 
+            users: { create: true, read: true, update: true, delete: true },
+            locations: { create: true, read: true, update: true, delete: true },
+            products: { create: true, read: true, update: true, delete: true },
+            sales: { create: true, read: true, update: true, delete: true },
+            reports: { create: true, read: true, update: true, delete: true }
+          } 
+        },
         company: { id: '1', name: 'Default Company' },
         userLocations: [],
         isActive: true,
@@ -57,7 +75,16 @@ const authenticateToken = async (req, res, next) => {
         firstName: 'Company',
         lastName: 'Admin',
         email: 'admin@defaultcompany.com',
-        role: { name: 'admin', permissions: { users: { create: true, read: true, update: true, delete: false } } },
+        role: { 
+          name: 'admin', 
+          permissions: { 
+            users: { create: true, read: true, update: true, delete: false },
+            locations: { create: true, read: true, update: true, delete: false },
+            products: { create: true, read: true, update: true, delete: false },
+            sales: { create: true, read: true, update: true, delete: false },
+            reports: { create: true, read: true, update: false, delete: false }
+          } 
+        },
         company: { id: '1', name: 'Default Company' },
         userLocations: [],
         isActive: true,
@@ -69,7 +96,13 @@ const authenticateToken = async (req, res, next) => {
         firstName: 'John',
         lastName: 'Cashier',
         email: 'cashier@defaultcompany.com',
-        role: { name: 'cashier', permissions: { sales: { create: true, read: true, update: false, delete: false } } },
+        role: { 
+          name: 'cashier', 
+          permissions: { 
+            sales: { create: true, read: true, update: false, delete: false },
+            products: { create: false, read: true, update: false, delete: false }
+          } 
+        },
         company: { id: '1', name: 'Default Company' },
         userLocations: [],
         isActive: true,
@@ -119,12 +152,24 @@ const authenticateToken = async (req, res, next) => {
 
 const requirePermission = (permission) => {
   return (req, res, next) => {
-    if (!req.permissions || !req.permissions[permission]) {
+    if (!req.permissions) {
       return res.status(403).json({
         success: false,
         message: `Permission required: ${permission}`
       });
     }
+
+    // Parse permission string like 'locations.create' into resource and action
+    const [resource, action] = permission.split('.');
+    
+    // Check nested permission structure
+    if (!req.permissions[resource] || !req.permissions[resource][action]) {
+      return res.status(403).json({
+        success: false,
+        message: `Permission required: ${permission}`
+      });
+    }
+    
     next();
   };
 };

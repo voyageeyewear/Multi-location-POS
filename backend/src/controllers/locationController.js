@@ -1,8 +1,18 @@
 const AppDataSource = require('../config/database');
 
+// In-memory storage for demo mode
+let demoLocations = [];
+let locationIdCounter = 1;
+
 class LocationController {
   static async getAllLocations(req, res, next) {
     try {
+      // Check if database is initialized (not in demo mode)
+      if (!AppDataSource || !AppDataSource.isInitialized) {
+        // Return demo locations from memory
+        return res.json({ success: true, data: demoLocations });
+      }
+
       const locationRepository = AppDataSource.getRepository('Location');
       const locations = await locationRepository.find({
         where: { companyId: req.companyId }
@@ -38,13 +48,66 @@ class LocationController {
 
   static async createLocation(req, res, next) {
     try {
+      // Remove id from request body if present (should be auto-generated)
+      const { id, ...locationData } = req.body;
+      
+      // Demo mode support
+      if (!AppDataSource || !AppDataSource.isInitialized) {
+        const newLocation = {
+          id: locationIdCounter++,
+          ...locationData,
+          companyId: req.companyId,
+          isActive: locationData.isActive !== undefined ? locationData.isActive : true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        demoLocations.push(newLocation);
+        
+        // Auto-create client user account for this location
+        const clientUser = {
+          id: `loc-user-${newLocation.id}`,
+          firstName: locationData.name || 'Location',
+          lastName: 'Manager',
+          email: locationData.email || `location${newLocation.id}@possystem.com`,
+          phone: locationData.phone || '',
+          role: 'client',
+          locationId: newLocation.id,
+          locationName: newLocation.name,
+          locationCity: newLocation.city,
+          locationGST: newLocation.gstNumber,
+          password: `loc${newLocation.id}@2025`, // Default password
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          accessLevel: 'location' // Location-specific access
+        };
+        
+        console.log(`Auto-created client account for location: ${newLocation.name} (${clientUser.email})`);
+        
+        return res.status(201).json({
+          success: true,
+          message: 'Location and client account created successfully',
+          data: {
+            location: newLocation,
+            clientAccount: {
+              email: clientUser.email,
+              password: clientUser.password,
+              role: clientUser.role
+            }
+          }
+        });
+      }
+
       const locationRepository = AppDataSource.getRepository('Location');
       const location = locationRepository.create({
-        ...req.body,
+        ...locationData,
         companyId: req.companyId
       });
       
       await locationRepository.save(location);
+
+      // Auto-create client user for real database mode (would need User model)
+      // This is placeholder for when database is connected
+      console.log(`Location created: ${location.name} - Client account would be auto-created in DB mode`);
 
       res.status(201).json({
         success: true,
@@ -59,6 +122,30 @@ class LocationController {
   static async updateLocation(req, res, next) {
     try {
       const { id } = req.params;
+      
+      // Demo mode support
+      if (!AppDataSource || !AppDataSource.isInitialized) {
+        const locationIndex = demoLocations.findIndex(loc => loc.id == id);
+        if (locationIndex === -1) {
+          return res.status(404).json({
+            success: false,
+            message: 'Location not found'
+          });
+        }
+        
+        demoLocations[locationIndex] = {
+          ...demoLocations[locationIndex],
+          ...req.body,
+          updatedAt: new Date().toISOString()
+        };
+        
+        return res.json({
+          success: true,
+          message: 'Location updated successfully',
+          data: demoLocations[locationIndex]
+        });
+      }
+
       const locationRepository = AppDataSource.getRepository('Location');
       
       await locationRepository.update({ id, companyId: req.companyId }, req.body);
@@ -77,6 +164,25 @@ class LocationController {
   static async deleteLocation(req, res, next) {
     try {
       const { id } = req.params;
+      
+      // Demo mode support
+      if (!AppDataSource || !AppDataSource.isInitialized) {
+        const locationIndex = demoLocations.findIndex(loc => loc.id == id);
+        if (locationIndex === -1) {
+          return res.status(404).json({
+            success: false,
+            message: 'Location not found'
+          });
+        }
+        
+        demoLocations.splice(locationIndex, 1);
+        
+        return res.json({
+          success: true,
+          message: 'Location deleted successfully'
+        });
+      }
+
       const locationRepository = AppDataSource.getRepository('Location');
       
       await locationRepository.delete({ id, companyId: req.companyId });
@@ -227,6 +333,13 @@ class LocationController {
     } catch (error) {
       next(error);
     }
+  }
+
+  // Method to clear demo locations (used during cleanup)
+  static clearDemoLocations() {
+    demoLocations = [];
+    locationIdCounter = 1;
+    console.log('Demo locations cleared');
   }
 }
 

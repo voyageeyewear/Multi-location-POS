@@ -157,6 +157,45 @@ class ShopifyController {
     }
   }
 
+  // Create order in Shopify
+  static async createOrder(req, res, next) {
+    try {
+      const orderData = req.body;
+      
+      // Validate required fields
+      if (!orderData.customerName || !orderData.items || !orderData.items.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: customerName and items are required'
+        });
+      }
+
+      const result = await shopifyService.createOrder(orderData);
+      
+      if (result.success) {
+        res.status(201).json({
+          success: true,
+          message: result.message,
+          data: {
+            order: result.order,
+            shopifyOrderId: result.order.id,
+            shopifyOrderNumber: result.order.name
+          }
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'Failed to create order in Shopify',
+          error: result.error,
+          details: result.details
+        });
+      }
+    } catch (error) {
+      console.error('Error in createOrder controller:', error);
+      next(error);
+    }
+  }
+
   // Get locations from Shopify
   static async getLocations(req, res, next) {
     try {

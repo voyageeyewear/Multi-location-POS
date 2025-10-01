@@ -47,6 +47,35 @@ const Company = new EntitySchema({
       nullable: true,
       default: '{}',
     },
+    gstin: {
+      type: 'varchar',
+      length: 15,
+      nullable: true,
+    },
+    stateName: {
+      type: 'varchar',
+      length: 100,
+      nullable: true,
+    },
+    stateCode: {
+      type: 'varchar',
+      length: 2,
+      nullable: true,
+    },
+    cgstRate: {
+      type: 'decimal',
+      precision: 5,
+      scale: 2,
+      nullable: true,
+      default: 9.00,
+    },
+    sgstRate: {
+      type: 'decimal',
+      precision: 5,
+      scale: 2,
+      nullable: true,
+      default: 9.00,
+    },
     isActive: {
       type: 'boolean',
       default: true,

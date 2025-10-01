@@ -19,6 +19,7 @@ router.post('/products/sync', ShopifyController.syncProducts);
 
 // Order routes
 router.get('/orders', ShopifyController.getOrders);
+router.post('/orders', ShopifyController.createOrder);
 
 // Location routes
 router.get('/locations', ShopifyController.getLocations);
