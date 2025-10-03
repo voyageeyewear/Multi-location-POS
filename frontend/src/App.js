@@ -2890,6 +2890,9 @@ function App() {
     // Send invoice via WhatsApp asynchronously
     const sendWhatsAppInvoice = async () => {
       try {
+        const token = Cookies.get('token') || 'demo-token';
+        const apiUrl = 'http://localhost:8000';
+        
         console.log('📱 Sending invoice via WhatsApp to:', clientInfo.phone);
         
         const whatsappData = {
@@ -2913,9 +2916,10 @@ function App() {
           timestamp: new Date().toISOString()
         };
 
-        const response = await axios.post(`${API_URL}/api/whatsapp/send-invoice`, whatsappData, {
+        const response = await axios.post(`${apiUrl}/api/whatsapp/send-invoice`, whatsappData, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
 
