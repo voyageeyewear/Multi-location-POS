@@ -69,9 +69,9 @@ const generateInvoiceMessage = (orderData) => {
 };
 
 /**
- * Send WhatsApp message via Kwikengage API
+ * Send WhatsApp message via Kwikengage API using Template
  */
-const sendWhatsAppMessage = async (phoneNumber, message) => {
+const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
   try {
     // Ensure phone number is in correct format (remove spaces, add country code if needed)
     let formattedPhone = phoneNumber.replace(/\s+/g, '');
@@ -87,17 +87,47 @@ const sendWhatsAppMessage = async (phoneNumber, message) => {
       }
     }
 
-    // Use template type to bypass 24-hour window restriction
-    // Note: For production, you should create and use approved WhatsApp templates
-    const requestBody = {
-      to: formattedPhone,
-      channel: "whatsapp",
-      type: "text", // Changed from "session" to "text" to avoid 24hr restriction
-      content: {
+    let requestBody;
+
+    // If orderData is provided, use the approved template
+    if (orderData) {
+      console.log('📱 Using WhatsApp template: invoice_notification_kiosk');
+      
+      // Prepare template parameters
+      const parameters = [
+        orderData.customerName || 'Customer',                           // {{1}}
+        orderData.invoiceNumber || 'N/A',                              // {{2}}
+        new Date(orderData.timestamp).toLocaleDateString('en-IN', {    // {{3}}
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }),
+        String(orderData.total?.toFixed(2) || '0.00'),                // {{4}}
+        orderData.paymentMethod || 'Cash'                              // {{5}}
+      ];
+
+      requestBody = {
+        to: formattedPhone,
+        channel: "whatsapp",
+        type: "template",
+        content: {
+          templateName: "invoice_notification_kiosk",
+          language: "en",
+          parameters: parameters
+        }
+      };
+    } else {
+      // Fallback to text message (for non-invoice messages)
+      requestBody = {
+        to: formattedPhone,
+        channel: "whatsapp",
         type: "text",
-        text: message
-      }
-    };
+        content: {
+          type: "text",
+          text: message
+        }
+      };
+    }
 
     console.log('📱 Sending WhatsApp message to:', formattedPhone);
 
@@ -124,7 +154,7 @@ const sendWhatsAppMessage = async (phoneNumber, message) => {
 };
 
 /**
- * Send invoice via WhatsApp
+ * Send invoice via WhatsApp using Template
  */
 const sendInvoiceViaWhatsApp = async (orderData) => {
   try {
@@ -134,11 +164,9 @@ const sendInvoiceViaWhatsApp = async (orderData) => {
       throw new Error('Customer phone number is required');
     }
 
-    // Generate invoice message
-    const invoiceMessage = generateInvoiceMessage(orderData);
-
-    // Send via WhatsApp
-    const result = await sendWhatsAppMessage(customerPhone, invoiceMessage);
+    // Send via WhatsApp using template
+    // Pass orderData as third parameter to trigger template usage
+    const result = await sendWhatsAppMessage(customerPhone, null, orderData);
 
     return result;
   } catch (error) {
