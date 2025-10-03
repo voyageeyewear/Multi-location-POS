@@ -111,6 +111,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
         channel: "whatsapp",
         type: "template",
         content: {
+          type: "template",
           templateName: "invoice_notification_kiosk",
           language: "en",
           parameters: parameters
