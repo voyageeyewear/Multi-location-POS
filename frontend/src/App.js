@@ -129,17 +129,17 @@ function App() {
           lastName: foundUser.lastName,
           email: foundUser.email,
           role: { name: foundUser.role, permissions: foundUser.permissions },
-          company: { id: '1', name: 'Default Company' },
-          userLocations: [],
-          isActive: true,
-          companyId: '1',
+        company: { id: '1', name: 'Default Company' },
+        userLocations: [],
+        isActive: true,
+        companyId: '1',
           roleId: foundUser.role === 'super_admin' ? '0' : foundUser.role === 'admin' ? '1' : '2'
-        };
-        
+      };
+    
         Cookies.set('token', 'demo-token', { expires: 7 });
         setUser(loggedInUser);
-        setIsLoggedIn(true);
-        setCurrentPage('dashboard');
+    setIsLoggedIn(true);
+    setCurrentPage('dashboard');
         return { success: true };
       }
     }
@@ -156,7 +156,12 @@ function App() {
   const handleNavigation = (page) => {
     setCurrentPage(page);
     
-    if (page === 'products') {
+    if (page === 'dashboard') {
+      // Refresh dashboard data
+      loadSalesData();
+      loadShopifyProducts();
+      loadLocations();
+    } else if (page === 'products') {
       loadShopifyProducts();
     } else if (page === 'locations') {
       // Load location data
@@ -785,9 +790,11 @@ function App() {
     }
   }, [currentPage]);
 
-  // Load sales data on component mount
+  // Load initial data on component mount
   useEffect(() => {
     loadSalesData();
+    loadShopifyProducts(); // Load products for dashboard
+    loadLocations(); // Load locations for dashboard
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load real invoice data when locations page is accessed
@@ -811,13 +818,37 @@ function App() {
     const savedData = localStorage.getItem('pos_sales_data');
     if (savedData) {
       const parsed = JSON.parse(savedData);
-      // Check if it contains demo data (John Smith, Sarah Johnson, etc.)
-      const hasDemoData = parsed.orders?.some(order => 
-        ['John Smith', 'Sarah Johnson', 'Mike Wilson', 'Emily Davis', 'David Brown', 'Lisa Anderson'].includes(order.clientName)
-      );
+      // Check if it contains demo data (John Smith, Sarah Johnson, etc.) OR orders without proper createdBy structure
+      const hasDemoData = parsed.orders?.some(order => {
+        // Check for demo client names
+        const isDemoName = ['John Smith', 'Sarah Johnson', 'Mike Wilson', 'Emily Davis', 'David Brown', 'Lisa Anderson', 'Sale', 'Sale2'].some(
+          name => order.clientName?.includes(name)
+        );
+        
+        // Check if order has old format (no createdBy object with user details)
+        const hasOldFormat = !order.createdBy || typeof order.createdBy === 'string' || 
+          !order.createdBy.id || !order.createdBy.firstName;
+        
+        return isDemoName || hasOldFormat;
+      });
+      
       if (hasDemoData) {
         localStorage.removeItem('pos_sales_data');
-        console.log('Cleared demo data from localStorage');
+        console.log('Cleared demo/old format data from localStorage');
+        // Set empty sales data
+        const emptySalesData = {
+          orders: [],
+          stats: {
+            totalOrders: 0,
+            completedOrders: 0,
+            defectedOrders: 0,
+            totalRevenue: 0,
+            defectedRevenue: 0,
+            averageOrderValue: 0
+          }
+        };
+        setSalesData(emptySalesData);
+        saveSalesData(emptySalesData);
       }
     }
   }, []);
@@ -827,6 +858,18 @@ function App() {
     if (!salesData) return [];
     
     let filtered = salesData.orders;
+    
+    // Apply user-based access control for client users
+    if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
+      filtered = filtered.filter(order => {
+        // Check if order was created by this user
+        const orderCreatorId = order.createdBy?.id || null;
+        const orderCreatorEmail = order.createdBy?.email || null;
+        
+        // Match by ID or email
+        return orderCreatorId === user.id || orderCreatorEmail === user.email;
+      });
+    }
     
     // Apply status filter
     if (salesFilter === 'defected') {
@@ -862,6 +905,75 @@ function App() {
 
   const handleSearchChange = (term) => {
     setSearchTerm(term);
+  };
+
+  // Calculate stats from filtered orders (for client users who see only their sales)
+  const getFilteredStats = () => {
+    const filteredOrders = getFilteredOrders();
+    
+    const totalOrders = filteredOrders.length;
+    const completedOrders = filteredOrders.filter(order => order.status === 'completed').length;
+    const defectedOrders = filteredOrders.filter(order => order.status === 'defected').length;
+    const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const defectedRevenue = filteredOrders.filter(order => order.status === 'defected').reduce((sum, order) => sum + (order.total || 0), 0);
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    
+    return {
+      totalOrders,
+      completedOrders,
+      defectedOrders,
+      totalRevenue,
+      defectedRevenue,
+      averageOrderValue
+    };
+  };
+
+  // Get dashboard statistics based on user role
+  const getDashboardStats = () => {
+    if (!salesData || !salesData.orders) {
+      return {
+        todaySales: 0,
+        totalOrders: 0,
+        totalProducts: products.length,
+        totalLocations: locations ? locations.length : 0
+      };
+    }
+
+    // Get today's date
+    const today = new Date().toLocaleDateString('en-IN');
+    
+    // Filter orders based on user role
+    let userOrders = salesData.orders;
+    if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
+      // Client users see only their own sales
+      userOrders = salesData.orders.filter(order => {
+        const orderCreatorId = order.createdBy?.id || null;
+        const orderCreatorEmail = order.createdBy?.email || null;
+        return orderCreatorId === user.id || orderCreatorEmail === user.email;
+      });
+    }
+
+    // Calculate today's sales
+    const todayOrders = userOrders.filter(order => {
+      try {
+        const orderDate = new Date(order.timestamp || order.createdAt).toLocaleDateString('en-IN');
+        return orderDate === today;
+      } catch {
+        return false;
+      }
+    });
+
+    const todaySales = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const totalOrders = userOrders.length;
+    const totalProducts = products.length;
+    const totalLocations = locations ? locations.length : 0;
+
+    return {
+      todaySales,
+      totalOrders,
+      totalProducts,
+      totalLocations
+    };
   };
 
   // User management functions
@@ -1838,42 +1950,36 @@ function App() {
   };
 
   const addToCart = (product) => {
-    const existingItem = cart.find(item => item.id === product.id);
-    if (existingItem) {
-      setCart(cart.map(item => 
-        item.id === product.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
+    // Always add as a new cart item with unique cartItemId
+    const cartItemId = `${product.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       setCart([...cart, { 
         ...product, 
+      cartItemId: cartItemId, // Unique identifier for this cart entry
         quantity: 1, 
         discountAmount: 0,
         discountPercentage: 0
       }]);
-    }
   };
 
-  const removeFromCart = (productId) => {
-    setCart(cart.filter(item => item.id !== productId));
+  const removeFromCart = (cartItemId) => {
+    setCart(cart.filter(item => item.cartItemId !== cartItemId));
   };
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = (cartItemId, quantity) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(cartItemId);
     } else {
       setCart(cart.map(item => 
-        item.id === productId 
+        item.cartItemId === cartItemId 
           ? { ...item, quantity }
           : item
       ));
     }
   };
 
-  const updateDiscount = (productId, discountType, discountValue) => {
+  const updateDiscount = (cartItemId, discountType, discountValue) => {
     setCart(cart.map(item => {
-      if (item.id === productId) {
+      if (item.cartItemId === cartItemId) {
         let discountAmount = 0;
         let discountPercentage = 0;
         
@@ -2663,7 +2769,13 @@ function App() {
       status: 'completed',
       invoiceNumber: invoiceNumber,
       notes: `Order created via POS at ${locationInfo.name} (${kioskInfo.name}) by ${clientInfo.role}`,
-          createdBy: user.firstName + ' ' + user.lastName,
+          createdBy: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role.name || user.role
+          },
       createdAt: currentTime.toISOString(),
       accessControl: {
         locationId: locationInfo.id,
@@ -2735,7 +2847,13 @@ function App() {
           tax: getCartGST(),
           total: getCartTotalWithGST(),
           notes: `Order created via POS by ${clientInfo.role}`,
-          createdBy: user.firstName + ' ' + user.lastName,
+          createdBy: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role.name || user.role
+          },
           billingAddress: {
             address1: clientInfo.address || '',
             city: locationInfo.city,
@@ -2840,7 +2958,7 @@ function App() {
                   onFocus={(e) => e.target.style.borderColor = '#667eea'}
                   onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                 />
-              </div>
+          </div>
               
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#334155' }}>
@@ -2876,7 +2994,7 @@ function App() {
                   fontSize: '0.9rem'
                 }}>
                   ⚠️ {loginError}
-                </div>
+            </div>
               )}
               
               <button
@@ -2939,7 +3057,7 @@ function App() {
           {user?.role?.name === 'admin' && (
             <>
               <button onClick={() => handleNavigation('products')} className={`nav-item ${currentPage === 'products' ? 'active' : ''}`}>Products</button>
-              <button onClick={() => handleNavigation('locations')} className={`nav-item ${currentPage === 'locations' ? 'active' : ''}`}>Locations</button>
+              <button onClick={() => handleNavigation('locations')} className={`nav-item ${currentPage === 'locations' ? 'active' : ''}`}>Invoice</button>
               <button onClick={() => handleNavigation('location-analytics')} className={`nav-item ${currentPage === 'location-analytics' ? 'active' : ''}`}>Location Analytics</button>
               <button onClick={() => handleNavigation('assign-locations')} className={`nav-item ${currentPage === 'assign-locations' ? 'active' : ''}`}>Assign Locations</button>
               <button onClick={() => handleNavigation('sales')} className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}>Sales</button>
@@ -2970,30 +3088,58 @@ function App() {
 
             <div className="dashboard-content">
               <div className="stats-grid">
+                {(() => {
+                  const stats = getDashboardStats();
+                  return (
+                    <>
                 <div className="stat-card">
                   <h3>Today's Sales</h3>
-                  <p className="stat-value">$0.00</p>
+                        <p className="stat-value">₹{stats.todaySales.toLocaleString()}</p>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                          {user?.role?.name === 'client' ? 'Your sales today' : 'All sales today'}
+                        </span>
                 </div>
                 <div className="stat-card">
                   <h3>Total Products</h3>
-                  <p className="stat-value">{products.length}</p>
+                        <p className="stat-value">{stats.totalProducts}</p>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Shopify products</span>
+                      </div>
+                      <div className="stat-card">
+                        <h3>{user?.role?.name === 'client' ? 'Your Orders' : 'Total Orders'}</h3>
+                        <p className="stat-value">{stats.totalOrders}</p>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                          {user?.role?.name === 'client' ? 'Orders you created' : 'All time orders'}
+                        </span>
                 </div>
                 <div className="stat-card">
                   <h3>Locations</h3>
-                  <p className="stat-value">0</p>
+                        <p className="stat-value">{stats.totalLocations}</p>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Active stores</span>
                 </div>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="welcome-section">
                 <h2>Quick Actions</h2>
                 <p>Use the sidebar menu to navigate to different sections:</p>
                 <div className="action-tags">
+                  {user?.role?.name === 'admin' ? (
+                    <>
                   <span className="tag">Products</span>
-                  <span className="tag">Locations</span>
+                      <span className="tag">Invoice</span>
                   <span className="tag">Location Analytics</span>
                   <span className="tag">Sales</span>
                   <span className="tag">Reports</span>
                   <span className="tag">Data Management</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="tag">Sales</span>
+                      <span className="tag">POS</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -3134,7 +3280,14 @@ function App() {
                       paymentMethod: order.paymentMethod || 'Cash',
                       timestamp: order.timestamp || new Date().toISOString(),
                       items: Array.isArray(order.items) ? order.items : [],
-                      total: order.total || 0
+                      total: order.total || 0,
+                      createdBy: order.createdBy || (user ? {
+                        id: user.id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email,
+                        role: user.role?.name || user.role
+                      } : null)
                     };
 
                     // Format date and time safely
@@ -3196,6 +3349,42 @@ function App() {
                                 <span className="payment-badge">{safeOrder.paymentMethod}</span>
                               </div>
                             </div>
+                            
+                            {/* Created By Info */}
+                            {safeOrder.createdBy && safeOrder.createdBy.firstName && safeOrder.createdBy.lastName && (
+                              <div className="info-item">
+                                <div className="info-label">👨‍💼 Created By</div>
+                                <div className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <div style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.875rem'
+                                  }}>
+                                    {safeOrder.createdBy.firstName.charAt(0)}{safeOrder.createdBy.lastName.charAt(0)}
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: '600', color: '#1e293b' }}>
+                                      {safeOrder.createdBy.firstName} {safeOrder.createdBy.lastName}
+                                    </span>
+                                    <span style={{ 
+                                      fontSize: '0.75rem', 
+                                      color: '#64748b',
+                                      textTransform: 'capitalize'
+                                    }}>
+                                      {safeOrder.createdBy.role}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
                             <div className="info-item download-section">
                               <div className="info-label">📄 Invoice</div>
                               <div className="info-value">
@@ -3488,6 +3677,30 @@ function App() {
             <div className="content-header">
               <h1>🛒 Sales & Orders Management</h1>
               <p>View and manage all orders, customers, and defected items</p>
+              
+              {/* Client User Notice */}
+              {user && user.role && (user.role.name === 'client' || user.role === 'client') && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  padding: '1rem 1.5rem',
+                  borderRadius: '0.75rem',
+                  margin: '1rem 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
+                  <div>
+                    <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Your Sales Only</strong>
+                    <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                      You are viewing only the sales created by you. Other client users cannot see your sales.
+                    </span>
+                  </div>
+                </div>
+              )}
+              
               <div className="sales-actions">
                 <button 
                   className="refresh-btn"
@@ -3507,81 +3720,105 @@ function App() {
                 )}
               </div>
               
-              <div className="sales-filters">
-                <div className="filter-group">
-                  <label>Filter Orders:</label>
-                  <div className="filter-buttons">
-                    <button 
-                      className={`filter-btn ${salesFilter === 'all' ? 'active' : ''}`}
-                      onClick={() => handleSalesFilterChange('all')}
+              {user?.role?.name === 'admin' && (
+                <div className="sales-filters">
+                  <div className="filter-group">
+                    <label>Filter Orders:</label>
+                    <div className="filter-buttons">
+                      {(() => {
+                        // Use filtered stats for client users, regular stats for admin users
+                        const displayStats = (user && user.role && (user.role.name === 'client' || user.role === 'client')) 
+                          ? getFilteredStats() 
+                          : salesData?.stats || { totalOrders: 0, completedOrders: 0, defectedOrders: 0 };
+                        
+                        return (
+                          <>
+                            <button 
+                              className={`filter-btn ${salesFilter === 'all' ? 'active' : ''}`}
+                              onClick={() => handleSalesFilterChange('all')}
+                            >
+                              All Orders ({displayStats.totalOrders})
+                            </button>
+                            <button 
+                              className={`filter-btn ${salesFilter === 'completed' ? 'active' : ''}`}
+                              onClick={() => handleSalesFilterChange('completed')}
+                            >
+                              Completed ({displayStats.completedOrders})
+                            </button>
+                            <button 
+                              className={`filter-btn ${salesFilter === 'defected' ? 'active' : ''}`}
+                              onClick={() => handleSalesFilterChange('defected')}
+                            >
+                              Defected ({displayStats.defectedOrders})
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="filter-group">
+                    <label>Filter by City:</label>
+                    <select 
+                      className="city-filter-select"
+                      value={cityFilter}
+                      onChange={(e) => setCityFilter(e.target.value)}
                     >
-                      All Orders ({salesData?.stats.totalOrders || 0})
-                    </button>
-                    <button 
-                      className={`filter-btn ${salesFilter === 'completed' ? 'active' : ''}`}
-                      onClick={() => handleSalesFilterChange('completed')}
-                    >
-                      Completed ({salesData?.stats.completedOrders || 0})
-                    </button>
-                    <button 
-                      className={`filter-btn ${salesFilter === 'defected' ? 'active' : ''}`}
-                      onClick={() => handleSalesFilterChange('defected')}
-                    >
-                      Defected ({salesData?.stats.defectedOrders || 0})
-                    </button>
+                      <option value="all">All Cities ({getUniqueCities().length})</option>
+                      {getUniqueCities().map(city => (
+                        <option key={city} value={city}>
+                          {city} ({salesData?.orders?.filter(o => (o.location?.city || o.city) === city).length || 0})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="search-group">
+                    <label>Search:</label>
+                    <input
+                      type="text"
+                      placeholder="Search by name, order ID, invoice, or SKU..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="search-input"
+                    />
                   </div>
                 </div>
-
-                <div className="filter-group">
-                  <label>Filter by City:</label>
-                  <select 
-                    className="city-filter-select"
-                    value={cityFilter}
-                    onChange={(e) => setCityFilter(e.target.value)}
-                  >
-                    <option value="all">All Cities ({getUniqueCities().length})</option>
-                    {getUniqueCities().map(city => (
-                      <option key={city} value={city}>
-                        {city} ({salesData?.orders?.filter(o => (o.location?.city || o.city) === city).length || 0})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="search-group">
-                  <label>Search:</label>
-                  <input
-                    type="text"
-                    placeholder="Search by name, order ID, invoice, or SKU..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="search-input"
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="sales-content">
               {salesData ? (
                 <div className="sales-overview">
                   <div className="sales-stats">
+                    {(() => {
+                      // Use filtered stats for client users, regular stats for admin users
+                      const displayStats = (user && user.role && (user.role.name === 'client' || user.role === 'client')) 
+                        ? getFilteredStats() 
+                        : salesData.stats;
+                      
+                      return (
+                        <>
                     <div className="stat-card">
-                      <h3>₹{salesData.stats.totalRevenue.toLocaleString()}</h3>
+                            <h3>₹{displayStats.totalRevenue.toLocaleString()}</h3>
                       <p>Total Revenue</p>
                     </div>
                     <div className="stat-card">
-                      <h3>{salesData.stats.totalOrders}</h3>
+                            <h3>{displayStats.totalOrders}</h3>
                       <p>Total Orders</p>
                     </div>
                     <div className="stat-card">
-                      <h3>₹{salesData.stats.averageOrderValue.toLocaleString()}</h3>
+                            <h3>₹{displayStats.averageOrderValue.toLocaleString()}</h3>
                       <p>Avg Order Value</p>
                     </div>
                     <div className="stat-card defect-card">
-                      <h3>{salesData.stats.defectedOrders}</h3>
+                            <h3>{displayStats.defectedOrders}</h3>
                       <p>Defected Orders</p>
-                      <span className="defect-amount">₹{salesData.stats.defectedRevenue.toLocaleString()}</span>
+                            <span className="defect-amount">₹{displayStats.defectedRevenue.toLocaleString()}</span>
                     </div>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {salesData.orders.length === 0 && (
@@ -3949,21 +4186,21 @@ function App() {
                             const discountedTotal = itemTotal - discountAmount;
                             
                             return (
-                            <div key={item.id} className="cart-item">
+                            <div key={item.cartItemId} className="cart-item">
                               <div className="cart-item-info">
                                 <span className="cart-item-name">{item.name}</span>
                                 <div className="cart-item-controls">
                                   <button 
-                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                    onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
                                     className="quantity-btn"
                                   >-</button>
                                   <span className="quantity">{item.quantity}</span>
                                   <button 
-                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                    onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                                     className="quantity-btn"
                                   >+</button>
                                   <button 
-                                    onClick={() => removeFromCart(item.id)}
+                                    onClick={() => removeFromCart(item.cartItemId)}
                                     className="remove-btn"
                                   >×</button>
                                 </div>
@@ -3978,7 +4215,7 @@ function App() {
                                       min="0"
                                       max="100"
                                       value={item.discountPercentage || 0}
-                                      onChange={(e) => updateDiscount(item.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      onChange={(e) => updateDiscount(item.cartItemId, 'percentage', parseFloat(e.target.value) || 0)}
                                       className="discount-input"
                                     />
                             </div>
@@ -3989,7 +4226,7 @@ function App() {
                                       min="0"
                                       max={itemTotal}
                                       value={item.discountAmount || 0}
-                                      onChange={(e) => updateDiscount(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      onChange={(e) => updateDiscount(item.cartItemId, 'amount', parseFloat(e.target.value) || 0)}
                                       className="discount-input"
                                     />
                                   </div>

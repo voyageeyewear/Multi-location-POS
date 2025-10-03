@@ -19,7 +19,6 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const locationRoutes = require('./routes/locations');
-const userLocationRoutes = require('./routes/userLocations');
 const saleRoutes = require('./routes/sales');
 const reportRoutes = require('./routes/reports');
 const companyRoutes = require('./routes/companies');
@@ -28,6 +27,7 @@ const shopifyRoutes = require('./routes/shopifyRoutes');
 const invoiceRoutes = require('./routes/invoices');
 const backupRoutes = require('./routes/backups');
 const dataRoutes = require('./routes/data');
+const userLocationRoutes = require('./routes/userLocations');
 
 const app = express();
 const server = createServer(app);
@@ -143,15 +143,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/products', authenticateToken, productRoutes);
 app.use('/api/locations', authenticateToken, locationRoutes);
-app.use('/api/user-locations', authenticateToken, userLocationRoutes);
 app.use('/api/sales', authenticateToken, saleRoutes);
 app.use('/api/reports', authenticateToken, reportRoutes);
 app.use('/api/companies', authenticateToken, companyRoutes);
 app.use('/api/roles', authenticateToken, roleRoutes);
 app.use('/api/shopify', shopifyRoutes);
 app.use('/api/invoices', invoiceRoutes);
-app.use('/api/backups', authenticateToken, backupRoutes);
+app.use('/api/backups', backupRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/user-locations', authenticateToken, userLocationRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
