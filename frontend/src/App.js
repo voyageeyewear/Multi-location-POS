@@ -5,6 +5,11 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
+// API URL configuration - works in both development and production
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:8000' 
+  : window.location.origin;
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -1187,7 +1192,7 @@ function App() {
   const handleSaveLocation = async (locationData) => {
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       if (locationData.id) {
         // Update existing location
@@ -1237,7 +1242,7 @@ function App() {
   const loadAllLocations = async () => {
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.get(
         `${apiUrl}/api/locations`,
@@ -1265,7 +1270,7 @@ function App() {
     
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.delete(
         `${apiUrl}/api/locations/${locationId}`,
@@ -1293,7 +1298,7 @@ function App() {
     try {
       setBackupLoading(true);
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.get(
         `${apiUrl}/api/backups`,
@@ -1320,7 +1325,7 @@ function App() {
     try {
       setBackupLoading(true);
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.post(
         `${apiUrl}/api/backups`,
@@ -1358,7 +1363,7 @@ function App() {
   const handleUpdateBackup = async (backupId, updateData) => {
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.put(
         `${apiUrl}/api/backups/${backupId}`,
@@ -1389,7 +1394,7 @@ function App() {
     
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.delete(
         `${apiUrl}/api/backups/${backupId}`,
@@ -1414,7 +1419,7 @@ function App() {
   const handleDownloadBackup = async (backupId, backupName) => {
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.get(
         `${apiUrl}/api/backups/${backupId}/download`,
@@ -1446,7 +1451,7 @@ function App() {
     try {
       setCleanupLoading(true);
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.post(
         `${apiUrl}/api/data/cleanup`,
@@ -1527,7 +1532,7 @@ function App() {
     try {
       setAssignmentLoading(true);
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.get(
         `${apiUrl}/api/user-locations`,
@@ -1558,7 +1563,7 @@ function App() {
     try {
       setAssignmentLoading(true);
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.post(
         `${apiUrl}/api/user-locations`,
@@ -1596,7 +1601,7 @@ function App() {
 
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.delete(
         `${apiUrl}/api/user-locations/${assignmentId}`,
@@ -1620,7 +1625,7 @@ function App() {
   const handleToggleAssignmentStatus = async (assignmentId, currentStatus) => {
     try {
       const token = Cookies.get('token') || 'demo-token';
-      const apiUrl = 'http://localhost:8000';
+      const apiUrl = API_URL;
       
       const response = await axios.put(
         `${apiUrl}/api/user-locations/${assignmentId}`,
@@ -1651,7 +1656,7 @@ function App() {
       // Fetch real products from backend Shopify API (proxy)
       console.log('Fetching products from backend Shopify API...');
       
-      const response = await fetch('http://localhost:8000/api/shopify/products', {
+      const response = await fetch(`${API_URL}/api/shopify/products`, {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer demo-token', // Using demo token for now
@@ -1797,7 +1802,7 @@ function App() {
       // Fetch real products from backend Shopify API for POS
       console.log('Fetching POS products from backend Shopify API...');
       
-      const response = await fetch('http://localhost:8000/api/shopify/products', {
+      const response = await fetch(`${API_URL}/api/shopify/products`, {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer demo-token', // Using demo token for now
@@ -2864,7 +2869,7 @@ function App() {
         };
 
         const response = await axios.post(
-          'http://localhost:8000/api/shopify/orders',
+          `${API_URL}/api/shopify/orders`,
           shopifyOrderData,
           {
             headers: {
@@ -2891,7 +2896,7 @@ function App() {
     const sendWhatsAppInvoice = async () => {
       try {
         const token = Cookies.get('token') || 'demo-token';
-        const apiUrl = 'http://localhost:8000';
+        const apiUrl = API_URL;
         
         console.log('📱 Sending invoice via WhatsApp to:', clientInfo.phone);
         
