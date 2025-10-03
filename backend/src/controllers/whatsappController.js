@@ -9,38 +9,49 @@ exports.sendInvoice = async (req, res) => {
 
     // Validate required fields
     if (!orderData.customerPhone) {
-      return res.status(400).json({
+      console.log('⚠️ WhatsApp invoice: Missing customer phone number');
+      return res.status(200).json({
         success: false,
-        message: 'Customer phone number is required'
+        message: 'Customer phone number is required',
+        skipped: true
       });
     }
 
     if (!orderData.invoiceNumber || !orderData.items || orderData.items.length === 0) {
-      return res.status(400).json({
+      console.log('⚠️ WhatsApp invoice: Missing invoice number or items');
+      return res.status(200).json({
         success: false,
-        message: 'Invalid order data: invoiceNumber and items are required'
+        message: 'Invalid order data: invoiceNumber and items are required',
+        skipped: true
       });
     }
+
+    console.log(`📱 Attempting to send WhatsApp invoice ${orderData.invoiceNumber} to ${orderData.customerPhone}`);
 
     // Send invoice via WhatsApp
     const result = await whatsappService.sendInvoiceViaWhatsApp(orderData);
 
     if (result.success) {
+      console.log('✅ WhatsApp invoice sent successfully!', result.messageId);
       return res.status(200).json({
         success: true,
         message: 'Invoice sent successfully via WhatsApp',
         messageId: result.messageId
       });
     } else {
-      return res.status(500).json({
+      console.error('❌ WhatsApp invoice failed:', result.error);
+      // Return 200 with success: false so sale doesn't fail
+      return res.status(200).json({
         success: false,
         message: 'Failed to send invoice via WhatsApp',
         error: result.error
       });
     }
   } catch (error) {
-    console.error('Error in sendInvoice controller:', error);
-    return res.status(500).json({
+    console.error('❌ Error in sendInvoice controller:', error.message);
+    console.error('Full error:', error);
+    // Return 200 with success: false so sale doesn't fail
+    return res.status(200).json({
       success: false,
       message: 'Internal server error',
       error: error.message

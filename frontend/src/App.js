@@ -2875,12 +2875,12 @@ function App() {
         );
 
         if (response.data.success) {
-          console.log('Order created in Shopify:', response.data.data);
+          console.log('✅ Order created in Shopify:', response.data.data);
           toast.success(`Order synced to Shopify! Order #${response.data.data.shopifyOrderNumber}`);
         }
       } catch (error) {
-        console.error('Error creating order in Shopify:', error);
-        toast.error('Order saved locally but failed to sync to Shopify');
+        console.error('⚠️ Shopify sync skipped:', error.message);
+        // Don't show error to user - order is saved locally and sale is completed
       }
     };
 
@@ -2924,11 +2924,14 @@ function App() {
         });
 
         if (response.data.success) {
-          console.log('✅ WhatsApp invoice sent successfully!');
+          console.log('✅ WhatsApp invoice sent successfully!', response.data.messageId);
           toast.success('Invoice sent via WhatsApp!');
+        } else {
+          console.log('⚠️ WhatsApp invoice not sent:', response.data.message);
+          // Don't show error to user - sale is already completed
         }
       } catch (error) {
-        console.error('❌ Error sending WhatsApp invoice:', error);
+        console.error('❌ Error sending WhatsApp invoice:', error.message);
         // Don't show error to user, just log it - sale is already completed
         console.log('WhatsApp delivery failed, but sale was successful');
       }
@@ -2939,7 +2942,7 @@ function App() {
 
     // Show success message
     toast.success(`Sale completed successfully! Invoice: ${invoiceNumber}`);
-    alert(`Sale completed successfully!\nInvoice: ${invoiceNumber}\nLocation: ${locationInfo.city}\nSubtotal: ₹${getCartSubtotal().toLocaleString()}\nGST: ₹${getCartGST().toLocaleString()}\nTotal: ₹${getCartTotalWithGST().toLocaleString()}\nPayment: ${selectedPaymentMethod}\nCustomer: ${customerInfo.name}\n\n📱 Invoice will be sent to WhatsApp: ${clientInfo.phone}`);
+    alert(`Sale completed successfully!\nInvoice: ${invoiceNumber}\nLocation: ${locationInfo.city}\nSubtotal: ₹${getCartSubtotal().toLocaleString()}\nGST: ₹${getCartGST().toLocaleString()}\nTotal: ₹${getCartTotalWithGST().toLocaleString()}\nPayment: ${selectedPaymentMethod}\nCustomer: ${customerInfo.name}`);
 
     // Clear cart and reset payment method
     clearCart();
