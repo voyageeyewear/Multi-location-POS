@@ -110,14 +110,8 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
         to: formattedPhone,
         channel: "whatsapp",
         type: "template",
-        content: {
-          type: "template",
-          template: {
-            name: "invoice_notification_kiosk",
-            language: "en",
-            bodyValues: parameters
-          }
-        }
+        templateID: "invoice_notification_kiosk",
+        bodyValues: parameters
       };
     } else {
       // Fallback to text message (for non-invoice messages)
