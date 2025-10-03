@@ -51,56 +51,98 @@ class PDFInvoiceService {
   }
 
   generateHeader(doc, orderData) {
+    // Top section - Company name with "V" logo
     doc
-      .fontSize(20)
+      .fontSize(24)
       .font('Helvetica-Bold')
-      .text(orderData.location?.name || 'SS ENTERPRISES', 50, 45)
-      .fontSize(10)
-      .font('Helvetica')
-      .text(orderData.location?.address || 'C-7/31, Sector-7, Rohini Delhi-110085', 50, 70)
-      .text(`GSTIN/UIN: ${orderData.location?.gstNumber || '08AGFPK7804C1ZQ'}`, 50, 85)
-      .text(`Email: ${orderData.location?.email || 'ssenterprise255@gmail.com'}`, 50, 100)
-      .moveDown();
+      .text('V', 50, 45)
+      .fontSize(18)
+      .text('  SS ENTERPRISES', 70, 48);
 
-    // Invoice details on the right
+    // Company details (left side)
     doc
-      .fontSize(10)
-      .font('Helvetica-Bold')
-      .text(`Invoice No: ${orderData.invoiceNumber}`, 400, 50, { align: 'right' })
+      .fontSize(9)
       .font('Helvetica')
-      .text(`e-Way Bill No: ${orderData.eWayBillNo || 'TT1866418'}`, 400, 65, { align: 'right' })
-      .text(`Date: ${new Date(orderData.timestamp).toLocaleDateString('en-IN')}`, 400, 80, { align: 'right' })
-      .text(`Mode/Terms of Payment: ${orderData.paymentMethod || 'Cash'}`, 400, 95, { align: 'right' })
-      .moveDown();
+      .text('C-7/31, Sector-7, Rohini Delhi-110085', 50, 75)
+      .text('GSTIN/UIN: 08AGFPK7804C1ZQ', 50, 88)
+      .text('E-Mail: ssenterprise255@gmail.com', 50, 101);
 
-    // Draw line
+    // Invoice details box (right side)
     doc
-      .strokeColor('#aaaaaa')
-      .lineWidth(1)
-      .moveTo(50, 130)
-      .lineTo(550, 130)
+      .rect(350, 40, 200, 100)
       .stroke();
+    
+    doc
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .text('Invoice No:', 360, 50)
+      .font('Helvetica')
+      .text(orderData.invoiceNumber || 'DELHVOYA-00001', 450, 50)
+      
+      .font('Helvetica-Bold')
+      .text('e-Way Bill No.:', 360, 65)
+      .font('Helvetica')
+      .text('TT1866418', 450, 65)
+      
+      .font('Helvetica-Bold')
+      .text('Dated:', 360, 80)
+      .font('Helvetica')
+      .text(new Date(orderData.timestamp).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }), 450, 80)
+      
+      .font('Helvetica-Bold')
+      .text('Delivery Note:', 360, 95)
+      .font('Helvetica')
+      .text('Mode/Terms of Payment', 450, 95)
+      
+      .font('Helvetica-Bold')
+      .text('Reference No. & Date:', 360, 110)
+      .font('Helvetica')
+      .text('Other References', 450, 110)
+      
+      .font('Helvetica-Bold')
+      .text('Buyer\'s Order No.:', 360, 125)
+      .moveDown();
   }
 
   generateCustomerInformation(doc, orderData) {
+    const startY = 160;
+    
+    // Draw boxes for Consignee and Buyer sections
     doc
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .text('Buyer (Bill to):', 50, 145)
-      .fontSize(10)
-      .font('Helvetica')
-      .text(orderData.customerName || 'Customer', 50, 165)
-      .text(orderData.customerAddress || 'Ahmedabad, Gujarat', 50, 180)
-      .text(`Buyer's Order No.: ${orderData.buyerOrderNo || ''}`, 50, 195)
-      .moveDown();
-
-    // Draw line
-    doc
-      .strokeColor('#aaaaaa')
-      .lineWidth(1)
-      .moveTo(50, 220)
-      .lineTo(550, 220)
+      .rect(50, startY, 250, 100)
+      .stroke()
+      .rect(300, startY, 250, 100)
       .stroke();
+
+    // Consignee (Ship to) - Left side
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text('Consignee (Ship to)', 55, startY + 5)
+      .fontSize(9)
+      .font('Helvetica')
+      .text(orderData.customerName || 'Dhruv', 55, startY + 20)
+      .text(orderData.location?.city || 'Delhi', 55, startY + 33)
+      .text(orderData.location?.city ? `${orderData.location.city}, ${orderData.location.city}` : 'Delhi, Delhi', 55, startY + 46)
+      .text(`GSTIN/UIN: ${orderData.location?.gstNumber || 'DELHIWIHDSGKJF'}`, 55, startY + 59)
+      .text(`State Name: ${orderData.location?.city || 'Delhi'}, Code: 08`, 55, startY + 72);
+
+    // Buyer (Bill to) - Right side
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text('Buyer (Bill to)', 305, startY + 5)
+      .fontSize(9)
+      .font('Helvetica')
+      .text(orderData.customerName || 'Dhruv', 305, startY + 20)
+      .text(orderData.location?.city || 'Delhi', 305, startY + 33)
+      .text(orderData.location?.city ? `${orderData.location.city}, ${orderData.location.city}` : 'Delhi, Delhi', 305, startY + 46)
+      .text(`Buyer's Order No.:`, 305, startY + 59)
+      .text('Dated:', 305, startY + 72);
   }
 
   generateInvoiceTable(doc, orderData) {
@@ -221,27 +263,51 @@ class PDFInvoiceService {
   }
 
   generateFooter(doc, orderData) {
-    const bottomPosition = 650;
+    let position = 500;
     
+    // Bank Details
     doc
       .fontSize(10)
-      .font('Helvetica-Oblique')
-      .text('Declaration:', 50, bottomPosition)
+      .font('Helvetica-Bold')
+      .text('Company\'s Bank Details', 50, position);
+    
+    position += 15;
+    doc
+      .fontSize(9)
       .font('Helvetica')
-      .text(
-        'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.',
-        50,
-        bottomPosition + 15,
-        { width: 350 }
-      );
-
+      .text('Bank Name: Kotak Mahindra Bank', 50, position)
+      .text('A/c No.: 2512756649', 50, position + 12)
+      .text('Branch & IFS Code: KKBK0004485', 50, position + 24);
+    
+    position += 60;
+    
+    // Declaration
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text('Declaration:', 50, position);
+    
+    position += 15;
+    doc
+      .fontSize(9)
+      .font('Helvetica')
+      .text('We declare that this invoice shows the actual price of the goods described and', 50, position)
+      .text('that all particulars are true and correct.', 50, position + 12);
+    
     // Company signature
     doc
-      .font('Helvetica-Bold')
-      .text(`for ${orderData.location?.name || 'SS ENTERPRISES'}`, 400, bottomPosition + 20)
+      .fontSize(9)
+      .font('Helvetica')
+      .text('for SS ENTERPRISES', 420, position)
       .moveDown()
+      .moveDown()
+      .text('Authorised Signatory', 420, position + 50);
+    
+    // Footer
+    doc
+      .fontSize(8)
       .font('Helvetica-Oblique')
-      .text('Authorised Signatory', 400, bottomPosition + 50);
+      .text('This is a Computer Generated Invoice', 50, 750, { align: 'center', width: 500 });
 
     // Footer note
     doc
