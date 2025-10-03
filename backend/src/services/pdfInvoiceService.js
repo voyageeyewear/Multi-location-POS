@@ -225,7 +225,7 @@ class PDFInvoiceService {
     
     doc
       .fontSize(10)
-      .font('Helvetica-Italic')
+      .font('Helvetica-Oblique')
       .text('Declaration:', 50, bottomPosition)
       .font('Helvetica')
       .text(
@@ -240,13 +240,13 @@ class PDFInvoiceService {
       .font('Helvetica-Bold')
       .text(`for ${orderData.location?.name || 'SS ENTERPRISES'}`, 400, bottomPosition + 20)
       .moveDown()
-      .font('Helvetica-Italic')
+      .font('Helvetica-Oblique')
       .text('Authorised Signatory', 400, bottomPosition + 50);
 
     // Footer note
     doc
       .fontSize(8)
-      .font('Helvetica-Italic')
+      .font('Helvetica-Oblique')
       .text(
         'This is a Computer Generated Invoice',
         50,
