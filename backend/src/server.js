@@ -66,6 +66,11 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static invoice PDFs
+const path = require('path');
+const invoicesPath = path.join(__dirname, '../invoices');
+app.use('/api/invoices', express.static(invoicesPath));
+
 // Logging
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined'));

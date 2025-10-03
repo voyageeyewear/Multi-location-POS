@@ -3774,10 +3774,10 @@ function App() {
               </div>
               
               {user?.role?.name === 'admin' && (
-                <div className="sales-filters">
-                  <div className="filter-group">
-                    <label>Filter Orders:</label>
-                    <div className="filter-buttons">
+              <div className="sales-filters">
+                <div className="filter-group">
+                  <label>Filter Orders:</label>
+                  <div className="filter-buttons">
                       {(() => {
                         // Use filtered stats for client users, regular stats for admin users
                         const displayStats = (user && user.role && (user.role.name === 'client' || user.role === 'client')) 
@@ -3786,57 +3786,57 @@ function App() {
                         
                         return (
                           <>
-                            <button 
-                              className={`filter-btn ${salesFilter === 'all' ? 'active' : ''}`}
-                              onClick={() => handleSalesFilterChange('all')}
-                            >
+                    <button 
+                      className={`filter-btn ${salesFilter === 'all' ? 'active' : ''}`}
+                      onClick={() => handleSalesFilterChange('all')}
+                    >
                               All Orders ({displayStats.totalOrders})
-                            </button>
-                            <button 
-                              className={`filter-btn ${salesFilter === 'completed' ? 'active' : ''}`}
-                              onClick={() => handleSalesFilterChange('completed')}
-                            >
+                    </button>
+                    <button 
+                      className={`filter-btn ${salesFilter === 'completed' ? 'active' : ''}`}
+                      onClick={() => handleSalesFilterChange('completed')}
+                    >
                               Completed ({displayStats.completedOrders})
-                            </button>
-                            <button 
-                              className={`filter-btn ${salesFilter === 'defected' ? 'active' : ''}`}
-                              onClick={() => handleSalesFilterChange('defected')}
-                            >
+                    </button>
+                    <button 
+                      className={`filter-btn ${salesFilter === 'defected' ? 'active' : ''}`}
+                      onClick={() => handleSalesFilterChange('defected')}
+                    >
                               Defected ({displayStats.defectedOrders})
-                            </button>
+                    </button>
                           </>
                         );
                       })()}
-                    </div>
-                  </div>
-
-                  <div className="filter-group">
-                    <label>Filter by City:</label>
-                    <select 
-                      className="city-filter-select"
-                      value={cityFilter}
-                      onChange={(e) => setCityFilter(e.target.value)}
-                    >
-                      <option value="all">All Cities ({getUniqueCities().length})</option>
-                      {getUniqueCities().map(city => (
-                        <option key={city} value={city}>
-                          {city} ({salesData?.orders?.filter(o => (o.location?.city || o.city) === city).length || 0})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="search-group">
-                    <label>Search:</label>
-                    <input
-                      type="text"
-                      placeholder="Search by name, order ID, invoice, or SKU..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="search-input"
-                    />
                   </div>
                 </div>
+
+                <div className="filter-group">
+                  <label>Filter by City:</label>
+                  <select 
+                    className="city-filter-select"
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                  >
+                    <option value="all">All Cities ({getUniqueCities().length})</option>
+                    {getUniqueCities().map(city => (
+                      <option key={city} value={city}>
+                        {city} ({salesData?.orders?.filter(o => (o.location?.city || o.city) === city).length || 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="search-group">
+                  <label>Search:</label>
+                  <input
+                    type="text"
+                    placeholder="Search by name, order ID, invoice, or SKU..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+              </div>
               )}
             </div>
 

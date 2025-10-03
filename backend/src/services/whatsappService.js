@@ -109,11 +109,21 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
       requestBody = {
         to: formattedPhone,
         channel: "whatsapp",
-        type: "template",
-        templateID: "invoice_notification_kiosk",
         content: {
           type: "template",
-          bodyValues: parameters
+          template: {
+            template_id: "invoice_notification_kiosk",
+            language: "en",
+            components: [
+              {
+                type: "body",
+                parameters: parameters.map(value => ({
+                  type: "text",
+                  text: value
+                }))
+              }
+            ]
+          }
         }
       };
     } else {
@@ -179,9 +189,57 @@ const sendInvoiceViaWhatsApp = async (orderData) => {
   }
 };
 
+/**
+ * Send document (PDF) via WhatsApp
+ */
+const sendDocumentViaWhatsApp = async (phoneNumber, documentUrl, fileName, caption = '') => {
+  try {
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    
+    console.log('📎 Sending document via WhatsApp to:', formattedPhone);
+    console.log('📄 Document URL:', documentUrl);
+
+    const requestBody = {
+      to: formattedPhone,
+      channel: "whatsapp",
+      content: {
+        type: "media",
+        media: {
+          url: documentUrl,
+          type: "document",
+          caption: caption || `Invoice: ${fileName}`
+        }
+      }
+    };
+
+    console.log('📦 Document request body:', JSON.stringify(requestBody, null, 2));
+
+    const response = await axios.post(KWIKENGAGE_API_URL, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': API_KEY
+      }
+    });
+
+    console.log('✅ Document sent successfully:', response.data);
+    return {
+      success: true,
+      messageId: response.data.messageId,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('❌ Error sending document:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data || error.message
+    };
+  }
+};
+
 module.exports = {
   sendWhatsAppMessage,
   sendInvoiceViaWhatsApp,
+  sendDocumentViaWhatsApp,
   generateInvoiceMessage
 };
 
