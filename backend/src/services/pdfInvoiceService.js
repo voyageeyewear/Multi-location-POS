@@ -262,7 +262,7 @@ class PDFInvoiceService {
 
     if (num === 0) return 'Zero';
 
-    const integerPart = Math.floor(num);
+    let integerPart = Math.floor(num);
     const decimalPart = Math.round((num - integerPart) * 100);
 
     let words = '';
