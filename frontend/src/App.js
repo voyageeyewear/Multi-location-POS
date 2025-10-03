@@ -2887,9 +2887,55 @@ function App() {
     // Send to Shopify asynchronously (don't wait for response)
     sendToShopify();
 
+    // Send invoice via WhatsApp asynchronously
+    const sendWhatsAppInvoice = async () => {
+      try {
+        console.log('📱 Sending invoice via WhatsApp to:', clientInfo.phone);
+        
+        const whatsappData = {
+          invoiceNumber: invoiceNumber,
+          customerName: clientInfo.name,
+          customerPhone: clientInfo.phone,
+          customerEmail: clientInfo.email,
+          customerAddress: clientInfo.address,
+          items: cart.map(item => ({
+            title: item.title,
+            quantity: item.quantity,
+            price: item.price,
+            discount: item.discount || 0
+          })),
+          subtotal: getCartSubtotal(),
+          tax: getCartGST(),
+          total: getCartTotalWithGST(),
+          gstBreakdown: getGSTBreakdown(),
+          paymentMethod: selectedPaymentMethod,
+          location: locationInfo,
+          timestamp: new Date().toISOString()
+        };
+
+        const response = await axios.post(`${API_URL}/api/whatsapp/send-invoice`, whatsappData, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        if (response.data.success) {
+          console.log('✅ WhatsApp invoice sent successfully!');
+          toast.success('Invoice sent via WhatsApp!');
+        }
+      } catch (error) {
+        console.error('❌ Error sending WhatsApp invoice:', error);
+        // Don't show error to user, just log it - sale is already completed
+        console.log('WhatsApp delivery failed, but sale was successful');
+      }
+    };
+
+    // Send WhatsApp invoice asynchronously (don't wait for response)
+    sendWhatsAppInvoice();
+
     // Show success message
     toast.success(`Sale completed successfully! Invoice: ${invoiceNumber}`);
-    alert(`Sale completed successfully!\nInvoice: ${invoiceNumber}\nLocation: ${locationInfo.city}\nSubtotal: ₹${getCartSubtotal().toLocaleString()}\nGST: ₹${getCartGST().toLocaleString()}\nTotal: ₹${getCartTotalWithGST().toLocaleString()}\nPayment: ${selectedPaymentMethod}\nCustomer: ${customerInfo.name}`);
+    alert(`Sale completed successfully!\nInvoice: ${invoiceNumber}\nLocation: ${locationInfo.city}\nSubtotal: ₹${getCartSubtotal().toLocaleString()}\nGST: ₹${getCartGST().toLocaleString()}\nTotal: ₹${getCartTotalWithGST().toLocaleString()}\nPayment: ${selectedPaymentMethod}\nCustomer: ${customerInfo.name}\n\n📱 Invoice will be sent to WhatsApp: ${clientInfo.phone}`);
 
     // Clear cart and reset payment method
     clearCart();

@@ -28,6 +28,7 @@ const invoiceRoutes = require('./routes/invoices');
 const backupRoutes = require('./routes/backups');
 const dataRoutes = require('./routes/data');
 const userLocationRoutes = require('./routes/userLocations');
+const whatsappRoutes = require('./routes/whatsapp');
 
 const app = express();
 const server = createServer(app);
@@ -152,6 +153,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/backups', backupRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/user-locations', authenticateToken, userLocationRoutes);
+app.use('/api/whatsapp', authenticateToken, whatsappRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
