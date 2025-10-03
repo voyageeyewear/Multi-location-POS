@@ -112,6 +112,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
         type: "template",
         templateID: "invoice_notification_kiosk",
         content: {
+          type: "template",
           bodyValues: parameters
         }
       };
