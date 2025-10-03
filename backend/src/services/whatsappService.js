@@ -111,6 +111,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
         channel: "whatsapp",
         type: "template",
         content: {
+          type: "template",
           template: {
             name: "invoice_notification_kiosk",
             language: "en",
@@ -132,6 +133,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
     }
 
     console.log('📱 Sending WhatsApp message to:', formattedPhone);
+    console.log('📦 Request body:', JSON.stringify(requestBody, null, 2));
 
     const response = await axios.post(KWIKENGAGE_API_URL, requestBody, {
       headers: {
