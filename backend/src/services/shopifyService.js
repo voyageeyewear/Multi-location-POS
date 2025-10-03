@@ -189,16 +189,16 @@ class ShopifyService {
       // Format order data for Shopify API
       const shopifyOrder = {
         line_items: orderData.items.map(item => ({
-          title: item.title,
-          price: item.price.toString(),
-          quantity: item.quantity,
-          sku: item.sku || '',
+          title: String(item.title || 'Product'),
+          price: String(item.price || 0),
+          quantity: parseInt(item.quantity) || 1,
+          sku: String(item.sku || ''),
           requires_shipping: false,
           taxable: true,
           tax_lines: item.gstRate ? [{
             title: `GST ${item.gstRate}%`,
-            price: (item.price * item.quantity * (item.gstRate / 100)).toFixed(2),
-            rate: (item.gstRate / 100).toFixed(4)
+            price: String((item.price * item.quantity * (item.gstRate / 100)).toFixed(2)),
+            rate: String((item.gstRate / 100).toFixed(4))
           }] : []
         })),
         customer: (() => {
@@ -244,21 +244,21 @@ class ShopifyService {
         fulfillment_status: null,
         note: orderData.notes || `Order created via POS System - Invoice: ${orderData.invoiceNumber}`,
         note_attributes: [
-          { name: 'POS Invoice Number', value: orderData.invoiceNumber },
-          { name: 'Payment Method', value: orderData.paymentMethod },
-          { name: 'Location', value: `${orderData.location?.city}, ${orderData.location?.state}` },
-          { name: 'Created By', value: orderData.createdBy }
-        ],
+          { name: 'POS Invoice Number', value: orderData.invoiceNumber || '' },
+          { name: 'Payment Method', value: orderData.paymentMethod || 'Cash' },
+          { name: 'Location', value: `${orderData.location?.city || 'N/A'}, ${orderData.location?.state || 'N/A'}` },
+          { name: 'Created By', value: typeof orderData.createdBy === 'string' ? orderData.createdBy : orderData.createdBy?.email || orderData.createdBy?.firstName || 'POS User' }
+        ].filter(attr => attr.value),  // Remove any attributes with empty values
         tags: 'POS, ' + (orderData.location?.city || ''),
         currency: 'INR',
-        total_price: orderData.total.toString(),
-        subtotal_price: orderData.subtotal.toString(),
-        total_tax: orderData.tax.toString(),
+        total_price: String(orderData.total || 0),
+        subtotal_price: String(orderData.subtotal || 0),
+        total_tax: String(orderData.tax || 0),
         transactions: [{
           kind: 'sale',
           status: 'success',
-          amount: orderData.total.toString(),
-          gateway: orderData.paymentMethod || 'cash'
+          amount: String(orderData.total || 0),
+          gateway: String(orderData.paymentMethod || 'cash')
         }],
         processed_at: new Date().toISOString(),
         send_receipt: false,

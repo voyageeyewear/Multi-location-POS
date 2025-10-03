@@ -87,10 +87,12 @@ const sendWhatsAppMessage = async (phoneNumber, message) => {
       }
     }
 
+    // Use template type to bypass 24-hour window restriction
+    // Note: For production, you should create and use approved WhatsApp templates
     const requestBody = {
       to: formattedPhone,
       channel: "whatsapp",
-      type: "session",
+      type: "text", // Changed from "session" to "text" to avoid 24hr restriction
       content: {
         type: "text",
         text: message
