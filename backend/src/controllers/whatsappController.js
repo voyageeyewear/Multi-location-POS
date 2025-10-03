@@ -1,5 +1,5 @@
 const whatsappService = require('../services/whatsappService');
-const pdfInvoiceService = require('../services/pdfInvoiceServiceHTML');
+const pdfInvoiceService = require('../services/pdfInvoiceService');
 
 /**
  * Send invoice via WhatsApp (Template Message + PDF Document)
