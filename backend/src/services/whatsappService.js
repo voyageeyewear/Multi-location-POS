@@ -4,6 +4,27 @@ const KWIKENGAGE_API_URL = 'https://api.kwikengage.ai/send-message/v2';
 const API_KEY = process.env.KWIKENGAGE_API_KEY || 'tjMB1OJa48acNEkUBjmU1QLzbOs215sY6oNTH5KpHCOVunDzpf45XaYqLuJ1';
 
 /**
+ * Format phone number to international format
+ */
+const formatPhoneNumber = (phoneNumber) => {
+  // Ensure phone number is in correct format (remove spaces, add country code if needed)
+  let formattedPhone = phoneNumber.replace(/\s+/g, '');
+  
+  // If phone doesn't start with country code, assume India (+91)
+  if (!formattedPhone.startsWith('+')) {
+    if (formattedPhone.startsWith('91')) {
+      formattedPhone = '+' + formattedPhone;
+    } else if (formattedPhone.length === 10) {
+      formattedPhone = '+91' + formattedPhone;
+    } else {
+      formattedPhone = '+' + formattedPhone;
+    }
+  }
+  
+  return formattedPhone;
+};
+
+/**
  * Generate invoice text message
  */
 const generateInvoiceMessage = (orderData) => {
@@ -73,20 +94,7 @@ const generateInvoiceMessage = (orderData) => {
  */
 const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
   try {
-    // Ensure phone number is in correct format (remove spaces, add country code if needed)
-    let formattedPhone = phoneNumber.replace(/\s+/g, '');
-    
-    // If phone doesn't start with country code, assume India (+91)
-    if (!formattedPhone.startsWith('+')) {
-      if (formattedPhone.startsWith('91')) {
-        formattedPhone = '+' + formattedPhone;
-      } else if (formattedPhone.length === 10) {
-        formattedPhone = '+91' + formattedPhone;
-      } else {
-        formattedPhone = '+' + formattedPhone;
-      }
-    }
-
+    const formattedPhone = formatPhoneNumber(phoneNumber);
     let requestBody;
 
     // If orderData is provided, use the approved template
