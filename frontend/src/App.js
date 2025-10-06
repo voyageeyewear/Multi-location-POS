@@ -1815,26 +1815,37 @@ function App() {
       }
 
       const data = await response.json();
-      console.log('POS Backend Shopify API Response:', data);
+      console.log('🔍 FULL Shopify API Response:', JSON.stringify(data, null, 2));
 
       if (data.success && data.data && data.data.products && data.data.products.length > 0) {
+        console.log('📦 Total products received:', data.data.products.length);
+        console.log('🖼️  First product raw data:', JSON.stringify(data.data.products[0], null, 2));
+        
         // Transform Shopify products to POS format
-        const transformedProducts = data.data.products.map(product => {
+        const transformedProducts = data.data.products.map((product, index) => {
           const variant = product.variants && product.variants[0];
           
           // Extract image URL - handle different image formats
           let imageUrl = '🕶️'; // Default emoji fallback
           
+          console.log(`\n🔍 Processing product ${index + 1}: ${product.title}`);
+          console.log('  - Has images array?', !!product.images, 'Length:', product.images?.length);
+          console.log('  - Has image field?', !!product.image);
+          console.log('  - Raw images:', product.images);
+          console.log('  - Raw image:', product.image);
+          
           if (product.images && product.images.length > 0) {
             const firstImage = product.images[0];
-            imageUrl = firstImage.src || firstImage.url || imageUrl;
-            console.log(`✅ Image found for ${product.title}:`, imageUrl);
+            console.log('  - First image object:', firstImage);
+            imageUrl = firstImage.src || firstImage.url || firstImage;
+            console.log(`  ✅ Image extracted:`, imageUrl);
           } else if (product.image) {
             // Some Shopify responses have a single image field
-            imageUrl = product.image.src || product.image.url || product.image;
-            console.log(`✅ Single image found for ${product.title}:`, imageUrl);
+            console.log('  - Single image object:', product.image);
+            imageUrl = typeof product.image === 'string' ? product.image : (product.image.src || product.image.url || product.image);
+            console.log(`  ✅ Single image extracted:`, imageUrl);
           } else {
-            console.warn(`⚠️  No image found for ${product.title}`, product);
+            console.warn(`  ⚠️  NO IMAGE FOUND - product will show emoji`);
           }
           
          // Determine product type and GST rate based on product title/tags
