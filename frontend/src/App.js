@@ -2162,20 +2162,31 @@ function App() {
 
       toast.loading('Sending invoice via WhatsApp...', { id: 'whatsapp-send' });
 
-      // Prepare order data for WhatsApp
-      const whatsappData = {
-        invoiceNumber: order.id,
-        customerName: order.customerName || 'Customer',
-        customerPhone: phone,
-        items: order.items || [],
-        subtotal: order.subtotal || order.total,
-        tax: order.tax || 0,
-        total: order.total,
-        paymentMethod: order.paymentMethod || 'Cash',
-        location: order.location || { name: 'Store', city: order.city, state: order.state },
-        timestamp: order.createdAt || order.date || new Date().toISOString(),
-        gstBreakdown: order.gstBreakdown || []
-      };
+        // Prepare order data for WhatsApp
+        const whatsappData = {
+          invoiceNumber: order.id,
+          customerName: order.customerName || 'Customer',
+          customerPhone: phone,
+          items: (order.items || []).map(item => ({
+            title: item.title || item.name || 'Product',
+            name: item.title || item.name || 'Product',
+            quantity: item.quantity || 1,
+            price: item.price || 0,
+            sku: item.sku || 'N/A',
+            productType: item.productType || 'Product',
+            hsnCode: item.hsnCode || '90041000',
+            gstRate: item.gstRate || 18,
+            discountAmount: item.discountAmount || 0,
+            discountPercentage: item.discountPercentage || 0
+          })),
+          subtotal: order.subtotal || order.total,
+          tax: order.tax || 0,
+          total: order.total,
+          paymentMethod: order.paymentMethod || 'Cash',
+          location: order.location || { name: 'Store', city: order.city, state: order.state },
+          timestamp: order.createdAt || order.date || new Date().toISOString(),
+          gstBreakdown: order.gstBreakdown || []
+        };
 
       // Send to backend
       const token = Cookies.get('token') || 'demo-token';
@@ -2975,10 +2986,16 @@ function App() {
           customerEmail: clientInfo.email,
           customerAddress: clientInfo.address,
           items: cart.map(item => ({
-            title: item.title,
+            title: item.name || item.title,
+            name: item.name || item.title,
             quantity: item.quantity,
             price: item.price,
-            discount: item.discount || 0
+            sku: item.sku || 'N/A',
+            productType: item.productType,
+            hsnCode: item.hsnCode,
+            gstRate: item.gstRate,
+            discountAmount: item.discountAmount || 0,
+            discountPercentage: item.discountPercentage || 0
           })),
           subtotal: getCartSubtotal(),
           tax: getCartGST(),

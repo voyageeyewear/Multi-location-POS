@@ -226,19 +226,78 @@ class PDFInvoiceService {
       .lineTo(rightMargin, tableTop + 15)
       .stroke();
 
-    // Table Rows
+    // Table Rows with dynamic height for text wrapping
     doc.fontSize(9).font('Helvetica');
     let currentY = tableTop + 25;
-    const rowHeight = 20;
+    const baseRowHeight = 20;
+    const lineHeight = 12;
 
     orderData.items.forEach((item, index) => {
-      const itemTotal = (item.price * item.quantity).toFixed(2);
+      // Calculate price after discount
+      const originalPrice = item.price || 0;
+      const discountAmount = item.discountAmount || 0;
+      const discountPercentage = item.discountPercentage || 0;
       
-      doc.text((index + 1).toString(), col1X, currentY);
-      doc.text(item.title || 'Product', col2X, currentY, { width: 260 });
-      doc.text(`${item.quantity} pcs`, col3X, currentY);
-      doc.text(`₹${item.price.toFixed(2)}`, col4X, currentY);
-      doc.text(`₹${itemTotal}`, col5X - 70, currentY, { width: 70, align: 'right' });
+      // Calculate final price (price already includes discount if any)
+      const finalPrice = originalPrice;
+      const itemTotal = (finalPrice * item.quantity).toFixed(2);
+      
+      // Calculate text height for product name (with wrapping)
+      const productName = item.title || item.name || 'Product';
+      const descriptionWidth = 260;
+      const textHeight = doc.heightOfString(productName, { 
+        width: descriptionWidth,
+        lineGap: 2
+      });
+      
+      // Dynamic row height based on text
+      const rowHeight = Math.max(baseRowHeight, textHeight + 6);
+      
+      // Row number
+      doc.text((index + 1).toString(), col1X, currentY, { width: 40 });
+      
+      // Product name with text wrapping
+      doc.text(productName, col2X, currentY, { 
+        width: descriptionWidth,
+        lineGap: 2
+      });
+      
+      // Quantity
+      doc.text(`${item.quantity} pcs`, col3X, currentY, { width: 60 });
+      
+      // Rate (with discount indication if applicable)
+      if (discountAmount > 0 || discountPercentage > 0) {
+        // Show original price struck through
+        const originalPriceY = currentY;
+        doc.fontSize(8);
+        doc.text(`₹${(originalPrice + (discountAmount / item.quantity)).toFixed(2)}`, col4X, originalPriceY, { 
+          strike: true,
+          width: 60 
+        });
+        
+        // Show discounted price
+        doc.fontSize(9).fillColor('#059669').font('Helvetica-Bold');
+        doc.text(`₹${finalPrice.toFixed(2)}`, col4X, originalPriceY + 10, { width: 60 });
+        doc.fillColor('#000000').font('Helvetica');
+        
+        // Show discount percentage if available
+        if (discountPercentage > 0) {
+          doc.fontSize(7).fillColor('#dc2626');
+          doc.text(`(${discountPercentage}% OFF)`, col4X, originalPriceY + 20, { width: 60 });
+          doc.fillColor('#000000');
+        }
+        doc.fontSize(9);
+      } else {
+        doc.text(`₹${finalPrice.toFixed(2)}`, col4X, currentY, { width: 60 });
+      }
+      
+      // Amount (right-aligned)
+      doc.font('Helvetica-Bold');
+      doc.text(`₹${itemTotal}`, col5X - 70, currentY, { 
+        width: 70, 
+        align: 'right' 
+      });
+      doc.font('Helvetica');
       
       currentY += rowHeight;
     });
