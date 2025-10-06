@@ -92,7 +92,7 @@ const generateInvoiceMessage = (orderData) => {
 /**
  * Send WhatsApp message via Kwikengage API using Template
  */
-const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
+const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUrl = null) => {
   try {
     const formattedPhone = formatPhoneNumber(phoneNumber);
     let requestBody;
@@ -114,6 +114,31 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
         orderData.paymentMethod || 'Cash'                              // {{5}}
       ];
 
+      const components = [
+        {
+          type: "body",
+          parameters: parameters.map(value => ({
+            type: "text",
+            text: value
+          }))
+        }
+      ];
+
+      // Add header with PDF document if provided
+      if (pdfUrl) {
+        console.log('📎 Adding PDF document to template header:', pdfUrl);
+        components.unshift({
+          type: "header",
+          parameters: [{
+            type: "document",
+            document: {
+              link: pdfUrl,
+              filename: `${orderData.invoiceNumber}.pdf`
+            }
+          }]
+        });
+      }
+
       requestBody = {
         to: formattedPhone,
         channel: "whatsapp",
@@ -122,15 +147,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
           template: {
             template_id: "invoice_notification_kiosk",
             language: "en",
-            components: [
-              {
-                type: "body",
-                parameters: parameters.map(value => ({
-                  type: "text",
-                  text: value
-                }))
-              }
-            ]
+            components: components
           }
         }
       };
@@ -173,9 +190,9 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null) => {
 };
 
 /**
- * Send invoice via WhatsApp using Template
+ * Send invoice via WhatsApp using Template (with optional PDF)
  */
-const sendInvoiceViaWhatsApp = async (orderData) => {
+const sendInvoiceViaWhatsApp = async (orderData, pdfUrl = null) => {
   try {
     const { customerPhone } = orderData;
 
@@ -183,9 +200,8 @@ const sendInvoiceViaWhatsApp = async (orderData) => {
       throw new Error('Customer phone number is required');
     }
 
-    // Send via WhatsApp using template
-    // Pass orderData as third parameter to trigger template usage
-    const result = await sendWhatsAppMessage(customerPhone, null, orderData);
+    // Send via WhatsApp using template (with PDF if provided)
+    const result = await sendWhatsAppMessage(customerPhone, null, orderData, pdfUrl);
 
     return result;
   } catch (error) {
