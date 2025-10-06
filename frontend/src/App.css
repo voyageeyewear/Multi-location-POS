@@ -4880,11 +4880,33 @@ body {
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
-.download-invoice-btn:active, .preview-invoice-btn:active {
+.send-whatsapp-btn {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(37, 211, 102, 0.2);
+}
+
+.send-whatsapp-btn:hover {
+  background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 211, 102, 0.3);
+}
+
+.download-invoice-btn:active, .preview-invoice-btn:active, .send-whatsapp-btn:active {
   transform: translateY(0);
 }
 
-.download-invoice-btn:disabled, .preview-invoice-btn:disabled {
+.download-invoice-btn:disabled, .preview-invoice-btn:disabled, .send-whatsapp-btn:disabled {
   background: #9ca3af;
   cursor: not-allowed;
   transform: none;

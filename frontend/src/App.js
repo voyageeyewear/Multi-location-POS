@@ -2136,6 +2136,74 @@ function App() {
     }
   };
 
+  const sendInvoiceWhatsApp = async (order) => {
+    try {
+      // Prompt for phone number
+      const phoneInput = prompt(
+        'Enter customer WhatsApp number (with country code):\nExample: +918076616747',
+        order.customerPhone || '+91'
+      );
+      
+      if (!phoneInput) {
+        return; // User cancelled
+      }
+
+      // Validate phone number format
+      const phone = phoneInput.trim();
+      if (!phone.startsWith('+')) {
+        toast.error('Phone number must start with + and country code (e.g., +91)');
+        return;
+      }
+
+      if (phone.length < 12) {
+        toast.error('Please enter a valid phone number with country code');
+        return;
+      }
+
+      toast.loading('Sending invoice via WhatsApp...', { id: 'whatsapp-send' });
+
+      // Prepare order data for WhatsApp
+      const whatsappData = {
+        invoiceNumber: order.id,
+        customerName: order.customerName || 'Customer',
+        customerPhone: phone,
+        items: order.items || [],
+        subtotal: order.subtotal || order.total,
+        tax: order.tax || 0,
+        total: order.total,
+        paymentMethod: order.paymentMethod || 'Cash',
+        location: order.location || { name: 'Store', city: order.city, state: order.state },
+        timestamp: order.createdAt || order.date || new Date().toISOString(),
+        gstBreakdown: order.gstBreakdown || []
+      };
+
+      // Send to backend
+      const token = Cookies.get('token') || 'demo-token';
+      const response = await axios.post(
+        `${API_URL}/api/whatsapp/send-invoice`,
+        whatsappData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        toast.success('✅ Invoice sent successfully via WhatsApp!', { id: 'whatsapp-send' });
+        console.log('WhatsApp sent:', response.data);
+      } else {
+        toast.error(`Failed: ${response.data.message || 'Unknown error'}`, { id: 'whatsapp-send' });
+        console.error('WhatsApp send failed:', response.data);
+      }
+
+    } catch (error) {
+      console.error('Error sending WhatsApp:', error);
+      toast.error(`Failed to send WhatsApp: ${error.response?.data?.message || error.message}`, { id: 'whatsapp-send' });
+    }
+  };
+
   const generateInvoiceHTML = (order) => {
     const gstBreakdown = order.gstBreakdown || [];
     const taxableAmount = order.subtotal || order.total;
@@ -3460,6 +3528,13 @@ function App() {
                                   title="Download Invoice PDF"
                                 >
                                   📥 Download
+                                </button>
+                                <button 
+                                  className="send-whatsapp-btn"
+                                  onClick={() => sendInvoiceWhatsApp(safeOrder)}
+                                  title="Send Invoice via WhatsApp"
+                                >
+                                  📱 Send WhatsApp
                                 </button>
                                 </div>
                               </div>
