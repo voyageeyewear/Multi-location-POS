@@ -4527,7 +4527,16 @@ function App() {
                         <div key={product.id} className="product-item">
                           <div className="product-image">
                             {product.image.startsWith('http') ? (
-                              <img src={product.image} alt={product.name} />
+                              <img 
+                                src={product.image} 
+                                alt={product.name}
+                                crossOrigin="anonymous"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  e.target.parentElement.innerHTML = '🕶️';
+                                }}
+                              />
                             ) : (
                               product.image
                             )}
