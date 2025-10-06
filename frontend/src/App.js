@@ -1821,7 +1821,21 @@ function App() {
         // Transform Shopify products to POS format
         const transformedProducts = data.data.products.map(product => {
           const variant = product.variants && product.variants[0];
-          const image = product.images && product.images[0];
+          
+          // Extract image URL - handle different image formats
+          let imageUrl = '🕶️'; // Default emoji fallback
+          
+          if (product.images && product.images.length > 0) {
+            const firstImage = product.images[0];
+            imageUrl = firstImage.src || firstImage.url || imageUrl;
+            console.log(`✅ Image found for ${product.title}:`, imageUrl);
+          } else if (product.image) {
+            // Some Shopify responses have a single image field
+            imageUrl = product.image.src || product.image.url || product.image;
+            console.log(`✅ Single image found for ${product.title}:`, imageUrl);
+          } else {
+            console.warn(`⚠️  No image found for ${product.title}`, product);
+          }
           
          // Determine product type and GST rate based on product title/tags
          const isSunglasses = product.title.toLowerCase().includes('sunglasses') ||
@@ -1835,9 +1849,6 @@ function App() {
                              product.tags?.some(tag => tag.toLowerCase().includes('eyeglasses')) ||
                              product.tags?.some(tag => tag.toLowerCase().includes('frames'));
 
-         // Debug logging
-         console.log(`Product: ${product.title}, isSunglasses: ${isSunglasses}, isEyeglasses: ${isEyeglasses}`);
-
          const productType = isEyeglasses ? 'eyeglasses' : (isSunglasses ? 'sunglasses' : 'sunglasses');
          const hsnCode = isEyeglasses ? '90031900' : '90041000';
          const gstRate = isEyeglasses ? 5 : 18;
@@ -1847,7 +1858,7 @@ function App() {
             name: product.title,
             description: product.body_html ? product.body_html.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : 'Premium eyewear product',
             price: variant ? parseFloat(variant.price) : 0,
-            image: image ? image.src : '🕶️',
+            image: imageUrl,
             vendor: product.vendor || 'Voyage Eyewear',
             sku: variant ? variant.sku : '',
             inventory: variant ? (variant.inventory_quantity || 0) : 0,
