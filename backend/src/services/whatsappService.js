@@ -99,7 +99,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
 
     // If orderData is provided, use the approved template
     if (orderData) {
-      console.log('📱 Using WhatsApp template: invoice_with_pdf_kiosk (TESTING - PDF header enabled)');
+      console.log('📱 Using WhatsApp template: invoice_notification_kiosk (OLD WORKING - no PDF)');
       
       // Prepare template parameters
       const parameters = [
@@ -114,50 +114,35 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
         orderData.paymentMethod || 'Cash'                              // {{5}}
       ];
 
-      // Build components array
-      const components = [];
-
-      // Add header with PDF document if provided
-      if (pdfUrl) {
-        console.log('📎 Adding PDF document to template header:', pdfUrl);
-        components.push({
-          type: "header",
-          parameters: [{
-            type: "document",
-            document: {
-              link: pdfUrl,
-              filename: `${orderData.invoiceNumber}.pdf`
-            }
-          }]
-        });
-      } else {
-        console.log('⚠️  No PDF URL provided, sending template without header');
-      }
-
-      // Add body with text parameters
-      components.push({
-        type: "body",
-        parameters: parameters.map(value => ({
-          type: "text",
-          text: value
-        }))
-      });
-
-      // Template message with PDF support
+      // Template message (using old working template without PDF header)
       requestBody = {
         to: formattedPhone,
         channel: "whatsapp",
         content: {
           type: "template",
           template: {
-            template_id: "invoice_with_pdf_kiosk",
+            template_id: "invoice_notification_kiosk",
             language: "en",
-            components: components
+            components: [
+              {
+                type: "body",
+                parameters: parameters.map(value => ({
+                  type: "text",
+                  text: value
+                }))
+              }
+            ]
           }
         }
       };
       
-      console.log('📤 Sending WhatsApp message with', components.length, 'components (header+body)');
+      // Log PDF status
+      if (pdfUrl) {
+        console.log('📎 PDF generated at:', pdfUrl);
+        console.log('⚠️  Using old template - PDF not attached (new template not activated yet)');
+      }
+      
+      console.log('📤 Sending WhatsApp template message');
       console.log('🔍 Full request body:', JSON.stringify(requestBody, null, 2));
     } else {
       // Fallback to text message (for non-invoice messages)
