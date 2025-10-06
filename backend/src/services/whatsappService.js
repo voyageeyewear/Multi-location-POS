@@ -99,7 +99,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
 
     // If orderData is provided, use the approved template
     if (orderData) {
-      console.log('📱 Using WhatsApp template: invoice_with_pdf_kiosk');
+      console.log('📱 Using WhatsApp template: invoice_notification_kiosk (WORKING - no PDF)');
       
       // Prepare template parameters
       const parameters = [
@@ -114,46 +114,33 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
         orderData.paymentMethod || 'Cash'                              // {{5}}
       ];
 
-      // Build components array
-      const components = [];
-
-      // Add header with PDF document if provided
-      if (pdfUrl) {
-        console.log('📎 Adding PDF document to template header:', pdfUrl);
-        components.push({
-          type: "header",
-          parameters: [{
-            type: "document",
-            document: {
-              link: pdfUrl,
-              filename: `${orderData.invoiceNumber}.pdf`
-            }
-          }]
-        });
-      }
-
-      // Add body with text parameters
-      components.push({
-        type: "body",
-        parameters: parameters.map(value => ({
-          type: "text",
-          text: value
-        }))
-      });
-
-      // Template message with PDF support
+      // Template message (without PDF - using working template)
       requestBody = {
         to: formattedPhone,
         channel: "whatsapp",
         content: {
           type: "template",
           template: {
-            template_id: "invoice_with_pdf_kiosk",
+            template_id: "invoice_notification_kiosk",
             language: "en",
-            components: components
+            components: [
+              {
+                type: "body",
+                parameters: parameters.map(value => ({
+                  type: "text",
+                  text: value
+                }))
+              }
+            ]
           }
         }
       };
+      
+      // Log PDF status for debugging
+      if (pdfUrl) {
+        console.log('📎 PDF generated at:', pdfUrl);
+        console.log('⚠️  Using old template (no PDF header) - waiting for invoice_with_pdf_kiosk to be fully activated');
+      }
     } else {
       // Fallback to text message (for non-invoice messages)
       requestBody = {
