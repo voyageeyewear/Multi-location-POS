@@ -114,31 +114,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
         orderData.paymentMethod || 'Cash'                              // {{5}}
       ];
 
-      const components = [
-        {
-          type: "body",
-          parameters: parameters.map(value => ({
-            type: "text",
-            text: value
-          }))
-        }
-      ];
-
-      // Add header with PDF document if provided
-      if (pdfUrl) {
-        console.log('📎 Adding PDF document to template header:', pdfUrl);
-        components.unshift({
-          type: "header",
-          parameters: [{
-            type: "document",
-            document: {
-              link: pdfUrl,
-              filename: `${orderData.invoiceNumber}.pdf`
-            }
-          }]
-        });
-      }
-
+      // Template message (without PDF - template doesn't support header)
       requestBody = {
         to: formattedPhone,
         channel: "whatsapp",
@@ -147,10 +123,25 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
           template: {
             template_id: "invoice_notification_kiosk",
             language: "en",
-            components: components
+            components: [
+              {
+                type: "body",
+                parameters: parameters.map(value => ({
+                  type: "text",
+                  text: value
+                }))
+              }
+            ]
           }
         }
       };
+      
+      // Log PDF URL for debugging but don't send yet (24-hour window issue)
+      if (pdfUrl) {
+        console.log('📎 PDF generated at:', pdfUrl);
+        console.log('⚠️  Note: Cannot send PDF due to WhatsApp 24-hour session window');
+        console.log('💡 Solution: Customer needs to reply to enable PDF sending, OR create new template with header support');
+      }
     } else {
       // Fallback to text message (for non-invoice messages)
       requestBody = {
