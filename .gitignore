@@ -99,6 +99,10 @@ dist/
 uploads/
 backups/
 
+# Generated invoices (PDFs)
+invoices/
+backend/invoices/
+
 # Temporary files
 tmp/
 temp/
