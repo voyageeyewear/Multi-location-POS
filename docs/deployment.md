@@ -57,6 +57,14 @@ SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com
 SHOPIFY_API_KEY=your_api_key
 SHOPIFY_API_SECRET=your_api_secret
 SHOPIFY_ACCESS_TOKEN=your_access_token
+
+# WhatsApp Integration (Kwikengage)
+KWIKENGAGE_API_KEY=your_kwikengage_api_key
+
+# Backend URL for WhatsApp PDF delivery
+# For Railway: https://your-app-name.up.railway.app
+# For local with ngrok: https://your-ngrok-url.ngrok-free.app
+BACKEND_URL=https://your-backend-url.com
 ```
 
 ### 3. Frontend Setup
