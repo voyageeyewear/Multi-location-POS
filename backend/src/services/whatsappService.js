@@ -99,7 +99,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
 
     // If orderData is provided, use the approved template
     if (orderData) {
-      console.log('📱 Using WhatsApp template: invoice_notification_kiosk');
+      console.log('📱 Using WhatsApp template: invoice_with_pdf_kiosk');
       
       // Prepare template parameters
       const parameters = [
@@ -114,34 +114,46 @@ const sendWhatsAppMessage = async (phoneNumber, message, orderData = null, pdfUr
         orderData.paymentMethod || 'Cash'                              // {{5}}
       ];
 
-      // Template message (without PDF - template doesn't support header)
+      // Build components array
+      const components = [];
+
+      // Add header with PDF document if provided
+      if (pdfUrl) {
+        console.log('📎 Adding PDF document to template header:', pdfUrl);
+        components.push({
+          type: "header",
+          parameters: [{
+            type: "document",
+            document: {
+              link: pdfUrl,
+              filename: `${orderData.invoiceNumber}.pdf`
+            }
+          }]
+        });
+      }
+
+      // Add body with text parameters
+      components.push({
+        type: "body",
+        parameters: parameters.map(value => ({
+          type: "text",
+          text: value
+        }))
+      });
+
+      // Template message with PDF support
       requestBody = {
         to: formattedPhone,
         channel: "whatsapp",
         content: {
           type: "template",
           template: {
-            template_id: "invoice_notification_kiosk",
+            template_id: "invoice_with_pdf_kiosk",
             language: "en",
-            components: [
-              {
-                type: "body",
-                parameters: parameters.map(value => ({
-                  type: "text",
-                  text: value
-                }))
-              }
-            ]
+            components: components
           }
         }
       };
-      
-      // Log PDF URL for debugging but don't send yet (24-hour window issue)
-      if (pdfUrl) {
-        console.log('📎 PDF generated at:', pdfUrl);
-        console.log('⚠️  Note: Cannot send PDF due to WhatsApp 24-hour session window');
-        console.log('💡 Solution: Customer needs to reply to enable PDF sending, OR create new template with header support');
-      }
     } else {
       // Fallback to text message (for non-invoice messages)
       requestBody = {
