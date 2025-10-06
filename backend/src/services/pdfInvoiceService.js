@@ -17,8 +17,11 @@ class PDFInvoiceService {
         const fileName = `${orderData.invoiceNumber}.pdf`;
         const filePath = path.join(this.invoicesDir, fileName);
         
-        // Create PDF document
-        const doc = new PDFDocument({ margin: 50 });
+        // Create PDF document with proper margins
+        const doc = new PDFDocument({ 
+          margin: 40,
+          size: 'A4'
+        });
         
         // Pipe to file
         const writeStream = fs.createWriteStream(filePath);
@@ -51,274 +54,292 @@ class PDFInvoiceService {
   }
 
   generateHeader(doc, orderData) {
-    // Top section - Company name with "V" logo
+    const pageWidth = doc.page.width;
+    const leftMargin = 50;
+    const rightMargin = pageWidth - 50;
+    
+    // Company name with "V" logo
     doc
-      .fontSize(24)
+      .fontSize(28)
       .font('Helvetica-Bold')
-      .text('V', 50, 45)
-      .fontSize(18)
-      .text('  SS ENTERPRISES', 70, 48);
+      .text('V', leftMargin, 45, { continued: true })
+      .fontSize(20)
+      .text('  SS ENTERPRISES', { continued: false });
 
     // Company details (left side)
     doc
       .fontSize(9)
       .font('Helvetica')
-      .text('C-7/31, Sector-7, Rohini Delhi-110085', 50, 75)
-      .text('GSTIN/UIN: 08AGFPK7804C1ZQ', 50, 88)
-      .text('E-Mail: ssenterprise255@gmail.com', 50, 101);
+      .text('C-7/31, Sector-7, Rohini Delhi-110085', leftMargin, 78)
+      .text('GSTIN/UIN: 08AGFPK7804C1ZQ', leftMargin, 91)
+      .text('E-Mail: ssenterprise255@gmail.com', leftMargin, 104);
 
-    // Invoice details box (right side)
-    doc
-      .rect(350, 40, 200, 100)
-      .stroke();
+    // Invoice details box (right side) - properly aligned
+    const boxX = 340;
+    const boxY = 40;
+    const boxWidth = 210;
+    const boxHeight = 115;
     
     doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .text('Invoice No:', 360, 50)
-      .font('Helvetica')
-      .text(orderData.invoiceNumber || 'DELHVOYA-00001', 450, 50)
-      
-      .font('Helvetica-Bold')
-      .text('e-Way Bill No.:', 360, 65)
-      .font('Helvetica')
-      .text('TT1866418', 450, 65)
-      
-      .font('Helvetica-Bold')
-      .text('Dated:', 360, 80)
-      .font('Helvetica')
-      .text(new Date(orderData.timestamp).toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      }), 450, 80)
-      
-      .font('Helvetica-Bold')
-      .text('Delivery Note:', 360, 95)
-      .font('Helvetica')
-      .text('Mode/Terms of Payment', 450, 95)
-      
-      .font('Helvetica-Bold')
-      .text('Reference No. & Date:', 360, 110)
-      .font('Helvetica')
-      .text('Other References', 450, 110)
-      
-      .font('Helvetica-Bold')
-      .text('Buyer\'s Order No.:', 360, 125)
-      .moveDown();
+      .rect(boxX, boxY, boxWidth, boxHeight)
+      .stroke();
+    
+    // Invoice details with proper alignment
+    const labelX = boxX + 10;
+    const valueX = boxX + 100;
+    let currentY = boxY + 12;
+    const lineHeight = 15;
+    
+    doc.fontSize(9);
+    
+    // Invoice No
+    doc.font('Helvetica-Bold').text('Invoice No:', labelX, currentY);
+    doc.font('Helvetica').text(orderData.invoiceNumber || 'MUMBVOYA-00001', valueX, currentY);
+    currentY += lineHeight;
+    
+    // e-Way Bill No
+    doc.font('Helvetica-Bold').text('e-Way Bill No.:', labelX, currentY);
+    doc.font('Helvetica').text('TT1866418', valueX, currentY);
+    currentY += lineHeight;
+    
+    // Dated
+    doc.font('Helvetica-Bold').text('Dated:', labelX, currentY);
+    doc.font('Helvetica').text(new Date(orderData.timestamp).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }), valueX, currentY);
+    currentY += lineHeight;
+    
+    // Delivery Note
+    doc.font('Helvetica-Bold').text('Delivery Note:', labelX, currentY);
+    doc.font('Helvetica').text('Mode/Terms of Payment', valueX, currentY, { width: 100 });
+    currentY += lineHeight;
+    
+    // Reference No
+    doc.font('Helvetica-Bold').text('Reference No. & Date:', labelX, currentY, { width: 85 });
+    doc.font('Helvetica').text('Other References', valueX, currentY);
+    currentY += lineHeight;
+    
+    // Buyer's Order No
+    doc.font('Helvetica-Bold').text('Buyer\'s Order No.:', labelX, currentY);
   }
 
   generateCustomerInformation(doc, orderData) {
-    const startY = 160;
+    const startY = 175;
+    const leftBoxX = 50;
+    const rightBoxX = 305;
+    const boxWidth = 245;
+    const boxHeight = 105;
     
-    // Draw boxes for Consignee and Buyer sections
+    // Draw boxes
     doc
-      .rect(50, startY, 250, 100)
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .rect(leftBoxX, startY, boxWidth, boxHeight)
       .stroke()
-      .rect(300, startY, 250, 100)
+      .rect(rightBoxX, startY, boxWidth, boxHeight)
       .stroke();
+
+    const padding = 8;
+    let leftY = startY + padding;
+    let rightY = startY + padding;
+    const lineHeight = 13;
 
     // Consignee (Ship to) - Left side
     doc
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('Consignee (Ship to)', 55, startY + 5)
+      .text('Consignee (Ship to)', leftBoxX + padding, leftY);
+    leftY += lineHeight;
+    
+    doc
       .fontSize(9)
       .font('Helvetica')
-      .text(orderData.customerName || 'Dhruv', 55, startY + 20)
-      .text(orderData.location?.city || 'Delhi', 55, startY + 33)
-      .text(orderData.location?.city ? `${orderData.location.city}, ${orderData.location.city}` : 'Delhi, Delhi', 55, startY + 46)
-      .text(`GSTIN/UIN: ${orderData.location?.gstNumber || 'DELHIWIHDSGKJF'}`, 55, startY + 59)
-      .text(`State Name: ${orderData.location?.city || 'Delhi'}, Code: 08`, 55, startY + 72);
+      .text(orderData.customerName || 'Dhruv', leftBoxX + padding, leftY);
+    leftY += lineHeight;
+    
+    doc.text(orderData.location?.city || 'Mumbai', leftBoxX + padding, leftY);
+    leftY += lineHeight;
+    
+    doc.text(`${orderData.location?.city || 'Mumbai'}, ${orderData.location?.city || 'Mumbai'}`, leftBoxX + padding, leftY);
+    leftY += lineHeight;
+    
+    doc.text('GSTIN/UIN: N/A', leftBoxX + padding, leftY);
+    leftY += lineHeight;
+    
+    doc.text(`State Name: ${orderData.location?.city || 'Mumbai'}, Code: 08`, leftBoxX + padding, leftY);
 
     // Buyer (Bill to) - Right side
     doc
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('Buyer (Bill to)', 305, startY + 5)
+      .text('Buyer (Bill to)', rightBoxX + padding, rightY);
+    rightY += lineHeight;
+    
+    doc
       .fontSize(9)
       .font('Helvetica')
-      .text(orderData.customerName || 'Dhruv', 305, startY + 20)
-      .text(orderData.location?.city || 'Delhi', 305, startY + 33)
-      .text(orderData.location?.city ? `${orderData.location.city}, ${orderData.location.city}` : 'Delhi, Delhi', 305, startY + 46)
-      .text(`Buyer's Order No.:`, 305, startY + 59)
-      .text('Dated:', 305, startY + 72);
+      .text(orderData.customerName || 'Dhruv', rightBoxX + padding, rightY);
+    rightY += lineHeight;
+    
+    doc.text(orderData.location?.city || 'Mumbai', rightBoxX + padding, rightY);
+    rightY += lineHeight;
+    
+    doc.text(`${orderData.location?.city || 'Mumbai'}, ${orderData.location?.city || 'Mumbai'}`, rightBoxX + padding, rightY);
+    rightY += lineHeight;
+    
+    doc.text('Buyer\'s Order No.:', rightBoxX + padding, rightY);
+    rightY += lineHeight;
+    
+    doc.text('Dated:', rightBoxX + padding, rightY);
   }
 
   generateInvoiceTable(doc, orderData) {
-    let i;
-    const tableTop = 240;
-    const itemCodeX = 50;
-    const descriptionX = 150;
-    const quantityX = 320;
-    const rateX = 380;
-    const amountX = 480;
-
+    const tableTop = 300;
+    const leftMargin = 50;
+    const rightMargin = 550;
+    
+    // Column positions - properly aligned
+    const col1X = leftMargin;        // SI No
+    const col2X = 100;               // Description
+    const col3X = 370;               // Quantity  
+    const col4X = 440;               // Rate
+    const col5X = rightMargin;       // Amount (right-aligned)
+    
     // Table Header
-    doc.font('Helvetica-Bold');
-    this.generateTableRow(
-      doc,
-      tableTop,
-      'SI No.',
-      'Description of Goods',
-      'Quantity',
-      'Rate',
-      'Amount'
-    );
-
     doc
-      .strokeColor('#aaaaaa')
+      .fontSize(10)
+      .font('Helvetica-Bold');
+    
+    doc.text('SI No.', col1X, tableTop);
+    doc.text('Description of Goods', col2X, tableTop);
+    doc.text('Quantity', col3X, tableTop);
+    doc.text('Rate', col4X, tableTop);
+    doc.text('Amount', col5X - 60, tableTop);
+
+    // Header underline
+    doc
+      .strokeColor('#000000')
       .lineWidth(1)
-      .moveTo(50, tableTop + 20)
-      .lineTo(550, tableTop + 20)
+      .moveTo(leftMargin, tableTop + 15)
+      .lineTo(rightMargin, tableTop + 15)
       .stroke();
 
     // Table Rows
-    doc.font('Helvetica');
-    let position = tableTop + 30;
+    doc.fontSize(9).font('Helvetica');
+    let currentY = tableTop + 25;
+    const rowHeight = 20;
 
     orderData.items.forEach((item, index) => {
-      this.generateTableRow(
-        doc,
-        position,
-        (index + 1).toString(),
-        item.title,
-        `${item.quantity} pcs`,
-        `₹${item.price.toFixed(2)}`,
-        `₹${(item.price * item.quantity).toFixed(2)}`
-      );
-      position += 25;
+      const itemTotal = (item.price * item.quantity).toFixed(2);
+      
+      doc.text((index + 1).toString(), col1X, currentY);
+      doc.text(item.title || 'Product', col2X, currentY, { width: 260 });
+      doc.text(`${item.quantity} pcs`, col3X, currentY);
+      doc.text(`₹${item.price.toFixed(2)}`, col4X, currentY);
+      doc.text(`₹${itemTotal}`, col5X - 70, currentY, { width: 70, align: 'right' });
+      
+      currentY += rowHeight;
     });
 
-    // Draw line
+    // Bottom line
     doc
-      .strokeColor('#aaaaaa')
+      .strokeColor('#000000')
       .lineWidth(1)
-      .moveTo(50, position)
-      .lineTo(550, position)
+      .moveTo(leftMargin, currentY)
+      .lineTo(rightMargin, currentY)
       .stroke();
 
-    // Totals
-    position += 10;
-    doc.font('Helvetica-Bold');
-    this.generateTableRow(
-      doc,
-      position,
-      '',
-      '',
-      `Total: ${orderData.items.reduce((sum, item) => sum + item.quantity, 0)} pcs`,
-      '',
-      `₹${orderData.subtotal.toFixed(2)}`
-    );
-
-    // GST Breakdown
-    position += 30;
-    doc.font('Helvetica');
+    // Totals section
+    currentY += 10;
+    doc.fontSize(10).font('Helvetica-Bold');
     
-    // IGST/CGST/SGST section
-    if (orderData.gstBreakdown) {
-      const taxableAmount = orderData.subtotal;
-      const gstRate = 18; // 18% GST
-      
-      doc.text('HSN/SAC: 90041000', 50, position);
-      doc.text('Taxable Value:', 320, position);
-      doc.text(`₹${taxableAmount.toFixed(2)}`, 480, position, { align: 'right' });
-      
-      position += 20;
-      doc.text(`IGST Rate: ${gstRate}%`, 320, position);
-      doc.text(`₹${orderData.tax.toFixed(2)}`, 480, position, { align: 'right' });
-    }
+    const totalQty = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+    doc.text(`Total: ${totalQty} pcs`, col3X - 60, currentY);
+    doc.text(`₹${orderData.subtotal.toFixed(2)}`, col5X - 70, currentY, { width: 70, align: 'right' });
 
-    // Draw line
-    position += 25;
+    // GST Section
+    currentY += 25;
+    doc.fontSize(9).font('Helvetica');
+    
+    doc.text('HSN/SAC: 90041000', leftMargin, currentY);
+    doc.text('Taxable Value:', 370, currentY);
+    doc.text(`₹${orderData.subtotal.toFixed(2)}`, col5X - 70, currentY, { width: 70, align: 'right' });
+    
+    currentY += 15;
+    doc.text('IGST Rate: 18%', 370, currentY);
+    doc.text(`₹${orderData.tax.toFixed(2)}`, col5X - 70, currentY, { width: 70, align: 'right' });
+
+    // Total line
+    currentY += 20;
     doc
-      .strokeColor('#aaaaaa')
+      .strokeColor('#000000')
       .lineWidth(2)
-      .moveTo(50, position)
-      .lineTo(550, position)
+      .moveTo(leftMargin, currentY)
+      .lineTo(rightMargin, currentY)
       .stroke();
 
     // Grand Total
-    position += 10;
-    doc.font('Helvetica-Bold').fontSize(12);
-    doc.text('Total:', 320, position);
-    doc.text(`₹${orderData.total.toFixed(2)}`, 480, position, { align: 'right' });
+    currentY += 10;
+    doc.fontSize(12).font('Helvetica-Bold');
+    doc.text('Total:', 370, currentY);
+    doc.text(`₹${orderData.total.toFixed(2)}`, col5X - 70, currentY, { width: 70, align: 'right' });
 
     // Amount in words
-    position += 25;
+    currentY += 25;
     doc.fontSize(10).font('Helvetica');
-    doc.text(`Amount Chargeable (in words): INR ${this.numberToWords(orderData.total)} Only`, 50, position);
+    doc.text(`Amount Chargeable (in words): INR ${this.numberToWords(orderData.total)} Only`, leftMargin, currentY, { width: 500 });
 
-    return position;
-  }
-
-  generateTableRow(doc, y, col1, col2, col3, col4, col5) {
-    doc
-      .fontSize(10)
-      .text(col1, 50, y, { width: 90 })
-      .text(col2, 150, y, { width: 160 })
-      .text(col3, 320, y, { width: 50 })
-      .text(col4, 380, y, { width: 90 })
-      .text(col5, 480, y, { width: 100, align: 'right' });
+    return currentY;
   }
 
   generateFooter(doc, orderData) {
-    let position = 500;
+    let position = 560;
+    const leftMargin = 50;
     
     // Bank Details
     doc
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('Company\'s Bank Details', 50, position);
+      .text('Company\'s Bank Details', leftMargin, position);
     
     position += 15;
     doc
       .fontSize(9)
       .font('Helvetica')
-      .text('Bank Name: Kotak Mahindra Bank', 50, position)
-      .text('A/c No.: 2512756649', 50, position + 12)
-      .text('Branch & IFS Code: KKBK0004485', 50, position + 24);
+      .text('Bank Name: Kotak Mahindra Bank', leftMargin, position);
     
-    position += 60;
+    position += 12;
+    doc.text('A/c No.: 2512756649', leftMargin, position);
+    
+    position += 12;
+    doc.text('Branch & IFS Code: KKBK0004485', leftMargin, position);
+    
+    position += 35;
     
     // Declaration
     doc
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('Declaration:', 50, position);
+      .text('Declaration:', leftMargin, position);
     
     position += 15;
     doc
       .fontSize(9)
       .font('Helvetica')
-      .text('We declare that this invoice shows the actual price of the goods described and', 50, position)
-      .text('that all particulars are true and correct.', 50, position + 12);
+      .text('We declare that this invoice shows the actual price of the goods described and', leftMargin, position)
+      .text('that all particulars are true and correct.', leftMargin, position + 12);
     
-    // Company signature
+    // Company signature (right side)
     doc
       .fontSize(9)
       .font('Helvetica')
-      .text('for SS ENTERPRISES', 420, position)
-      .moveDown()
-      .moveDown()
-      .text('Authorised Signatory', 420, position + 50);
+      .text('for SS ENTERPRISES', 410, position);
     
-    // Footer
     doc
-      .fontSize(8)
-      .font('Helvetica-Oblique')
-      .text('This is a Computer Generated Invoice', 50, 750, { align: 'center', width: 500 });
-
-    // Footer note
-    doc
-      .fontSize(8)
-      .font('Helvetica-Oblique')
-      .text(
-        'This is a Computer Generated Invoice',
-        50,
-        720,
-        { align: 'center', width: 500 }
-      );
+      .moveDown(3)
+      .text('Authorised Signatory', 410, position + 50);
   }
 
   numberToWords(num) {
@@ -424,4 +445,3 @@ class PDFInvoiceService {
 }
 
 module.exports = new PDFInvoiceService();
-
