@@ -1,0 +1,13 @@
+# Nixpacks configuration for Railway deployment with Puppeteer support
+
+[phases.setup]
+nixPkgs = ["nodejs", "chromium"]
+
+[phases.install]
+cmds = ["cd backend && npm ci --only=production"]
+
+[phases.build]
+cmds = ["echo 'Build complete'"]
+
+[start]
+cmd = "cd backend && PUPPETEER_EXECUTABLE_PATH=/nix/store/$(ls /nix/store | grep chromium | head -1)/bin/chromium npm start"
