@@ -63,6 +63,22 @@ class ShopifyService {
         }
       });
 
+      // 🔍 DEBUG: Log what Shopify ACTUALLY returns
+      console.log('🛍️  SHOPIFY API RESPONSE:');
+      console.log('   Total products:', response.data.products.length);
+      if (response.data.products.length > 0) {
+        const firstProduct = response.data.products[0];
+        console.log('   First product title:', firstProduct.title);
+        console.log('   First product images:', JSON.stringify(firstProduct.images, null, 2));
+        console.log('   Has images array?', !!firstProduct.images);
+        console.log('   Images length:', firstProduct.images?.length || 0);
+        if (firstProduct.images && firstProduct.images.length > 0) {
+          console.log('   ✅ FIRST IMAGE SRC:', firstProduct.images[0].src);
+        } else {
+          console.log('   ❌ NO IMAGES IN SHOPIFY DATA!');
+        }
+      }
+
       return {
         success: true,
         products: response.data.products,
