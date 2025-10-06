@@ -44,28 +44,58 @@ exports.sendInvoice = async (req, res) => {
       console.error('❌ PDF generation failed, sending template without PDF');
     }
 
-    // Step 2: Send template message WITH PDF attached
-    console.log('📱 Step 2: Sending WhatsApp template with PDF attachment...');
+    // Step 2: Send template message
+    console.log('📱 Step 2: Sending WhatsApp template message...');
     const templateResult = await whatsappService.sendInvoiceViaWhatsApp(orderData, pdfUrl);
 
-    if (templateResult.success) {
-      console.log('✅ WhatsApp invoice sent successfully (template + PDF)!', templateResult.messageId);
-      return res.status(200).json({
-        success: true,
-        message: 'Invoice sent successfully via WhatsApp (template + PDF)',
-        messageId: templateResult.messageId,
-        pdfGenerated: !!pdfUrl,
-        pdfUrl: pdfUrl
-      });
-    } else {
-      console.error('❌ WhatsApp send failed:', templateResult.error);
+    if (!templateResult.success) {
+      console.error('❌ Template message failed:', templateResult.error);
       return res.status(200).json({
         success: false,
-        message: 'Failed to send WhatsApp invoice',
+        message: 'Failed to send WhatsApp template',
         error: templateResult.error,
         pdfGenerated: !!pdfUrl
       });
     }
+
+    console.log('✅ Template message sent successfully!', templateResult.messageId);
+
+    // Step 3: Send PDF as separate document
+    let pdfSent = false;
+    if (pdfUrl) {
+      try {
+        console.log('📎 Step 3: Sending PDF document...');
+        // Wait 1 second before sending PDF
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const documentResult = await whatsappService.sendDocumentViaWhatsApp(
+          orderData.customerPhone,
+          pdfUrl,
+          `${orderData.invoiceNumber}.pdf`,
+          `Invoice ${orderData.invoiceNumber} - Thank you for your purchase!`
+        );
+
+        if (documentResult.success) {
+          console.log('✅ PDF document sent successfully!', documentResult.messageId);
+          pdfSent = true;
+        } else {
+          console.error('⚠️ PDF send failed (but template was sent):', documentResult.error);
+        }
+      } catch (pdfError) {
+        console.error('⚠️ PDF send error (but template was sent):', pdfError.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: pdfSent 
+        ? 'Invoice sent successfully via WhatsApp (template + PDF in 2 messages)'
+        : 'Template sent, PDF delivery failed (check logs)',
+      templateMessageId: templateResult.messageId,
+      pdfGenerated: !!pdfUrl,
+      pdfSent: pdfSent,
+      pdfUrl: pdfUrl
+    });
 
   } catch (error) {
     console.error('❌ Error in sendInvoice controller:', error.message);
