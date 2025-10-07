@@ -832,7 +832,7 @@ function App() {
   useEffect(() => {
     if (currentPage === 'assign-locations') {
       loadAssignments();
-      loadAllLocations();
+      fetchShopifyLocations(); // Load Shopify locations instead of database locations
       if (!usersData) {
         loadUsersData();
       }
@@ -4879,9 +4879,9 @@ function App() {
                     }}
                   >
                     <option value="">-- Select a location --</option>
-                    {locations?.map(location => (
+                    {shopifyLocations?.map(location => (
                       <option key={location.id} value={location.id}>
-                        {location.name} ({location.city}, {location.state})
+                        {location.name} {location.city && `(${location.city}${location.province ? `, ${location.province}` : ''})`}
                       </option>
                     ))}
                   </select>
@@ -4952,7 +4952,7 @@ function App() {
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {assignments.map((assignment) => {
                     const assignedUser = usersData?.users?.find(u => u.id === assignment.userId);
-                    const assignedLocation = locations?.find(l => l.id == assignment.locationId);
+                    const assignedLocation = shopifyLocations?.find(l => l.id == assignment.locationId);
                     
                     return (
                       <div
@@ -4991,7 +4991,7 @@ function App() {
                               {assignedLocation?.name || 'Unknown Location'}
                             </div>
                             <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                              {assignedLocation?.city || 'N/A'}, {assignedLocation?.state || 'N/A'}
+                              {assignedLocation?.city || 'N/A'}{assignedLocation?.province ? `, ${assignedLocation.province}` : ''}{assignedLocation?.country ? `, ${assignedLocation.country}` : ''}
                             </div>
                           </div>
 
