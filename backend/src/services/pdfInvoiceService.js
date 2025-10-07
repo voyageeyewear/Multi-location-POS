@@ -414,13 +414,15 @@ class PDFInvoiceService {
     let totalTaxableValue = 0;
     let totalIGST = 0;
 
-    // Group items by HSN code
+    // Group items by HSN code (with proper discount calculation)
     const hsnGroups = {};
     orderData.items.forEach(item => {
       const hsnCode = item.hsnCode || '90041000';
-      const itemValue = (item.price * item.quantity);
+      const itemTotal = (item.price * item.quantity);
+      const discountAmount = (item.discountAmount || 0) * item.quantity;
+      const taxableValue = itemTotal - discountAmount; // Apply discount before tax
       const gstRate = item.gstRate || 18;
-      const gstAmount = itemValue * (gstRate / 100);
+      const gstAmount = taxableValue * (gstRate / 100); // Calculate IGST on discounted amount
       
       if (!hsnGroups[hsnCode]) {
         hsnGroups[hsnCode] = {
@@ -430,7 +432,7 @@ class PDFInvoiceService {
         };
       }
       
-      hsnGroups[hsnCode].taxableValue += itemValue;
+      hsnGroups[hsnCode].taxableValue += taxableValue;
       hsnGroups[hsnCode].gstAmount += gstAmount;
     });
 
