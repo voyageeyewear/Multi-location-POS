@@ -2932,42 +2932,74 @@ function App() {
       role: user.role.name
     };
 
-    // Get location info from actual locations or use default
+    // Get location info from SELECTED SHOPIFY LOCATION
     let locationInfo;
     let kioskInfo;
     
-    if (locations && locations.length > 0) {
-      // Use the first available location (in real app, user would select)
-      const selectedLocation = locations[0];
-      locationInfo = {
-        id: selectedLocation.id,
-        name: selectedLocation.name,
-        state: selectedLocation.state,
-        city: selectedLocation.city,
-        address: selectedLocation.address,
-        gstNumber: selectedLocation.gstNumber || 'N/A',
-        phone: selectedLocation.phone,
-        email: selectedLocation.email
-      };
+    // Use the Shopify location that the user selected on POS page
+    if (selectedLocationId && shopifyLocations && shopifyLocations.length > 0) {
+      const selectedShopifyLocation = shopifyLocations.find(loc => loc.id.toString() === selectedLocationId.toString());
       
-      // Generate kiosk/terminal info
-      kioskInfo = {
-        id: `KIOSK-${selectedLocation.id}-001`,
-        name: `${selectedLocation.name} - Terminal 1`,
-        locationId: selectedLocation.id,
-        terminalNumber: '001'
-      };
+      if (selectedShopifyLocation) {
+        console.log(`📍 Using selected Shopify location for invoice: ${selectedShopifyLocation.name} (${selectedShopifyLocation.city})`);
+        
+        locationInfo = {
+          id: selectedShopifyLocation.id,
+          shopifyLocationId: selectedShopifyLocation.id,
+          name: selectedShopifyLocation.name,
+          state: selectedShopifyLocation.province || selectedShopifyLocation.city,
+          city: selectedShopifyLocation.city || selectedShopifyLocation.name,
+          address: selectedShopifyLocation.address1 || 'N/A',
+          country: selectedShopifyLocation.country_code || 'IN',
+          gstNumber: 'N/A',
+          phone: selectedShopifyLocation.phone || '',
+          email: ''
+        };
+        
+        // Generate kiosk/terminal info
+        kioskInfo = {
+          id: `KIOSK-${selectedShopifyLocation.id}-001`,
+          name: `${selectedShopifyLocation.name} - Terminal 1`,
+          locationId: selectedShopifyLocation.id,
+          terminalNumber: '001'
+        };
+      } else {
+        // Fallback if selected location not found
+        console.warn('⚠️  Selected location not found in Shopify locations, using first available');
+        const firstLocation = shopifyLocations[0];
+        locationInfo = {
+          id: firstLocation.id,
+          shopifyLocationId: firstLocation.id,
+          name: firstLocation.name,
+          state: firstLocation.province || firstLocation.city,
+          city: firstLocation.city || firstLocation.name,
+          address: firstLocation.address1 || 'N/A',
+          country: firstLocation.country_code || 'IN',
+          gstNumber: 'N/A',
+          phone: firstLocation.phone || '',
+          email: ''
+        };
+        
+        kioskInfo = {
+          id: `KIOSK-${firstLocation.id}-001`,
+          name: `${firstLocation.name} - Terminal 1`,
+          locationId: firstLocation.id,
+          terminalNumber: '001'
+        };
+      }
     } else {
-      // Fallback to random location if no locations exist
-    const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
-    const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
-    const randomIndex = Math.floor(Math.random() * cities.length);
-    
+      // Final fallback if no Shopify locations available
+      console.warn('⚠️  No Shopify locations available, using fallback location');
+      const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
+      const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
+      const randomIndex = Math.floor(Math.random() * cities.length);
+      
       locationInfo = {
         id: null,
+        shopifyLocationId: null,
         name: `${cities[randomIndex]} Store`,
-      state: states[randomIndex],
-      city: cities[randomIndex],
+        state: states[randomIndex],
+        city: cities[randomIndex],
         address: `123 Business District, ${cities[randomIndex]}`,
         gstNumber: 'N/A',
         phone: '',
@@ -2982,34 +3014,39 @@ function App() {
       };
     }
 
-    // Generate location-based invoice number
-    const generateLocationInvoiceNumber = (city) => {
+    // Generate location-based invoice number using Shopify location city
+    const generateLocationInvoiceNumber = (city, locationId) => {
       // Get city prefix (first 4 letters, uppercase)
       const cityPrefix = city.substring(0, 4).toUpperCase();
       const companySuffix = 'VOYA'; // Voyage Eyewear
       
-      // Get or create sequence counter for this city
-      const locationKey = `invoice_seq_${city.toLowerCase()}`;
+      // Get or create sequence counter for this specific Shopify location
+      const locationKey = `invoice_seq_shopify_${locationId}`;
       let sequenceNumber = parseInt(localStorage.getItem(locationKey) || '0');
       sequenceNumber += 1;
       
       // Save updated sequence
       localStorage.setItem(locationKey, sequenceNumber.toString());
       
-      // Format as: CITY + VOYA + 5-digit sequence
-      const invoiceNumber = `${cityPrefix}${companySuffix}-${sequenceNumber.toString().padStart(5, '0')}`;
+      // Format as: CITY + VOYA + 4-digit sequence (e.g., DELHVOYA0001)
+      const invoiceNumber = `${cityPrefix}${companySuffix}${sequenceNumber.toString().padStart(4, '0')}`;
+      
+      console.log(`✅ Generated invoice number: ${invoiceNumber} for location: ${city} (ID: ${locationId})`);
+      
       return invoiceNumber;
     };
 
-    const invoiceNumber = generateLocationInvoiceNumber(locationInfo.city);
+    const invoiceNumber = generateLocationInvoiceNumber(locationInfo.city, locationInfo.id);
     const orderId = invoiceNumber;
     const currentTime = new Date();
 
     const newOrder = {
       id: orderId,
       clientName: clientInfo.name,
+      shopifyLocationId: locationInfo.shopifyLocationId, // Store Shopify location ID for filtering
           location: {
         id: locationInfo.id,
+        shopifyLocationId: locationInfo.shopifyLocationId,
         name: locationInfo.name,
       city: locationInfo.city,
         state: locationInfo.state,
