@@ -171,34 +171,66 @@ class ShopifyService {
         // Create a map of inventory item ID to quantity for this location
         const inventoryMap = new Map();
         
-        // Fetch inventory levels for all variants
+        // Collect all inventory_item_ids first
+        const inventoryItemIds = [];
         for (const product of allProducts) {
           if (product.variants && product.variants.length > 0) {
             for (const variant of product.variants) {
               if (variant.inventory_item_id) {
-                try {
-                  const invResponse = await axios.get(
-                    `${this.adminAPIURL}/inventory_levels.json`,
-                    {
-                      headers: this.getAdminHeaders(),
-                      params: {
-                        inventory_item_ids: variant.inventory_item_id,
-                        location_ids: locationId
-                      }
-                    }
-                  );
-                  
-                  if (invResponse.data.inventory_levels && invResponse.data.inventory_levels.length > 0) {
-                    const level = invResponse.data.inventory_levels[0];
-                    inventoryMap.set(variant.inventory_item_id, level.available || 0);
-                    variant.location_inventory = level.available || 0;
-                  } else {
-                    variant.location_inventory = 0;
-                  }
-                } catch (err) {
-                  console.error(`Error fetching inventory for variant ${variant.id}:`, err.message);
-                  variant.location_inventory = 0;
+                inventoryItemIds.push(variant.inventory_item_id);
+              }
+            }
+          }
+        }
+
+        console.log(`📊 Found ${inventoryItemIds.length} inventory items to check`);
+
+        // Batch inventory requests (Shopify allows up to 50 IDs per request)
+        const batchSize = 50;
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        
+        for (let i = 0; i < inventoryItemIds.length; i += batchSize) {
+          const batch = inventoryItemIds.slice(i, i + batchSize);
+          
+          try {
+            console.log(`📦 Fetching inventory batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(inventoryItemIds.length / batchSize)}`);
+            
+            const invResponse = await axios.get(
+              `${this.adminAPIURL}/inventory_levels.json`,
+              {
+                headers: this.getAdminHeaders(),
+                params: {
+                  inventory_item_ids: batch.join(','),
+                  location_ids: locationId,
+                  limit: 250
                 }
+              }
+            );
+            
+            // Map inventory levels
+            if (invResponse.data.inventory_levels) {
+              invResponse.data.inventory_levels.forEach(level => {
+                inventoryMap.set(level.inventory_item_id, level.available || 0);
+              });
+            }
+            
+            // Rate limit: Wait 500ms between batches to avoid hitting Shopify's 2 calls/second limit
+            if (i + batchSize < inventoryItemIds.length) {
+              await delay(500);
+            }
+          } catch (err) {
+            console.error(`Error fetching inventory batch:`, err.message);
+          }
+        }
+
+        console.log(`✅ Fetched inventory for ${inventoryMap.size} items`);
+
+        // Apply inventory to variants
+        for (const product of allProducts) {
+          if (product.variants && product.variants.length > 0) {
+            for (const variant of product.variants) {
+              if (variant.inventory_item_id) {
+                variant.location_inventory = inventoryMap.get(variant.inventory_item_id) || 0;
               }
             }
           }
