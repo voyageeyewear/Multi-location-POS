@@ -3003,16 +3003,16 @@ function App() {
     } else {
       // Final fallback if no Shopify locations available
       console.warn('⚠️  No Shopify locations available, using fallback location');
-      const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
-      const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
-      const randomIndex = Math.floor(Math.random() * cities.length);
-      
+    const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
+    const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Telangana', 'Maharashtra', 'Gujarat'];
+    const randomIndex = Math.floor(Math.random() * cities.length);
+    
       locationInfo = {
         id: null,
         shopifyLocationId: null,
         name: `${cities[randomIndex]} Store`,
-        state: states[randomIndex],
-        city: cities[randomIndex],
+      state: states[randomIndex],
+      city: cities[randomIndex],
         address: `123 Business District, ${cities[randomIndex]}`,
         gstNumber: 'N/A',
         phone: '',
