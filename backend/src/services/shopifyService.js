@@ -52,37 +52,74 @@ class ShopifyService {
     }
   }
 
-  // Get all products from Shopify
-  async getProducts(limit = 50) {
+  // Get all products from Shopify (with pagination to fetch ALL products)
+  async getProducts(limit = 250) {
     try {
-      const response = await axios.get(`${this.adminAPIURL}/products.json`, {
+      let allProducts = [];
+      let nextPageUrl = null;
+      let pageCount = 0;
+      
+      console.log('🛍️  Fetching ALL products from Shopify...');
+
+      // First request
+      const firstResponse = await axios.get(`${this.adminAPIURL}/products.json`, {
         headers: this.getAdminHeaders(),
         params: {
-          limit,
+          limit: 250, // Shopify max limit
           fields: 'id,title,body_html,handle,vendor,product_type,created_at,updated_at,status,images,variants'
         }
       });
 
-      // 🔍 DEBUG: Log what Shopify ACTUALLY returns
-      console.log('🛍️  SHOPIFY API RESPONSE:');
-      console.log('   Total products:', response.data.products.length);
-      if (response.data.products.length > 0) {
-        const firstProduct = response.data.products[0];
+      allProducts = [...firstResponse.data.products];
+      pageCount++;
+      console.log(`   Page ${pageCount}: Fetched ${firstResponse.data.products.length} products`);
+
+      // Check for pagination link in headers
+      const linkHeader = firstResponse.headers['link'];
+      if (linkHeader) {
+        const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+        if (nextMatch) {
+          nextPageUrl = nextMatch[1];
+        }
+      }
+
+      // Fetch remaining pages
+      while (nextPageUrl) {
+        const pageResponse = await axios.get(nextPageUrl, {
+          headers: this.getAdminHeaders()
+        });
+
+        allProducts = [...allProducts, ...pageResponse.data.products];
+        pageCount++;
+        console.log(`   Page ${pageCount}: Fetched ${pageResponse.data.products.length} products`);
+
+        // Check for next page
+        const pageLinkHeader = pageResponse.headers['link'];
+        nextPageUrl = null;
+        if (pageLinkHeader) {
+          const nextPageMatch = pageLinkHeader.match(/<([^>]+)>;\s*rel="next"/);
+          if (nextPageMatch) {
+            nextPageUrl = nextPageMatch[1];
+          }
+        }
+      }
+
+      console.log(`✅ Total products fetched: ${allProducts.length}`);
+
+      // Debug first product
+      if (allProducts.length > 0) {
+        const firstProduct = allProducts[0];
         console.log('   First product title:', firstProduct.title);
-        console.log('   First product images:', JSON.stringify(firstProduct.images, null, 2));
-        console.log('   Has images array?', !!firstProduct.images);
-        console.log('   Images length:', firstProduct.images?.length || 0);
+        console.log('   Has images?', !!firstProduct.images && firstProduct.images.length > 0);
         if (firstProduct.images && firstProduct.images.length > 0) {
           console.log('   ✅ FIRST IMAGE SRC:', firstProduct.images[0].src);
-        } else {
-          console.log('   ❌ NO IMAGES IN SHOPIFY DATA!');
         }
       }
 
       return {
         success: true,
-        products: response.data.products,
-        count: response.data.products.length
+        products: allProducts,
+        count: allProducts.length
       };
     } catch (error) {
       console.error('Error fetching products:', error.response?.data || error.message);
