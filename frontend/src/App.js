@@ -850,7 +850,7 @@ function App() {
   useEffect(() => {
     if (currentPage === 'locations') {
       loadRealInvoiceData();
-      loadLocations();
+      fetchShopifyLocations(); // Fetch Shopify locations for filter
     }
   }, [currentPage]);
 
@@ -2269,17 +2269,27 @@ function App() {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  // Get unique cities from sales data for filter
+  // Get unique cities from sales data for filter (DEPRECATED - use Shopify locations)
   const getUniqueCities = () => {
     if (!salesData || !salesData.orders) return [];
     const cities = [...new Set(salesData.orders.map(order => order.location?.city || order.city))];
     return cities.filter(city => city && city !== 'Unknown City').sort();
   };
 
-  // Filter invoices by selected city
+  // Filter invoices by selected Shopify location
   const getFilteredInvoices = () => {
     if (!salesData || !salesData.orders) return [];
     if (selectedCity === 'all') return salesData.orders;
+    
+    // Filter by Shopify location ID if selectedCity is a number (location ID)
+    if (!isNaN(selectedCity)) {
+      return salesData.orders.filter(order => {
+        const orderLocationId = order.location?.shopifyLocationId || order.shopifyLocationId;
+        return orderLocationId && orderLocationId.toString() === selectedCity.toString();
+      });
+    }
+    
+    // Fallback: Filter by city name (for backwards compatibility)
     return salesData.orders.filter(order => (order.location?.city || order.city) === selectedCity);
   };
 
@@ -3565,16 +3575,8 @@ function App() {
         {currentPage === 'locations' && (
           <>
             <div className="content-header">
-              <div>
-                <h1>📍 Locations Management</h1>
-                <p>Manage your store locations</p>
-              </div>
-              <button 
-                className="btn-primary"
-                onClick={() => setShowAddLocationModal(true)}
-              >
-                ➕ Add New Location
-              </button>
+              <h1>🧾 Invoice Management</h1>
+              <p>View and manage recent client invoices</p>
             </div>
 
             <div className="locations-content">
@@ -3583,16 +3585,18 @@ function App() {
                 <div className="invoices-header">
                   <h2>🧾 Recent Client Invoices</h2>
                   <div className="city-filter">
-                    <label htmlFor="cityFilter">Filter by City:</label>
+                    <label htmlFor="cityFilter">Filter by Location:</label>
                     <select 
                       id="cityFilter"
                       value={selectedCity} 
                       onChange={(e) => setSelectedCity(e.target.value)}
                       className="city-filter-select"
                     >
-                      <option value="all">All Cities</option>
-                      {getUniqueCities().map(city => (
-                        <option key={city} value={city}>{city}</option>
+                      <option value="all">All Locations</option>
+                      {shopifyLocations && shopifyLocations.length > 0 && shopifyLocations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name}{location.city && ` - ${location.city}`}
+                        </option>
                       ))}
                     </select>
                   </div>
