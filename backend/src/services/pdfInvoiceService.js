@@ -291,9 +291,26 @@ class PDFInvoiceService {
       currentY += rowHeight;
     });
 
-    // Calculations
+    // Calculate IGST by product type (group by GST rate)
+    const igstBreakdown = {};
+    let totalIGST = 0;
+    
+    orderData.items.forEach(item => {
+      const itemTotal = (item.price * item.quantity);
+      const discountAmount = item.discountAmount || 0;
+      const discountedTotal = itemTotal - (discountAmount * item.quantity);
+      const igstRate = item.gstRate || item.igstRate || 18; // Default to 18% for sunglasses
+      const igstAmount = discountedTotal * (igstRate / 100);
+      
+      if (!igstBreakdown[igstRate]) {
+        igstBreakdown[igstRate] = 0;
+      }
+      igstBreakdown[igstRate] += igstAmount;
+      totalIGST += igstAmount;
+    });
+
     const subtotalAfterDiscount = totalBeforeDiscount - totalDiscount;
-    const gstAmount = orderData.tax || (subtotalAfterDiscount * 0.18);
+    const gstAmount = orderData.tax || totalIGST;
     const totalBeforeRounding = subtotalAfterDiscount + gstAmount;
     const roundedTotal = Math.round(totalBeforeRounding);
     const roundingAdjustment = roundedTotal - totalBeforeRounding;
@@ -313,11 +330,14 @@ class PDFInvoiceService {
       currentY += 15;
     }
 
-    // GST 18%
-    doc.text('GST 18%:', deductionX, currentY);
-    doc.font('Helvetica-Bold').text(gstAmount.toFixed(2), valueX, currentY, { width: 60, align: 'right' });
-    doc.font('Helvetica');
-    currentY += 15;
+    // Show IGST breakdown by rate (e.g., IGST 18%, IGST 5%)
+    Object.keys(igstBreakdown).sort((a, b) => b - a).forEach(rate => {
+      const amount = igstBreakdown[rate];
+      doc.text(`IGST ${rate}%:`, deductionX, currentY);
+      doc.font('Helvetica-Bold').text(amount.toFixed(2), valueX, currentY, { width: 60, align: 'right' });
+      doc.font('Helvetica');
+      currentY += 15;
+    });
 
     // Rounded OFF
     if (Math.abs(roundingAdjustment) > 0.01) {
