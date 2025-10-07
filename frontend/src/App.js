@@ -4651,8 +4651,8 @@ function App() {
                             </div>
                             {getGSTBreakdown().map((gstGroup, index) => (
                               <div key={index} className="total-row gst-row">
-                                <span>GST @ {gstGroup.rate}%:</span>
-                                <span>₹{gstGroup.gstAmount.toLocaleString()}</span>
+                                <span>IGST @ {gstGroup.rate}%:</span>
+                                <span>₹{(gstGroup.igst || 0).toLocaleString()}</span>
                               </div>
                             ))}
                             <div className="total-row final-total">
