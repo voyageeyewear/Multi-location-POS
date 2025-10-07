@@ -248,6 +248,32 @@ class ShopifyController {
       next(error);
     }
   }
+
+  // Get customers from Shopify
+  static async getCustomers(req, res, next) {
+    try {
+      const { limit } = req.query;
+      const result = await shopifyService.getCustomers(parseInt(limit) || 250);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: {
+            customers: result.customers,
+            count: result.count
+          }
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'Failed to fetch customers',
+          error: result.error
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = ShopifyController;

@@ -25,6 +25,11 @@ function App() {
   const [cityFilter, setCityFilter] = useState('all'); // all, or specific city
   const [searchTerm, setSearchTerm] = useState('');
   const [usersData, setUsersData] = useState(null);
+  const [shopifyOrders, setShopifyOrders] = useState([]);
+  const [shopifyCustomers, setShopifyCustomers] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('any');
   const [userFilter, setUserFilter] = useState('all'); // all, admin, client
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -767,12 +772,90 @@ function App() {
     }
   };
 
+  // Load Shopify Orders
+  const loadShopifyOrders = async (status = 'any') => {
+    try {
+      setOrdersLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/shopify/orders?status=${status}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setShopifyOrders(data.data.orders || []);
+        toast.success(`Loaded ${data.data.count} orders`);
+      } else {
+        toast.error('Failed to load orders');
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      toast.error('Failed to load orders');
+      setShopifyOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  // Load Shopify Customers
+  const loadShopifyCustomers = async () => {
+    try {
+      setCustomersLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/shopify/customers`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setShopifyCustomers(data.data.customers || []);
+        toast.success(`Loaded ${data.data.count} customers`);
+      } else {
+        toast.error('Failed to load customers');
+      }
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      toast.error('Failed to load customers');
+      setShopifyCustomers([]);
+    } finally {
+      setCustomersLoading(false);
+    }
+  };
+
   // Ensure data loads when selectedDate changes
   useEffect(() => {
     if (currentPage === 'locations' && selectedDate) {
       loadLocationData();
     }
   }, [selectedDate, customDate, currentPage]);
+
+  // Load Shopify Orders when page changes or filter changes
+  useEffect(() => {
+    if (currentPage === 'shopify-orders') {
+      loadShopifyOrders(orderStatusFilter);
+    }
+  }, [currentPage, orderStatusFilter]);
+
+  // Load Shopify Customers when page changes
+  useEffect(() => {
+    if (currentPage === 'shopify-customers') {
+      loadShopifyCustomers();
+    }
+  }, [currentPage]);
 
   // Load POS products when POS page is accessed
   useEffect(() => {
@@ -3449,6 +3532,8 @@ function App() {
               <button onClick={() => handleNavigation('locations')} className={`nav-item ${currentPage === 'locations' ? 'active' : ''}`}>Invoice</button>
               <button onClick={() => handleNavigation('location-analytics')} className={`nav-item ${currentPage === 'location-analytics' ? 'active' : ''}`}>Location Analytics</button>
               <button onClick={() => handleNavigation('assign-locations')} className={`nav-item ${currentPage === 'assign-locations' ? 'active' : ''}`}>Assign Locations</button>
+              <button onClick={() => handleNavigation('shopify-orders')} className={`nav-item ${currentPage === 'shopify-orders' ? 'active' : ''}`}>Shopify Orders</button>
+              <button onClick={() => handleNavigation('shopify-customers')} className={`nav-item ${currentPage === 'shopify-customers' ? 'active' : ''}`}>Shopify Customers</button>
               <button onClick={() => handleNavigation('sales')} className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}>Sales</button>
               <button onClick={() => handleNavigation('reports')} className={`nav-item ${currentPage === 'reports' ? 'active' : ''}`}>Reports</button>
               <button onClick={() => handleNavigation('data')} className={`nav-item ${currentPage === 'data' ? 'active' : ''}`}>Data Management</button>
@@ -5192,7 +5277,228 @@ function App() {
           </>
         )}
 
-        {currentPage !== 'dashboard' && currentPage !== 'products' && currentPage !== 'locations' && currentPage !== 'location-analytics' && currentPage !== 'sales' && currentPage !== 'users' && currentPage !== 'pos' && currentPage !== 'data' && (
+        {currentPage === 'shopify-orders' && (
+          <>
+            <div className="content-header">
+              <h1>📦 Shopify Orders</h1>
+              <p>View and manage all orders from your Shopify store</p>
+            </div>
+
+            <div className="filters-section">
+              <div className="filter-group">
+                <label>Order Status:</label>
+                <select 
+                  value={orderStatusFilter} 
+                  onChange={(e) => setOrderStatusFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="any">All Orders</option>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <button 
+                className="btn-secondary refresh-btn"
+                onClick={() => loadShopifyOrders(orderStatusFilter)}
+                disabled={ordersLoading}
+              >
+                🔄 Refresh Orders
+              </button>
+            </div>
+
+            {ordersLoading ? (
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <p>Loading Shopify orders...</p>
+              </div>
+            ) : shopifyOrders.length > 0 ? (
+              <div className="shopify-orders-grid">
+                {shopifyOrders.map((order) => (
+                  <div key={order.id} className="order-card">
+                    <div className="order-header">
+                      <h3>Order #{order.order_number || order.name}</h3>
+                      <span className={`order-status ${order.financial_status}`}>
+                        {order.financial_status}
+                      </span>
+                    </div>
+                    
+                    <div className="order-details">
+                      <div className="detail-row">
+                        <span className="label">Customer:</span>
+                        <span className="value">{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Guest'}</span>
+                      </div>
+                      {order.customer && order.customer.email && (
+                        <div className="detail-row">
+                          <span className="label">Email:</span>
+                          <span className="value">{order.customer.email}</span>
+                        </div>
+                      )}
+                      {order.customer && order.customer.phone && (
+                        <div className="detail-row">
+                          <span className="label">Phone:</span>
+                          <span className="value">{order.customer.phone}</span>
+                        </div>
+                      )}
+                      <div className="detail-row">
+                        <span className="label">Total:</span>
+                        <span className="value">₹{parseFloat(order.total_price || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">Items:</span>
+                        <span className="value">{order.line_items?.length || 0} items</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">Date:</span>
+                        <span className="value">{new Date(order.created_at).toLocaleDateString()}</span>
+                      </div>
+                      {order.shipping_address && (
+                        <div className="detail-row">
+                          <span className="label">Shipping:</span>
+                          <span className="value">{order.shipping_address.city}, {order.shipping_address.province}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {order.line_items && order.line_items.length > 0 && (
+                      <div className="order-items">
+                        <h4>Order Items:</h4>
+                        {order.line_items.map((item, idx) => (
+                          <div key={idx} className="order-item">
+                            <div className="item-info">
+                              <span className="item-name">{item.name}</span>
+                              <span className="item-quantity">Qty: {item.quantity}</span>
+                            </div>
+                            <span className="item-price">₹{parseFloat(item.price || 0).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">📦</div>
+                <h3>No Orders Found</h3>
+                <p>No orders match your current filter</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {currentPage === 'shopify-customers' && (
+          <>
+            <div className="content-header">
+              <h1>👥 Shopify Customers</h1>
+              <p>View and manage all customers from your Shopify store</p>
+            </div>
+
+            <div className="filters-section">
+              <button 
+                className="btn-secondary refresh-btn"
+                onClick={loadShopifyCustomers}
+                disabled={customersLoading}
+              >
+                🔄 Refresh Customers
+              </button>
+            </div>
+
+            {customersLoading ? (
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <p>Loading Shopify customers...</p>
+              </div>
+            ) : shopifyCustomers.length > 0 ? (
+              <div className="shopify-customers-grid">
+                {shopifyCustomers.map((customer) => (
+                  <div key={customer.id} className="customer-card">
+                    <div className="customer-header">
+                      <h3>{customer.first_name} {customer.last_name}</h3>
+                      {customer.verified_email && (
+                        <span className="verified-badge">✅ Verified</span>
+                      )}
+                    </div>
+                    
+                    <div className="customer-details">
+                      {customer.email && (
+                        <div className="detail-row">
+                          <span className="label">📧 Email:</span>
+                          <span className="value">{customer.email}</span>
+                        </div>
+                      )}
+                      {customer.phone && (
+                        <div className="detail-row">
+                          <span className="label">📱 Phone:</span>
+                          <span className="value">{customer.phone}</span>
+                        </div>
+                      )}
+                      <div className="detail-row">
+                        <span className="label">🛍️ Orders:</span>
+                        <span className="value">{customer.orders_count || 0} orders</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">💰 Total Spent:</span>
+                        <span className="value">₹{parseFloat(customer.total_spent || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">📅 Joined:</span>
+                        <span className="value">{new Date(customer.created_at).toLocaleDateString()}</span>
+                      </div>
+                      {customer.state && (
+                        <div className="detail-row">
+                          <span className="label">Status:</span>
+                          <span className={`customer-status ${customer.state}`}>{customer.state}</span>
+                        </div>
+                      )}
+                      {customer.default_address && (
+                        <>
+                          <div className="detail-row">
+                            <span className="label">📍 Address:</span>
+                            <span className="value">
+                              {customer.default_address.address1}
+                              {customer.default_address.address2 && `, ${customer.default_address.address2}`}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="label">🏙️ City:</span>
+                            <span className="value">{customer.default_address.city}, {customer.default_address.province}</span>
+                          </div>
+                          {customer.default_address.zip && (
+                            <div className="detail-row">
+                              <span className="label">📮 Zip:</span>
+                              <span className="value">{customer.default_address.zip}</span>
+                            </div>
+                          )}
+                          {customer.default_address.country && (
+                            <div className="detail-row">
+                              <span className="label">🌍 Country:</span>
+                              <span className="value">{customer.default_address.country}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {customer.tags && (
+                        <div className="detail-row">
+                          <span className="label">🏷️ Tags:</span>
+                          <span className="value">{customer.tags || 'None'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">👥</div>
+                <h3>No Customers Found</h3>
+                <p>No customers in your Shopify store</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {currentPage !== 'dashboard' && currentPage !== 'products' && currentPage !== 'locations' && currentPage !== 'location-analytics' && currentPage !== 'sales' && currentPage !== 'users' && currentPage !== 'pos' && currentPage !== 'data' && currentPage !== 'shopify-orders' && currentPage !== 'shopify-customers' && currentPage !== 'assign-locations' && (
           <div className="content-header">
             <h1>{currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</h1>
             <p>This section is coming soon...</p>

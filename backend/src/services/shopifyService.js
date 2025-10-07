@@ -586,6 +586,143 @@ class ShopifyService {
       };
     }
   }
+
+  // Get all orders from Shopify with pagination
+  async getOrders(limit = 250, status = 'any') {
+    try {
+      console.log(`📦 Fetching Shopify orders (status: ${status})...`);
+      
+      let allOrders = [];
+      let pageInfo = null;
+      let hasNextPage = true;
+      
+      while (hasNextPage) {
+        const params = {
+          limit: limit,
+          status: status, // any, open, closed, cancelled
+          order: 'created_at desc'
+        };
+        
+        if (pageInfo) {
+          params.page_info = pageInfo;
+        }
+        
+        const response = await axios.get(`${this.adminAPIURL}/orders.json`, {
+          headers: this.getAdminHeaders(),
+          params: params
+        });
+        
+        if (response.data.orders && response.data.orders.length > 0) {
+          allOrders = allOrders.concat(response.data.orders);
+          console.log(`✅ Fetched ${response.data.orders.length} orders (total: ${allOrders.length})`);
+          
+          // Check for next page
+          const linkHeader = response.headers.link;
+          if (linkHeader && linkHeader.includes('rel="next"')) {
+            const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+            if (nextMatch) {
+              const nextUrl = new URL(nextMatch[1]);
+              pageInfo = nextUrl.searchParams.get('page_info');
+            } else {
+              hasNextPage = false;
+            }
+          } else {
+            hasNextPage = false;
+          }
+        } else {
+          hasNextPage = false;
+        }
+        
+        // Rate limit: Wait 500ms between requests
+        if (hasNextPage) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      console.log(`✅ Total orders fetched: ${allOrders.length}`);
+      
+      return {
+        success: true,
+        orders: allOrders,
+        count: allOrders.length
+      };
+    } catch (error) {
+      console.error('Error fetching orders:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.errors || error.message,
+        orders: []
+      };
+    }
+  }
+
+  // Get all customers from Shopify with pagination
+  async getCustomers(limit = 250) {
+    try {
+      console.log('👥 Fetching Shopify customers...');
+      
+      let allCustomers = [];
+      let pageInfo = null;
+      let hasNextPage = true;
+      
+      while (hasNextPage) {
+        const params = {
+          limit: limit,
+          order: 'created_at desc'
+        };
+        
+        if (pageInfo) {
+          params.page_info = pageInfo;
+        }
+        
+        const response = await axios.get(`${this.adminAPIURL}/customers.json`, {
+          headers: this.getAdminHeaders(),
+          params: params
+        });
+        
+        if (response.data.customers && response.data.customers.length > 0) {
+          allCustomers = allCustomers.concat(response.data.customers);
+          console.log(`✅ Fetched ${response.data.customers.length} customers (total: ${allCustomers.length})`);
+          
+          // Check for next page
+          const linkHeader = response.headers.link;
+          if (linkHeader && linkHeader.includes('rel="next"')) {
+            const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+            if (nextMatch) {
+              const nextUrl = new URL(nextMatch[1]);
+              pageInfo = nextUrl.searchParams.get('page_info');
+            } else {
+              hasNextPage = false;
+            }
+          } else {
+            hasNextPage = false;
+          }
+        } else {
+          hasNextPage = false;
+        }
+        
+        // Rate limit: Wait 500ms between requests
+        if (hasNextPage) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      console.log(`✅ Total customers fetched: ${allCustomers.length}`);
+      
+      return {
+        success: true,
+        customers: allCustomers,
+        count: allCustomers.length
+      };
+    } catch (error) {
+      console.error('Error fetching customers:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.errors || error.message,
+        customers: []
+      };
+    }
+  }
 }
 
 module.exports = new ShopifyService();

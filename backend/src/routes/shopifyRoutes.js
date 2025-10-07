@@ -27,4 +27,7 @@ router.get('/locations', ShopifyController.getLocations);
 // Inventory routes
 router.get('/inventory', ShopifyController.getInventoryLevels);
 
+// Customer routes
+router.get('/customers', ShopifyController.getCustomers);
+
 module.exports = router;
