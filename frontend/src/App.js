@@ -780,13 +780,28 @@ function App() {
         // Fetch Shopify locations first
         await fetchShopifyLocations();
         
-        // Auto-detect location if not already set
+        // Load user's assigned locations
+        const userAssignedLocationIds = await loadUserAssignedLocations();
+        
         let locationToUse = selectedLocationId;
-        if (!locationToUse) {
+        
+        // For non-admin users with assigned locations, restrict to their locations
+        if (userAssignedLocationIds && userAssignedLocationIds.length > 0) {
+          console.log(`🔒 User restricted to ${userAssignedLocationIds.length} assigned locations`);
+          
+          // If no location selected or selected location is not in assigned list, use first assigned location
+          if (!locationToUse || !userAssignedLocationIds.includes(parseInt(locationToUse))) {
+            locationToUse = userAssignedLocationIds[0].toString();
+            setSelectedLocationId(locationToUse);
+            localStorage.setItem('selectedLocationId', locationToUse);
+            console.log(`📍 Auto-selected first assigned location: ${locationToUse}`);
+          }
+        } else if (!locationToUse) {
+          // Admin or user with no restrictions - auto-detect location
           locationToUse = await detectCustomerLocation();
         }
         
-        // Load products with location filter (if not admin or if admin hasn't toggled showAllLocations)
+        // Load products with location filter
         if (posProducts.length === 0 || locationToUse !== selectedLocationId) {
           loadPosProducts(locationToUse);
         }
@@ -794,7 +809,7 @@ function App() {
     };
     
     initializePOS();
-  }, [currentPage]); // Only run when page changes
+  }, [currentPage, user]); // Re-run when page or user changes
   
   // Reload products when showAllLocations toggle changes (admin only)
   useEffect(() => {
@@ -1581,6 +1596,54 @@ function App() {
     } finally {
       setAssignmentLoading(false);
     }
+  };
+
+  // Load current user's assigned locations
+  const loadUserAssignedLocations = async () => {
+    if (!user || !user.id) {
+      console.log('⚠️  No user logged in, cannot load assigned locations');
+      return [];
+    }
+
+    // Admins can see all locations
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      console.log('✅ Admin user - can access all locations');
+      setAssignedLocations([]);
+      return [];
+    }
+
+    try {
+      const token = Cookies.get('token') || 'demo-token';
+      const apiUrl = API_URL;
+      
+      console.log(`📍 Loading assigned locations for user: ${user.id}`);
+      
+      const response = await axios.get(
+        `${apiUrl}/api/user-locations`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (response.data.success) {
+        // Filter for current user's active assignments
+        const userAssignments = response.data.data.filter(
+          assignment => assignment.userId === user.id && assignment.isActive
+        );
+        
+        const assignedLocationIds = userAssignments.map(a => a.locationId);
+        console.log(`✅ User assigned to ${assignedLocationIds.length} locations:`, assignedLocationIds);
+        
+        setAssignedLocations(assignedLocationIds);
+        return assignedLocationIds;
+      }
+    } catch (error) {
+      console.error('Error loading user assigned locations:', error);
+    }
+    
+    return [];
   };
 
   const handleAssignUserToLocation = async () => {
@@ -4457,13 +4520,25 @@ function App() {
                     value={selectedLocationId || ''} 
                     onChange={(e) => handleLocationChange(e.target.value)}
                     className="location-selector"
+                    disabled={assignedLocations.length > 0 && assignedLocations.length === 1}
                   >
-                    <option value="">All Locations</option>
-                    {shopifyLocations.map(loc => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.name} {loc.city && `- ${loc.city}`}
-                      </option>
-                    ))}
+                    {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                      <option value="">All Locations</option>
+                    )}
+                    {shopifyLocations
+                      .filter(loc => {
+                        // Admin can see all locations
+                        if (user?.role === 'admin' || user?.role === 'super_admin') return true;
+                        // Non-admin can only see assigned locations
+                        if (assignedLocations.length === 0) return true; // Show all if no restrictions
+                        return assignedLocations.includes(loc.id);
+                      })
+                      .map(loc => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name} {loc.city && `- ${loc.city}`}
+                        </option>
+                      ))
+                    }
                   </select>
 
                   {user?.role === 'admin' && (
@@ -4480,7 +4555,11 @@ function App() {
 
                 {selectedLocationId && !showAllLocations && (
                   <div className="location-filter-notice">
-                    ℹ️ Showing products available at selected location only
+                    {assignedLocations.length > 0 ? (
+                      <>🔒 You are restricted to {assignedLocations.length} assigned location{assignedLocations.length > 1 ? 's' : ''}. Showing products from selected location only.</>
+                    ) : (
+                      <>ℹ️ Showing products available at selected location only</>
+                    )}
                   </div>
                 )}
               </div>
