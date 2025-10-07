@@ -90,7 +90,7 @@ function App() {
   const [assignments, setAssignments] = useState([]);
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedLocationId, setSelectedLocationId] = useState('');
+  const [selectedAssignmentLocationId, setSelectedAssignmentLocationId] = useState(''); // Renamed to avoid conflict with location-based inventory
   const [assignedLocations, setAssignedLocations] = useState([]);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -1584,7 +1584,7 @@ function App() {
   };
 
   const handleAssignUserToLocation = async () => {
-    if (!selectedUserId || !selectedLocationId) {
+    if (!selectedUserId || !selectedAssignmentLocationId) {
       toast.error('Please select both user and location');
       return;
     }
@@ -1598,7 +1598,7 @@ function App() {
         `${apiUrl}/api/user-locations`,
         {
           userId: selectedUserId,
-          locationId: parseInt(selectedLocationId),
+          locationId: parseInt(selectedAssignmentLocationId),
           isActive: true
         },
         {
@@ -4787,8 +4787,8 @@ function App() {
                     Select Location
                   </label>
                   <select
-                    value={selectedLocationId}
-                    onChange={(e) => setSelectedLocationId(e.target.value)}
+                    value={selectedAssignmentLocationId}
+                    onChange={(e) => setSelectedAssignmentLocationId(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -4810,16 +4810,16 @@ function App() {
 
                 <button
                   onClick={handleAssignUserToLocation}
-                  disabled={!selectedUserId || !selectedLocationId || assignmentLoading}
+                  disabled={!selectedUserId || !selectedAssignmentLocationId || assignmentLoading}
                   style={{
                     padding: '0.75rem 2rem',
                     borderRadius: '0.5rem',
                     border: 'none',
-                    background: selectedUserId && selectedLocationId ? '#10b981' : '#6b7280',
+                    background: selectedUserId && selectedAssignmentLocationId ? '#10b981' : '#6b7280',
                     color: 'white',
                     fontSize: '1rem',
                     fontWeight: '600',
-                    cursor: selectedUserId && selectedLocationId ? 'pointer' : 'not-allowed',
+                    cursor: selectedUserId && selectedAssignmentLocationId ? 'pointer' : 'not-allowed',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap'
