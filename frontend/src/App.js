@@ -824,7 +824,7 @@ function App() {
       if (!locationData) {
       loadLocationData();
       }
-      loadAllLocations();
+      fetchShopifyLocations(); // Fetch Shopify locations for analytics
     }
   }, [currentPage, locationData]);
 
@@ -3810,73 +3810,6 @@ function App() {
             </div>
 
             <div className="location-analytics-content">
-              {/* Location Management Section */}
-              <div className="location-management-section">
-                <div className="section-header">
-                  <h2>🏢 All Locations</h2>
-                  <button 
-                    className="btn-primary add-location-btn"
-                    onClick={() => setEditingLocation(null)}
-                  >
-                    <FiPlus /> Add New Location
-                  </button>
-                </div>
-                
-                <div className="locations-grid">
-                  {locations.length > 0 ? (
-                    locations.map((location) => (
-                      <div key={location.id} className="location-card">
-                        <div className="location-card-header">
-                          <h3>{location.name}</h3>
-                          <div className="location-actions">
-                            <button 
-                              className="icon-btn edit-btn"
-                              onClick={() => setEditingLocation(location)}
-                              title="Edit location"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button 
-                              className="icon-btn delete-btn"
-                              onClick={() => handleDeleteLocation(location.id, location.name)}
-                              title="Delete location"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="location-card-body">
-                          <div className="location-detail">
-                            <strong>📍 Address:</strong>
-                            <span>{location.address || 'N/A'}</span>
-                          </div>
-                          <div className="location-detail">
-                            <strong>📞 Phone:</strong>
-                            <span>{location.phone || 'N/A'}</span>
-                          </div>
-                          {location.city && (
-                            <div className="location-detail">
-                              <strong>🏙️ City:</strong>
-                              <span>{location.city}, {location.state || ''}</span>
-                            </div>
-                          )}
-                          <div className="location-detail">
-                            <strong>🏷️ Status:</strong>
-                            <span className={`status-badge ${location.isActive !== false ? 'active' : 'inactive'}`}>
-                              {location.isActive !== false ? 'Active' : 'Inactive'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="empty-locations-state">
-                      <p>No locations found. Add your first location to get started!</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Location Selector */}
               <div className="location-selector-section">
                 <h2>📊 Analytics by Location</h2>
@@ -3890,9 +3823,9 @@ function App() {
                     className="location-select"
                   >
                     <option value="">Choose a location...</option>
-                    {locations && locations.length > 0 && locations.map((location) => (
+                    {shopifyLocations && shopifyLocations.length > 0 && shopifyLocations.map((location) => (
                       <option key={location.id} value={location.id}>
-                        {location.name} - {location.city}
+                        {location.name}{location.city && ` - ${location.city}`}
                       </option>
                     ))}
                   </select>
