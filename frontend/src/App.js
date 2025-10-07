@@ -46,6 +46,12 @@ function App() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [posSearchTerm, setPosSearchTerm] = useState('');
   const [selectedLocationForAnalytics, setSelectedLocationForAnalytics] = useState('');
+  
+  // Location-based inventory state
+  const [shopifyLocations, setShopifyLocations] = useState([]);
+  const [selectedLocationId, setSelectedLocationId] = useState(localStorage.getItem('selectedLocationId') || null);
+  const [detectedCity, setDetectedCity] = useState(null);
+  const [showAllLocations, setShowAllLocations] = useState(user?.role === 'admin'); // Admin can see all
   const [locationAnalyticsData, setLocationAnalyticsData] = useState(null);
   const [expandedInvoice, setExpandedInvoice] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
@@ -769,10 +775,33 @@ function App() {
 
   // Load POS products when POS page is accessed
   useEffect(() => {
-    if (currentPage === 'pos' && posProducts.length === 0) {
-      loadPosProducts();
+    const initializePOS = async () => {
+      if (currentPage === 'pos') {
+        // Fetch Shopify locations first
+        await fetchShopifyLocations();
+        
+        // Auto-detect location if not already set
+        let locationToUse = selectedLocationId;
+        if (!locationToUse) {
+          locationToUse = await detectCustomerLocation();
+        }
+        
+        // Load products with location filter (if not admin or if admin hasn't toggled showAllLocations)
+        if (posProducts.length === 0 || locationToUse !== selectedLocationId) {
+          loadPosProducts(locationToUse);
+        }
+      }
+    };
+    
+    initializePOS();
+  }, [currentPage]); // Only run when page changes
+  
+  // Reload products when showAllLocations toggle changes (admin only)
+  useEffect(() => {
+    if (currentPage === 'pos' && user?.role === 'admin') {
+      loadPosProducts(showAllLocations ? null : selectedLocationId);
     }
-  }, [currentPage, posProducts.length]);
+  }, [showAllLocations]);
 
   // Load location data when Location Analytics page is accessed
   useEffect(() => {
@@ -1796,13 +1825,79 @@ function App() {
     }
   };
 
-  const loadPosProducts = async () => {
+  // Fetch Shopify locations
+  const fetchShopifyLocations = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/shopify/locations`, {
+        headers: {
+          'Authorization': 'Bearer demo-token',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.locations) {
+          console.log('📍 Shopify Locations:', data.data.locations);
+          setShopifyLocations(data.data.locations);
+          return data.data.locations;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Shopify locations:', error);
+    }
+    return [];
+  };
+
+  // Auto-detect customer location from IP
+  const detectCustomerLocation = async () => {
+    try {
+      console.log('🌍 Auto-detecting customer location...');
+      const response = await fetch(`${API_URL}/api/geolocation/detect`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          console.log('✅ Location detected:', data.data);
+          setDetectedCity(data.data.detectedLocation.city);
+          
+          // If user hasn't manually selected a location, use the detected one
+          if (!selectedLocationId && data.data.matchedLocationId) {
+            const locationId = data.data.matchedLocationId.toString();
+            setSelectedLocationId(locationId);
+            localStorage.setItem('selectedLocationId', locationId);
+            return locationId;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting location:', error);
+    }
+    return selectedLocationId;
+  };
+
+  // Handle manual location change by customer/admin
+  const handleLocationChange = (locationId) => {
+    console.log(`📍 Location changed to: ${locationId}`);
+    setSelectedLocationId(locationId);
+    localStorage.setItem('selectedLocationId', locationId);
+    loadPosProducts(locationId);
+  };
+
+  const loadPosProducts = async (locationId = null) => {
     setPosLoading(true);
     try {
       // Fetch real products from backend Shopify API for POS
-      console.log('Fetching POS products from backend Shopify API...');
+      // If locationId is provided and user is not admin (or admin hasn't toggled showAllLocations), filter by location
+      const shouldFilterByLocation = locationId && (!user || user.role !== 'admin' || !showAllLocations);
       
-      const response = await fetch(`${API_URL}/api/shopify/products`, {
+      console.log(`Fetching POS products from backend Shopify API... ${shouldFilterByLocation ? `(filtered by location: ${locationId})` : '(all locations)'}`);
+      
+      const url = shouldFilterByLocation 
+        ? `${API_URL}/api/shopify/products?locationId=${locationId}`
+        : `${API_URL}/api/shopify/products`;
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer demo-token', // Using demo token for now
@@ -1864,6 +1959,11 @@ function App() {
          const hsnCode = isEyeglasses ? '90031900' : '90041000';
          const gstRate = isEyeglasses ? 5 : 18;
           
+          // Use location-specific inventory if available, otherwise use global inventory
+          const locationInventory = variant && variant.location_inventory !== undefined 
+            ? variant.location_inventory 
+            : (variant ? (variant.inventory_quantity || 0) : 0);
+          
           return {
             id: product.id,
             name: product.title,
@@ -1872,7 +1972,8 @@ function App() {
             image: imageUrl,
             vendor: product.vendor || 'Voyage Eyewear',
             sku: variant ? variant.sku : '',
-            inventory: variant ? (variant.inventory_quantity || 0) : 0,
+            inventory: locationInventory,
+            locationFiltered: shouldFilterByLocation, // Flag to show if filtered by location
             productType: productType,
             hsnCode: hsnCode,
             gstRate: gstRate
@@ -4337,6 +4438,53 @@ function App() {
               <h1>Point of Sale (POS)</h1>
               <p>Process sales transactions and manage orders</p>
             </div>
+
+            {/* Location Selector */}
+            {shopifyLocations.length > 0 && (
+              <div className="location-selector-bar">
+                <div className="location-selector-content">
+                  <div className="location-info">
+                    <span className="location-icon">📍</span>
+                    <div>
+                      <strong>Shopping Location:</strong>
+                      {detectedCity && (
+                        <span className="detected-city"> (Detected: {detectedCity})</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <select 
+                    value={selectedLocationId || ''} 
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    className="location-selector"
+                  >
+                    <option value="">All Locations</option>
+                    {shopifyLocations.map(loc => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name} {loc.city && `- ${loc.city}`}
+                      </option>
+                    ))}
+                  </select>
+
+                  {user?.role === 'admin' && (
+                    <label className="admin-toggle">
+                      <input 
+                        type="checkbox" 
+                        checked={showAllLocations}
+                        onChange={(e) => setShowAllLocations(e.target.checked)}
+                      />
+                      <span>Show All Locations (Admin)</span>
+                    </label>
+                  )}
+                </div>
+
+                {selectedLocationId && !showAllLocations && (
+                  <div className="location-filter-notice">
+                    ℹ️ Showing products available at selected location only
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="pos-container">
               <div className="pos-main">

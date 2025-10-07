@@ -52,8 +52,56 @@ class ShopifyService {
     }
   }
 
+  // Get all Shopify locations (stores/warehouses)
+  async getLocations() {
+    try {
+      const response = await axios.get(`${this.adminAPIURL}/locations.json`, {
+        headers: this.getAdminHeaders()
+      });
+
+      console.log('📍 Shopify Locations:', response.data.locations.map(l => ({ id: l.id, name: l.name, city: l.city })));
+
+      return {
+        success: true,
+        locations: response.data.locations
+      };
+    } catch (error) {
+      console.error('Error fetching locations:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.errors || error.message
+      };
+    }
+  }
+
+  // Get inventory levels for all products at a specific location
+  async getInventoryLevels(locationId) {
+    try {
+      console.log(`📦 Fetching inventory for location: ${locationId}`);
+      
+      const response = await axios.get(`${this.adminAPIURL}/inventory_levels.json`, {
+        headers: this.getAdminHeaders(),
+        params: {
+          location_ids: locationId,
+          limit: 250
+        }
+      });
+
+      return {
+        success: true,
+        inventoryLevels: response.data.inventory_levels
+      };
+    } catch (error) {
+      console.error('Error fetching inventory levels:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.errors || error.message
+      };
+    }
+  }
+
   // Get all products from Shopify (with pagination to fetch ALL products)
-  async getProducts(limit = 250) {
+  async getProducts(limit = 250, locationId = null) {
     try {
       let allProducts = [];
       let nextPageUrl = null;
@@ -114,6 +162,58 @@ class ShopifyService {
         if (firstProduct.images && firstProduct.images.length > 0) {
           console.log('   ✅ FIRST IMAGE SRC:', firstProduct.images[0].src);
         }
+      }
+
+      // If locationId is provided, fetch inventory levels and filter products
+      if (locationId) {
+        console.log(`📦 Filtering products for location: ${locationId}`);
+        
+        // Create a map of inventory item ID to quantity for this location
+        const inventoryMap = new Map();
+        
+        // Fetch inventory levels for all variants
+        for (const product of allProducts) {
+          if (product.variants && product.variants.length > 0) {
+            for (const variant of product.variants) {
+              if (variant.inventory_item_id) {
+                try {
+                  const invResponse = await axios.get(
+                    `${this.adminAPIURL}/inventory_levels.json`,
+                    {
+                      headers: this.getAdminHeaders(),
+                      params: {
+                        inventory_item_ids: variant.inventory_item_id,
+                        location_ids: locationId
+                      }
+                    }
+                  );
+                  
+                  if (invResponse.data.inventory_levels && invResponse.data.inventory_levels.length > 0) {
+                    const level = invResponse.data.inventory_levels[0];
+                    inventoryMap.set(variant.inventory_item_id, level.available || 0);
+                    variant.location_inventory = level.available || 0;
+                  } else {
+                    variant.location_inventory = 0;
+                  }
+                } catch (err) {
+                  console.error(`Error fetching inventory for variant ${variant.id}:`, err.message);
+                  variant.location_inventory = 0;
+                }
+              }
+            }
+          }
+        }
+
+        // Filter out products with 0 stock at this location
+        allProducts = allProducts.filter(product => {
+          if (!product.variants || product.variants.length === 0) return false;
+          
+          // Check if ANY variant has stock > 0 at this location
+          const hasStock = product.variants.some(v => (v.location_inventory || 0) > 0);
+          return hasStock;
+        });
+
+        console.log(`✅ After location filtering: ${allProducts.length} products available at location ${locationId}`);
       }
 
       return {

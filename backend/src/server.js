@@ -29,6 +29,7 @@ const backupRoutes = require('./routes/backups');
 const dataRoutes = require('./routes/data');
 const userLocationRoutes = require('./routes/userLocations');
 const whatsappRoutes = require('./routes/whatsapp');
+const geolocationRoutes = require('./routes/geolocation');
 
 const app = express();
 const server = createServer(app);
@@ -163,6 +164,7 @@ app.use('/api/backups', backupRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/user-locations', authenticateToken, userLocationRoutes);
 app.use('/api/whatsapp', authenticateToken, whatsappRoutes);
+app.use('/api/geolocation', geolocationRoutes); // No auth for customer-facing location detection
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

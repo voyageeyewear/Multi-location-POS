@@ -51,11 +51,14 @@ class ShopifyController {
     }
   }
 
-  // Get products from Shopify
+  // Get products from Shopify (optionally filtered by location)
   static async getProducts(req, res, next) {
     try {
-      const { limit } = req.query;
-      const result = await shopifyService.getProducts(parseInt(limit) || 50);
+      const { limit, locationId } = req.query;
+      const result = await shopifyService.getProducts(
+        parseInt(limit) || 250,
+        locationId || null
+      );
       
       if (result.success) {
         res.json({
@@ -63,7 +66,8 @@ class ShopifyController {
           data: {
             products: result.products,
             count: result.count
-          }
+          },
+          ...(locationId && { locationFiltered: true, locationId })
         });
       } else {
         res.status(400).json({
