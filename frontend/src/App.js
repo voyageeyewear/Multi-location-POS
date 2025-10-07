@@ -68,8 +68,9 @@ function App() {
     stateCode: '08',
     phone: '+91 9876543210',
     email: 'ssenterprises255@gmail.com',
-    cgstRate: 9.00,
-    sgstRate: 9.00,
+    // IGST rates based on product type:
+    // Sunglasses: 18% IGST
+    // Frames/Eyeglasses: 5% IGST
     bankName: 'Kotak Mahindra Bank',
     accountNumber: '2512756589',
     ifscCode: 'KKBK0004485'
@@ -2204,13 +2205,17 @@ function App() {
     }, 0);
   };
 
+  // Calculate total IGST (Integrated GST) based on product type
+  // Sunglasses → 18% IGST
+  // Frames/Eyeglasses → 5% IGST
   const getCartGST = () => {
     return cart.reduce((total, item) => {
       const itemTotal = item.price * item.quantity;
       const discountAmount = item.discountAmount || 0;
       const discountedTotal = itemTotal - discountAmount;
-      const gstRate = item.gstRate || 18; // Default to 18% if not specified
-      return total + (discountedTotal * gstRate / 100);
+      const igstRate = item.gstRate || 18; // Default to 18% IGST for Sunglasses
+      const igstAmount = discountedTotal * igstRate / 100;
+      return total + igstAmount;
     }, 0);
   };
 
@@ -2229,27 +2234,35 @@ function App() {
       const itemTotal = item.price * item.quantity;
       const discountAmount = item.discountAmount || 0;
       const discountedTotal = itemTotal - discountAmount;
+      
+      // Determine IGST rate based on product type
+      // Sunglasses → 18% IGST
+      // Frames/Eyeglasses → 5% IGST
       const gstRate = item.gstRate || 18;
-      const gstAmount = discountedTotal * gstRate / 100;
+      const igstAmount = discountedTotal * gstRate / 100;
 
       if (!breakdown[gstRate]) {
         breakdown[gstRate] = {
           rate: gstRate,
           taxableAmount: 0,
-          gstAmount: 0,
+          igst: 0, // IGST only (no CGST/SGST split)
+          igstRate: gstRate,
           items: []
         };
       }
 
       breakdown[gstRate].taxableAmount += discountedTotal;
-      breakdown[gstRate].gstAmount += gstAmount;
+      breakdown[gstRate].igst += igstAmount;
       breakdown[gstRate].items.push({
         name: item.name,
         hsnCode: item.hsnCode || '90041000',
+        productType: item.productType || 'sunglasses',
         quantity: item.quantity,
         rate: item.price,
         discountAmount: discountAmount,
-        amount: discountedTotal
+        amount: discountedTotal,
+        igstRate: gstRate,
+        igstAmount: igstAmount
       });
     });
 
