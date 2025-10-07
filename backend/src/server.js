@@ -39,8 +39,12 @@ const io = new Server(server, {
   }
 });
 
-// Security middleware
-app.use(helmet());
+// Security middleware - DISABLE CSP to allow Shopify images
+app.use(helmet({
+  contentSecurityPolicy: false,  // DISABLE CSP completely to allow all images
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false
+}));
 app.use(compression());
 
 // Rate limiting
