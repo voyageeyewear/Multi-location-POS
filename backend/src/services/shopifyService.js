@@ -598,12 +598,14 @@ class ShopifyService {
       
       while (hasNextPage) {
         const params = {
-          limit: limit,
-          status: status, // any, open, closed, cancelled
-          order: 'created_at desc'
+          limit: limit
         };
         
-        if (pageInfo) {
+        // Only add status and order params for first page (not when page_info is present)
+        if (!pageInfo) {
+          params.status = status; // any, open, closed, cancelled
+          params.order = 'created_at desc';
+        } else {
           params.page_info = pageInfo;
         }
         
@@ -667,11 +669,13 @@ class ShopifyService {
       
       while (hasNextPage) {
         const params = {
-          limit: limit,
-          order: 'created_at desc'
+          limit: limit
         };
         
-        if (pageInfo) {
+        // Only add order param for first page (not when page_info is present)
+        if (!pageInfo) {
+          params.order = 'created_at desc';
+        } else {
           params.page_info = pageInfo;
         }
         
