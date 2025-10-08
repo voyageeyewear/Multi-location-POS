@@ -3,10 +3,15 @@ const AppDataSource = require('../config/database');
 
 const authenticateToken = async (req, res, next) => {
   try {
+    console.log('🔐 AUTH MIDDLEWARE - Path:', req.path);
     const authHeader = req.headers['authorization'];
+    console.log('🔐 AUTH HEADER:', authHeader ? 'Present' : 'MISSING');
+    
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    console.log('🔐 TOKEN:', token ? `${token.substring(0, 20)}...` : 'MISSING');
 
     if (!token) {
+      console.log('❌ AUTH FAILED: No token provided');
       return res.status(401).json({
         success: false,
         message: 'Access token required'
@@ -15,7 +20,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Handle demo token for testing
     if (token === 'demo-token') {
-      console.log('Using demo token for authentication');
+      console.log('✅ Using demo token for authentication');
       req.user = {
         id: '1',
         firstName: 'Super',
@@ -41,11 +46,14 @@ const authenticateToken = async (req, res, next) => {
       req.companyId = '1';
       req.roleId = '1';
       req.permissions = req.user.role.permissions;
+      console.log('✅ Demo token authentication successful');
       return next();
     }
 
     const jwtSecret = process.env.JWT_SECRET || 'demo-secret';
+    console.log('🔐 Verifying JWT with secret...');
     const decoded = jwt.verify(token, jwtSecret);
+    console.log('🔐 JWT Decoded:', decoded);
     
     // Demo users for testing without database
     const demoUsers = {
@@ -112,8 +120,12 @@ const authenticateToken = async (req, res, next) => {
     };
 
     // Get user from demo data
+    console.log('🔐 Looking for user with ID:', decoded.userId);
     const user = demoUsers[decoded.userId];
+    console.log('🔐 User found:', user ? 'YES' : 'NO');
+    
     if (!user || !user.isActive) {
+      console.log('❌ AUTH FAILED: Invalid or inactive user');
       return res.status(401).json({
         success: false,
         message: 'Invalid or inactive user'
@@ -126,9 +138,13 @@ const authenticateToken = async (req, res, next) => {
     req.roleId = user.roleId;
     req.permissions = user.role.permissions;
     
+    console.log('✅ JWT Authentication successful for user:', user.email);
     next();
   } catch (error) {
+    console.log('❌ AUTH ERROR:', error.name, error.message);
+    
     if (error.name === 'JsonWebTokenError') {
+      console.log('❌ Invalid JWT token');
       return res.status(401).json({
         success: false,
         message: 'Invalid token'
@@ -136,13 +152,14 @@ const authenticateToken = async (req, res, next) => {
     }
     
     if (error.name === 'TokenExpiredError') {
+      console.log('❌ JWT token expired');
       return res.status(401).json({
         success: false,
         message: 'Token expired'
       });
     }
 
-    console.error('Auth middleware error:', error);
+    console.error('❌ Auth middleware error:', error);
     return res.status(500).json({
       success: false,
       message: 'Authentication error'
