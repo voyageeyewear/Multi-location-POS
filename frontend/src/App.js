@@ -5356,6 +5356,23 @@ function App() {
                         <td>
                           <span className="customer-name">
                             {(() => {
+                              // Debug log first order
+                              if (order.order_number === shopifyOrders[0]?.order_number) {
+                                console.log('🔍 DEBUG Order Data:', {
+                                  orderNumber: order.order_number,
+                                  hasCustomer: !!order.customer,
+                                  customerName: order.customer?.first_name + ' ' + order.customer?.last_name,
+                                  hasShippingAddress: !!order.shipping_address,
+                                  shippingName: order.shipping_address?.name,
+                                  shippingFirstName: order.shipping_address?.first_name,
+                                  shippingLastName: order.shipping_address?.last_name,
+                                  hasBillingAddress: !!order.billing_address,
+                                  billingName: order.billing_address?.name,
+                                  contactEmail: order.contact_email,
+                                  email: order.email
+                                });
+                              }
+                              
                               // Try customer object first
                               if (order.customer?.first_name || order.customer?.last_name) {
                                 return `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim();
@@ -5374,9 +5391,12 @@ function App() {
                                   return `${order.billing_address.first_name || ''} ${order.billing_address.last_name || ''}`.trim();
                                 }
                               }
-                              // Try contact email
+                              // Try contact email or email
                               if (order.contact_email) {
                                 return order.contact_email.split('@')[0];
+                              }
+                              if (order.email) {
+                                return order.email.split('@')[0];
                               }
                               // Fallback
                               return 'Guest';
