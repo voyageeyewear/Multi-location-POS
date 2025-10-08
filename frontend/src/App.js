@@ -5424,7 +5424,7 @@ function App() {
                 <h3>No Orders Found</h3>
                 <p>No orders match your current filter</p>
               </div>
-            )
+            )}
           </React.Fragment>
         )}
 

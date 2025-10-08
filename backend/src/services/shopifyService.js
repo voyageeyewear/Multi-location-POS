@@ -626,8 +626,33 @@ class ShopifyService {
       if (customersResult.success && customersResult.customers) {
         customersResult.customers.forEach(customer => {
           if (customer.id) {
-            const customerName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.email?.split('@')[0] || 'Guest';
-            customerMap[customer.id] = customerName;
+            let customerName = '';
+            
+            // Try first_name + last_name
+            if (customer.first_name || customer.last_name) {
+              customerName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+            }
+            
+            // Try default_address
+            if (!customerName && customer.default_address) {
+              customerName = customer.default_address.name || 
+                            `${customer.default_address.first_name || ''} ${customer.default_address.last_name || ''}`.trim();
+            }
+            
+            // Try first address in addresses array
+            if (!customerName && customer.addresses && customer.addresses.length > 0) {
+              const firstAddr = customer.addresses[0];
+              customerName = firstAddr.name || 
+                            `${firstAddr.first_name || ''} ${firstAddr.last_name || ''}`.trim();
+            }
+            
+            // Try email
+            if (!customerName && customer.email) {
+              customerName = customer.email.split('@')[0];
+            }
+            
+            // Fallback
+            customerMap[customer.id] = customerName || 'Guest';
           }
         });
         console.log(`✅ Created customer mapping for ${Object.keys(customerMap).length} customers`);
@@ -763,6 +788,12 @@ class ShopifyService {
       }
       
       console.log(`✅ Total customers fetched: ${allCustomers.length}`);
+      
+      // Debug: Log first customer's structure
+      if (allCustomers.length > 0) {
+        console.log('\n🔍 First customer data sample:');
+        console.log('FULL CUSTOMER OBJECT:', JSON.stringify(allCustomers[0], null, 2));
+      }
       
       return {
         success: true,
