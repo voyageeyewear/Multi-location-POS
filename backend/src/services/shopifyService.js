@@ -618,16 +618,42 @@ class ShopifyService {
       
       console.log(`✅ Total orders fetched: ${allOrders.length}`);
       
-      // Debug: Log first order's customer data
-      if (allOrders.length > 0) {
-        console.log('📊 Sample order customer data:', {
-          hasCustomer: !!allOrders[0].customer,
-          customerKeys: allOrders[0].customer ? Object.keys(allOrders[0].customer) : [],
-          firstName: allOrders[0].customer?.first_name,
-          lastName: allOrders[0].customer?.last_name,
-          email: allOrders[0].customer?.email
-        });
+      // Enrich orders with full customer details
+      console.log('🔍 Enriching orders with customer details...');
+      const customerCache = {};
+      
+      for (let order of allOrders) {
+        if (order.customer && order.customer.id) {
+          const customerId = order.customer.id;
+          
+          // Check if customer details are missing
+          if (!order.customer.first_name && !order.customer.last_name && !order.customer.email) {
+            // Fetch from cache or API
+            if (!customerCache[customerId]) {
+              try {
+                const customerResponse = await axios.get(`${this.adminAPIURL}/customers/${customerId}.json`, {
+                  headers: this.getAdminHeaders()
+                });
+                customerCache[customerId] = customerResponse.data.customer;
+                console.log(`✅ Fetched customer ${customerId}: ${customerCache[customerId].first_name} ${customerCache[customerId].last_name}`);
+                
+                // Rate limit: Wait 200ms between customer fetches
+                await new Promise(resolve => setTimeout(resolve, 200));
+              } catch (error) {
+                console.error(`❌ Failed to fetch customer ${customerId}:`, error.message);
+                customerCache[customerId] = null;
+              }
+            }
+            
+            // Merge customer details into order
+            if (customerCache[customerId]) {
+              order.customer = { ...order.customer, ...customerCache[customerId] };
+            }
+          }
+        }
       }
+      
+      console.log(`✅ Customer enrichment complete! Enriched ${Object.keys(customerCache).length} customers.`);
       
       return {
         success: true,
