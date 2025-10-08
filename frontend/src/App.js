@@ -5286,7 +5286,7 @@ function App() {
         )}
 
         {currentPage === 'shopify-orders' && (
-          <>
+          <React.Fragment>
             <div className="content-header">
               <h1>📦 Shopify Orders</h1>
               <p>View and manage all orders from your Shopify store</p>
@@ -5337,59 +5337,81 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {shopifyOrders.map((order) => (
-                      <tr key={order.id}>
-                        <td>
-                          <span className="order-number">#{order.order_number || order.name}</span>
-                        </td>
-                        <td>
-                          <span className="order-date">
-                            {new Date(order.created_at).toLocaleDateString('en-US', { 
-                              weekday: 'short',
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="customer-name">
-                            {order.customerName || 'Guest'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="channel-name">
-                            {order.source_name || order.gateway || 'Online Store'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="order-total">₹{parseFloat(order.total_price || 0).toLocaleString()}</span>
-                        </td>
-                        <td>
-                          <span className={`status-badge payment-${order.financial_status?.toLowerCase()}`}>
-                            {order.financial_status || 'pending'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`status-badge fulfillment-${order.fulfillment_status || 'unfulfilled'}`}>
-                            {order.fulfillment_status || 'Unfulfilled'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="items-count">
-                            {order.line_items?.length || 0} {order.line_items?.length === 1 ? 'item' : 'items'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="delivery-status">
-                            {order.fulfillment_status === 'fulfilled' ? 'Delivered' : 
-                             order.fulfillment_status === 'partial' ? 'Partially delivered' :
-                             'Shipping not requested'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {shopifyOrders.map((order) => {
+                      const getShopifyOrderCustomerName = (o) => {
+                        if (!o) return 'Guest';
+                        if (o.customerName && String(o.customerName).trim()) return o.customerName;
+                        if (o.customer && (o.customer.first_name || o.customer.last_name)) {
+                          const parts = [o.customer.first_name, o.customer.last_name].filter(Boolean);
+                          const n = parts.join(' ').trim();
+                          if (n) return n;
+                        }
+                        if (o.shipping_address) {
+                          const n = o.shipping_address.name || [o.shipping_address.first_name, o.shipping_address.last_name].filter(Boolean).join(' ').trim();
+                          if (n) return n;
+                        }
+                        if (o.billing_address) {
+                          const n = o.billing_address.name || [o.billing_address.first_name, o.billing_address.last_name].filter(Boolean).join(' ').trim();
+                          if (n) return n;
+                        }
+                        if (o.contact_email || o.email) return (o.contact_email || o.email).split('@')[0];
+                        return 'Guest';
+                      };
+
+                      return (
+                        <tr key={order.id}>
+                          <td>
+                            <span className="order-number">#{order.order_number || order.name}</span>
+                          </td>
+                          <td>
+                            <span className="order-date">
+                              {new Date(order.created_at).toLocaleDateString('en-US', { 
+                                weekday: 'short',
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="customer-name">
+                              {getShopifyOrderCustomerName(order)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="channel-name">
+                              {order.source_name || order.gateway || 'Online Store'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="order-total">₹{parseFloat(order.total_price || 0).toLocaleString()}</span>
+                          </td>
+                          <td>
+                            <span className={`status-badge payment-${order.financial_status?.toLowerCase()}`}>
+                              {order.financial_status || 'pending'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`status-badge fulfillment-${order.fulfillment_status || 'unfulfilled'}`}>
+                              {order.fulfillment_status || 'Unfulfilled'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="items-count">
+                              {order.line_items?.length || 0} {order.line_items?.length === 1 ? 'item' : 'items'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="delivery-status">
+                              {order.fulfillment_status === 'fulfilled' ? 'Delivered' : 
+                               order.fulfillment_status === 'partial' ? 'Partially delivered' :
+                               'Shipping not requested'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 <div className="table-footer">
@@ -5402,12 +5424,12 @@ function App() {
                 <h3>No Orders Found</h3>
                 <p>No orders match your current filter</p>
               </div>
-            )}
-          </>
+            )
+          </React.Fragment>
         )}
 
         {currentPage === 'shopify-customers' && (
-          <>
+          <React.Fragment>
             <div className="content-header">
               <h1>👥 Shopify Customers</h1>
               <p>View and manage all customers from your Shopify store</p>
@@ -5514,7 +5536,7 @@ function App() {
                 <p>No customers in your Shopify store</p>
               </div>
             )}
-          </>
+          </React.Fragment>
         )}
 
         {currentPage !== 'dashboard' && currentPage !== 'products' && currentPage !== 'locations' && currentPage !== 'location-analytics' && currentPage !== 'sales' && currentPage !== 'users' && currentPage !== 'pos' && currentPage !== 'data' && currentPage !== 'shopify-orders' && currentPage !== 'shopify-customers' && currentPage !== 'assign-locations' && (

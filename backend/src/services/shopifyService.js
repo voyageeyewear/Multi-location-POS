@@ -631,16 +631,32 @@ class ShopifyService {
           }
         });
         console.log(`✅ Created customer mapping for ${Object.keys(customerMap).length} customers`);
+        
+        // Debug: Show first 5 customer mappings
+        const sampleMappings = Object.entries(customerMap).slice(0, 5);
+        console.log('📊 Sample customer mappings:', sampleMappings);
       }
       
       // Enrich orders with customer names
       console.log('\n🔍 Enriching orders with customer names...');
+      let matchedCount = 0;
+      let unmatchedCount = 0;
+      
+      // Debug: Check first order's customer ID
+      if (allOrders.length > 0 && allOrders[0].customer) {
+        console.log('📊 First order customer ID:', allOrders[0].customer.id);
+        console.log('📊 Is in map?', !!customerMap[allOrders[0].customer.id]);
+        console.log('📊 Mapped name:', customerMap[allOrders[0].customer.id]);
+      }
+      
       for (let order of allOrders) {
         // Try to get customer name from customer ID mapping
         if (order.customer && order.customer.id && customerMap[order.customer.id]) {
           order.customerName = customerMap[order.customer.id];
+          matchedCount++;
           continue;
         }
+        unmatchedCount++;
         
         // Try shipping address
         if (order.shipping_address) {
@@ -676,6 +692,7 @@ class ShopifyService {
       }
       
       console.log(`✅ Customer names enriched successfully!`);
+      console.log(`📊 Stats: ${matchedCount} matched from customer map, ${unmatchedCount} used fallback`);
       
       return {
         success: true,
