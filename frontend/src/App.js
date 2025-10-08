@@ -5355,7 +5355,32 @@ function App() {
                         </td>
                         <td>
                           <span className="customer-name">
-                            {order.customer ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() || 'Guest' : 'Guest'}
+                            {(() => {
+                              // Try customer object first
+                              if (order.customer?.first_name || order.customer?.last_name) {
+                                return `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim();
+                              }
+                              // Try shipping address
+                              if (order.shipping_address) {
+                                if (order.shipping_address.name) return order.shipping_address.name;
+                                if (order.shipping_address.first_name || order.shipping_address.last_name) {
+                                  return `${order.shipping_address.first_name || ''} ${order.shipping_address.last_name || ''}`.trim();
+                                }
+                              }
+                              // Try billing address
+                              if (order.billing_address) {
+                                if (order.billing_address.name) return order.billing_address.name;
+                                if (order.billing_address.first_name || order.billing_address.last_name) {
+                                  return `${order.billing_address.first_name || ''} ${order.billing_address.last_name || ''}`.trim();
+                                }
+                              }
+                              // Try contact email
+                              if (order.contact_email) {
+                                return order.contact_email.split('@')[0];
+                              }
+                              // Fallback
+                              return 'Guest';
+                            })()}
                           </span>
                         </td>
                         <td>
