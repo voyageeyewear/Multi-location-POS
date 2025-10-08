@@ -326,31 +326,6 @@ class ShopifyService {
     }
   }
 
-  // Get orders from Shopify
-  async getOrders(limit = 50, status = 'any') {
-    try {
-      const response = await axios.get(`${this.adminAPIURL}/orders.json`, {
-        headers: this.getAdminHeaders(),
-        params: {
-          limit,
-          status,
-          fields: 'id,name,email,created_at,updated_at,financial_status,fulfillment_status,total_price,currency,line_items'
-        }
-      });
-
-      return {
-        success: true,
-        orders: response.data.orders,
-        count: response.data.orders.length
-      };
-    } catch (error) {
-      console.error('Error fetching orders:', error.response?.data || error.message);
-      return {
-        success: false,
-        error: error.response?.data?.errors || error.message
-      };
-    }
-  }
 
   // Create order in Shopify
   async createOrder(orderData) {
