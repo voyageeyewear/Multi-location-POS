@@ -643,6 +643,17 @@ class ShopifyService {
       
       console.log(`✅ Total orders fetched: ${allOrders.length}`);
       
+      // Debug: Log first order's customer data
+      if (allOrders.length > 0) {
+        console.log('📊 Sample order customer data:', {
+          hasCustomer: !!allOrders[0].customer,
+          customerKeys: allOrders[0].customer ? Object.keys(allOrders[0].customer) : [],
+          firstName: allOrders[0].customer?.first_name,
+          lastName: allOrders[0].customer?.last_name,
+          email: allOrders[0].customer?.email
+        });
+      }
+      
       return {
         success: true,
         orders: allOrders,
