@@ -5313,69 +5313,80 @@ function App() {
                 <p>Loading Shopify orders...</p>
               </div>
             ) : shopifyOrders.length > 0 ? (
-              <div className="shopify-orders-grid">
-                {shopifyOrders.map((order) => (
-                  <div key={order.id} className="order-card">
-                    <div className="order-header">
-                      <h3>Order #{order.order_number || order.name}</h3>
-                      <span className={`order-status ${order.financial_status}`}>
-                        {order.financial_status}
-                      </span>
-                    </div>
-                    
-                    <div className="order-details">
-                      <div className="detail-row">
-                        <span className="label">Customer:</span>
-                        <span className="value">{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Guest'}</span>
-                      </div>
-                      {order.customer && order.customer.email && (
-                        <div className="detail-row">
-                          <span className="label">Email:</span>
-                          <span className="value">{order.customer.email}</span>
-                        </div>
-                      )}
-                      {order.customer && order.customer.phone && (
-                        <div className="detail-row">
-                          <span className="label">Phone:</span>
-                          <span className="value">{order.customer.phone}</span>
-                        </div>
-                      )}
-                      <div className="detail-row">
-                        <span className="label">Total:</span>
-                        <span className="value">₹{parseFloat(order.total_price || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="label">Items:</span>
-                        <span className="value">{order.line_items?.length || 0} items</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="label">Date:</span>
-                        <span className="value">{new Date(order.created_at).toLocaleDateString()}</span>
-                      </div>
-                      {order.shipping_address && (
-                        <div className="detail-row">
-                          <span className="label">Shipping:</span>
-                          <span className="value">{order.shipping_address.city}, {order.shipping_address.province}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {order.line_items && order.line_items.length > 0 && (
-                      <div className="order-items">
-                        <h4>Order Items:</h4>
-                        {order.line_items.map((item, idx) => (
-                          <div key={idx} className="order-item">
-                            <div className="item-info">
-                              <span className="item-name">{item.name}</span>
-                              <span className="item-quantity">Qty: {item.quantity}</span>
-                            </div>
-                            <span className="item-price">₹{parseFloat(item.price || 0).toLocaleString()}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="shopify-orders-table-container">
+                <table className="shopify-orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Channel</th>
+                      <th>Total</th>
+                      <th>Payment Status</th>
+                      <th>Fulfillment Status</th>
+                      <th>Items</th>
+                      <th>Delivery Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shopifyOrders.map((order) => (
+                      <tr key={order.id}>
+                        <td>
+                          <span className="order-number">#{order.order_number || order.name}</span>
+                        </td>
+                        <td>
+                          <span className="order-date">
+                            {new Date(order.created_at).toLocaleDateString('en-US', { 
+                              weekday: 'short',
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="customer-name">
+                            {order.customer ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() || 'Guest' : 'Guest'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="channel-name">
+                            {order.source_name || order.gateway || 'Online Store'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="order-total">₹{parseFloat(order.total_price || 0).toLocaleString()}</span>
+                        </td>
+                        <td>
+                          <span className={`status-badge payment-${order.financial_status?.toLowerCase()}`}>
+                            {order.financial_status || 'pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge fulfillment-${order.fulfillment_status || 'unfulfilled'}`}>
+                            {order.fulfillment_status || 'Unfulfilled'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="items-count">
+                            {order.line_items?.length || 0} {order.line_items?.length === 1 ? 'item' : 'items'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="delivery-status">
+                            {order.fulfillment_status === 'fulfilled' ? 'Delivered' : 
+                             order.fulfillment_status === 'partial' ? 'Partially delivered' :
+                             'Shipping not requested'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="table-footer">
+                  <span className="results-count">Showing {shopifyOrders.length} orders</span>
+                </div>
               </div>
             ) : (
               <div className="empty-state">
