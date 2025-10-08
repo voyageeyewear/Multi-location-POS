@@ -618,42 +618,77 @@ class ShopifyService {
       
       console.log(`✅ Total orders fetched: ${allOrders.length}`);
       
-      // Enrich orders with full customer details
-      console.log('🔍 Enriching orders with customer details...');
-      const customerCache = {};
+      // Debug: Log first order's customer-related fields
+      if (allOrders.length > 0) {
+        const firstOrder = allOrders[0];
+        console.log('\n🔍 ANALYZING FIRST ORDER FOR CUSTOMER DATA:');
+        console.log('Order #:', firstOrder.order_number);
+        console.log('note:', firstOrder.note);
+        console.log('note_attributes:', JSON.stringify(firstOrder.note_attributes, null, 2));
+        console.log('customer:', firstOrder.customer ? {
+          id: firstOrder.customer.id,
+          first_name: firstOrder.customer.first_name,
+          last_name: firstOrder.customer.last_name,
+          email: firstOrder.customer.email
+        } : 'null');
+        console.log('shipping_address:', firstOrder.shipping_address ? {
+          name: firstOrder.shipping_address.name,
+          first_name: firstOrder.shipping_address.first_name,
+          last_name: firstOrder.shipping_address.last_name
+        } : 'null');
+        console.log('billing_address:', firstOrder.billing_address ? {
+          name: firstOrder.billing_address.name,
+          first_name: firstOrder.billing_address.first_name,
+          last_name: firstOrder.billing_address.last_name
+        } : 'null');
+      }
       
+      // Extract customer names from order notes (Shopify POS stores them there)
+      console.log('\n🔍 Extracting customer names from order data...');
       for (let order of allOrders) {
-        if (order.customer && order.customer.id) {
-          const customerId = order.customer.id;
-          
-          // Check if customer details are missing
-          if (!order.customer.first_name && !order.customer.last_name && !order.customer.email) {
-            // Fetch from cache or API
-            if (!customerCache[customerId]) {
-              try {
-                const customerResponse = await axios.get(`${this.adminAPIURL}/customers/${customerId}.json`, {
-                  headers: this.getAdminHeaders()
-                });
-                customerCache[customerId] = customerResponse.data.customer;
-                console.log(`✅ Fetched customer ${customerId}: ${customerCache[customerId].first_name} ${customerCache[customerId].last_name}`);
-                
-                // Rate limit: Wait 200ms between customer fetches
-                await new Promise(resolve => setTimeout(resolve, 200));
-              } catch (error) {
-                console.error(`❌ Failed to fetch customer ${customerId}:`, error.message);
-                customerCache[customerId] = null;
-              }
-            }
-            
-            // Merge customer details into order
-            if (customerCache[customerId]) {
-              order.customer = { ...order.customer, ...customerCache[customerId] };
-            }
+        // Try note_attributes first (custom POS fields)
+        if (order.note_attributes && order.note_attributes.length > 0) {
+          const customerNameAttr = order.note_attributes.find(attr => 
+            attr.name && (attr.name.toLowerCase().includes('customer') || attr.name.toLowerCase() === 'name')
+          );
+          if (customerNameAttr && customerNameAttr.value) {
+            order.customerName = customerNameAttr.value.trim();
+            continue;
           }
+        }
+        
+        // Try shipping address
+        if (!order.customerName && order.shipping_address) {
+          order.customerName = order.shipping_address.name || 
+                              `${order.shipping_address.first_name || ''} ${order.shipping_address.last_name || ''}`.trim();
+        }
+        
+        // Try billing address
+        if (!order.customerName && order.billing_address) {
+          order.customerName = order.billing_address.name ||
+                              `${order.billing_address.first_name || ''} ${order.billing_address.last_name || ''}`.trim();
+        }
+        
+        // Try customer object
+        if (!order.customerName && order.customer) {
+          if (order.customer.first_name || order.customer.last_name) {
+            order.customerName = `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim();
+          }
+        }
+        
+        // Try email
+        if (!order.customerName && (order.contact_email || order.email)) {
+          const emailToUse = order.contact_email || order.email;
+          order.customerName = emailToUse.split('@')[0];
+        }
+        
+        // Final fallback
+        if (!order.customerName || order.customerName.trim() === '') {
+          order.customerName = 'Guest';
         }
       }
       
-      console.log(`✅ Customer enrichment complete! Enriched ${Object.keys(customerCache).length} customers.`);
+      console.log(`✅ Customer names extracted successfully!`);
       
       return {
         success: true,
