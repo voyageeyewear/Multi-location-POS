@@ -776,7 +776,11 @@ function App() {
   const loadShopifyOrders = async (status = 'any') => {
     try {
       setOrdersLoading(true);
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
+      // If token is null or "null" string, use demo-token
+      if (!token || token === 'null' || token === 'undefined') {
+        token = 'demo-token';
+      }
       const response = await fetch(`${API_URL}/api/shopify/orders?status=${status}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -808,7 +812,11 @@ function App() {
   const loadShopifyCustomers = async () => {
     try {
       setCustomersLoading(true);
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
+      // If token is null or "null" string, use demo-token
+      if (!token || token === 'null' || token === 'undefined') {
+        token = 'demo-token';
+      }
       const response = await fetch(`${API_URL}/api/shopify/customers`, {
         headers: {
           'Authorization': `Bearer ${token}`,
