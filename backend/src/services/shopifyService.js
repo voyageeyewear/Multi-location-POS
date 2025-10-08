@@ -628,26 +628,16 @@ class ShopifyService {
           if (customer.id) {
             let customerName = '';
             
+            // Try display_name first (GraphQL gives us this!)
+            if (customer.display_name) {
+              customerName = customer.display_name.trim();
+            }
             // Try first_name + last_name
-            if (customer.first_name || customer.last_name) {
+            else if (customer.first_name || customer.last_name) {
               customerName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
             }
-            
-            // Try default_address
-            if (!customerName && customer.default_address) {
-              customerName = customer.default_address.name || 
-                            `${customer.default_address.first_name || ''} ${customer.default_address.last_name || ''}`.trim();
-            }
-            
-            // Try first address in addresses array
-            if (!customerName && customer.addresses && customer.addresses.length > 0) {
-              const firstAddr = customer.addresses[0];
-              customerName = firstAddr.name || 
-                            `${firstAddr.first_name || ''} ${firstAddr.last_name || ''}`.trim();
-            }
-            
             // Try email
-            if (!customerName && customer.email) {
+            else if (customer.email) {
               customerName = customer.email.split('@')[0];
             }
             
@@ -657,8 +647,8 @@ class ShopifyService {
         });
         console.log(`✅ Created customer mapping for ${Object.keys(customerMap).length} customers`);
         
-        // Debug: Show first 5 customer mappings
-        const sampleMappings = Object.entries(customerMap).slice(0, 5);
+        // Debug: Show first 10 customer mappings
+        const sampleMappings = Object.entries(customerMap).slice(0, 10);
         console.log('📊 Sample customer mappings:', sampleMappings);
       }
       
@@ -737,46 +727,77 @@ class ShopifyService {
   // Get all customers from Shopify with pagination
   async getCustomers(limit = 250) {
     try {
-      console.log('👥 Fetching Shopify customers...');
+      console.log('👥 Fetching Shopify customers via GraphQL...');
+      
+      const graphqlQuery = `
+        query GetCustomers($first: Int!, $after: String) {
+          customers(first: $first, after: $after) {
+            edges {
+              node {
+                id
+                displayName
+                firstName
+                lastName
+                email
+                phone
+                numberOfOrders
+                createdAt
+                updatedAt
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      `;
       
       let allCustomers = [];
-      let pageInfo = null;
       let hasNextPage = true;
+      let cursor = null;
       
       while (hasNextPage) {
-        const params = {
-          limit: limit
-        };
-        
-        // Only add order param for first page (not when page_info is present)
-        if (!pageInfo) {
-          params.order = 'created_at desc';
-        } else {
-          params.page_info = pageInfo;
-        }
-        
-        const response = await axios.get(`${this.adminAPIURL}/customers.json`, {
-          headers: this.getAdminHeaders(),
-          params: params
-        });
-        
-        if (response.data.customers && response.data.customers.length > 0) {
-          allCustomers = allCustomers.concat(response.data.customers);
-          console.log(`✅ Fetched ${response.data.customers.length} customers (total: ${allCustomers.length})`);
-          
-          // Check for next page
-          const linkHeader = response.headers.link;
-          if (linkHeader && linkHeader.includes('rel="next"')) {
-            const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
-            if (nextMatch) {
-              const nextUrl = new URL(nextMatch[1]);
-              pageInfo = nextUrl.searchParams.get('page_info');
-            } else {
-              hasNextPage = false;
+        const response = await axios.post(
+          `https://${this.shopDomain}/admin/api/2024-10/graphql.json`,
+          {
+            query: graphqlQuery,
+            variables: {
+              first: Math.min(limit, 250),
+              after: cursor
             }
-          } else {
-            hasNextPage = false;
+          },
+          {
+            headers: {
+              'X-Shopify-Access-Token': this.accessToken,
+              'Content-Type': 'application/json'
+            }
           }
+        );
+        
+        if (response.data.data && response.data.data.customers) {
+          const customers = response.data.data.customers.edges.map(edge => {
+            const node = edge.node;
+            // Extract numeric ID from GraphQL ID
+            const numericId = node.id.split('/').pop();
+            return {
+              id: parseInt(numericId),
+              first_name: node.firstName,
+              last_name: node.lastName,
+              display_name: node.displayName,
+              email: node.email,
+              phone: node.phone,
+              orders_count: node.numberOfOrders,
+              created_at: node.createdAt,
+              updated_at: node.updatedAt
+            };
+          });
+          
+          allCustomers = allCustomers.concat(customers);
+          console.log(`✅ Fetched ${customers.length} customers (total: ${allCustomers.length})`);
+          
+          hasNextPage = response.data.data.customers.pageInfo.hasNextPage;
+          cursor = response.data.data.customers.pageInfo.endCursor;
         } else {
           hasNextPage = false;
         }
@@ -789,10 +810,12 @@ class ShopifyService {
       
       console.log(`✅ Total customers fetched: ${allCustomers.length}`);
       
-      // Debug: Log first customer's structure
+      // Debug: Log first customer
       if (allCustomers.length > 0) {
-        console.log('\n🔍 First customer data sample:');
-        console.log('FULL CUSTOMER OBJECT:', JSON.stringify(allCustomers[0], null, 2));
+        console.log('\n🔍 First customer from GraphQL:');
+        console.log('display_name:', allCustomers[0].display_name);
+        console.log('first_name:', allCustomers[0].first_name);
+        console.log('last_name:', allCustomers[0].last_name);
       }
       
       return {
@@ -801,7 +824,7 @@ class ShopifyService {
         count: allCustomers.length
       };
     } catch (error) {
-      console.error('Error fetching customers:', error.response?.data || error.message);
+      console.error('Error fetching customers via GraphQL:', error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.errors || error.message,
