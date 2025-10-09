@@ -863,6 +863,13 @@ function App() {
     }
   }, [currentPage, orderStatusFilter]);
 
+  // Load assigned locations when sales page is accessed (for client users)
+  useEffect(() => {
+    if (currentPage === 'sales' && user && user.role && (user.role.name === 'client' || user.role === 'client')) {
+      loadUserAssignedLocations();
+    }
+  }, [currentPage, user]);
+
   // Load Shopify Customers when page changes
   useEffect(() => {
     if (currentPage === 'shopify-customers') {
@@ -1010,16 +1017,26 @@ function App() {
     
     let filtered = salesData.orders;
     
-    // Apply user-based access control for client users
+    // Apply location-based access control for client users
     if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
-      filtered = filtered.filter(order => {
-        // Check if order was created by this user
-        const orderCreatorId = order.createdBy?.id || null;
-        const orderCreatorEmail = order.createdBy?.email || null;
+      // If user has assigned locations, filter orders by those locations
+      if (assignedLocations && assignedLocations.length > 0) {
+        const assignedLocationIds = assignedLocations.map(loc => 
+          parseInt(loc.shopifyLocationId || loc.id)
+        );
         
-        // Match by ID or email
-        return orderCreatorId === user.id || orderCreatorEmail === user.email;
-      });
+        filtered = filtered.filter(order => {
+          const orderLocationId = parseInt(order.location?.shopifyLocationId || order.shopifyLocationId || 0);
+          return assignedLocationIds.includes(orderLocationId);
+        });
+        
+        console.log(`🔒 Client filtered to ${assignedLocationIds.length} assigned locations:`, assignedLocationIds);
+        console.log(`📊 Showing ${filtered.length} orders from assigned locations`);
+      } else {
+        // No assigned locations - show no orders
+        console.log('⚠️ Client has no assigned locations - showing no orders');
+        filtered = [];
+      }
     }
     
     // Apply status filter
@@ -1093,15 +1110,23 @@ function App() {
     // Get today's date
     const today = new Date().toLocaleDateString('en-IN');
     
-    // Filter orders based on user role
+    // Filter orders based on user role and assigned locations
     let userOrders = salesData.orders;
     if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
-      // Client users see only their own sales
-      userOrders = salesData.orders.filter(order => {
-        const orderCreatorId = order.createdBy?.id || null;
-        const orderCreatorEmail = order.createdBy?.email || null;
-        return orderCreatorId === user.id || orderCreatorEmail === user.email;
-      });
+      // Client users see only sales from their assigned locations
+      if (assignedLocations && assignedLocations.length > 0) {
+        const assignedLocationIds = assignedLocations.map(loc => 
+          parseInt(loc.shopifyLocationId || loc.id)
+        );
+        
+        userOrders = salesData.orders.filter(order => {
+          const orderLocationId = parseInt(order.location?.shopifyLocationId || order.shopifyLocationId || 0);
+          return assignedLocationIds.includes(orderLocationId);
+        });
+      } else {
+        // No assigned locations - show no orders
+        userOrders = [];
+      }
     }
 
     // Calculate today's sales
@@ -4168,11 +4193,11 @@ function App() {
                   gap: '0.75rem',
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                 }}>
-                  <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
+                  <span style={{ fontSize: '1.5rem' }}>📍</span>
                   <div>
-                    <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Your Sales Only</strong>
+                    <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Assigned Locations Only</strong>
                     <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                      You are viewing only the sales created by you. Other client users cannot see your sales.
+                      You are viewing sales from your assigned locations only. {assignedLocations.length > 0 ? `Currently showing ${assignedLocations.length} location(s).` : 'No locations assigned.'}
                     </span>
                   </div>
                 </div>
