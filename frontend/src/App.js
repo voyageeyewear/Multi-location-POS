@@ -34,6 +34,9 @@ function App() {
   const [ordersPerPage] = useState(100);
   const [productsCurrentPage, setProductsCurrentPage] = useState(1);
   const [productsPerPage] = useState(100);
+  const [dashboardDateFilter, setDashboardDateFilter] = useState('today'); // today, yesterday, custom
+  const [dashboardCompareDate, setDashboardCompareDate] = useState('yesterday'); // For comparison
+  const [dashboardCustomDate, setDashboardCustomDate] = useState('');
   const [userFilter, setUserFilter] = useState('all'); // all, admin, client
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -863,6 +866,13 @@ function App() {
     }
   }, [currentPage, orderStatusFilter]);
 
+  // Load Shopify Orders for dashboard analytics
+  useEffect(() => {
+    if (currentPage === 'dashboard') {
+      loadShopifyOrders('any'); // Load all orders for analytics
+    }
+  }, [currentPage]);
+
   // Load assigned locations when sales page is accessed (for client users)
   useEffect(() => {
     if (currentPage === 'sales' && user && user.role && (user.role.name === 'client' || user.role === 'client')) {
@@ -1156,6 +1166,131 @@ function App() {
       totalOrders,
       totalProducts,
       totalLocations
+    };
+  };
+
+  // Enhanced analytics with date filtering and comparison (using Shopify data)
+  const getEnhancedAnalytics = () => {
+    console.log(`📊 Analytics: Processing ${shopifyOrders?.length || 0} Shopify orders`);
+    
+    if (!shopifyOrders || shopifyOrders.length === 0) {
+      return {
+        current: { sales: 0, orders: 0, sessions: 0, conversion: 0 },
+        previous: { sales: 0, orders: 0, sessions: 0, conversion: 0 },
+        comparison: { sales: 0, orders: 0, sessions: 0, conversion: 0 },
+        chartData: []
+      };
+    }
+
+    // Filter orders based on user role (using Shopify location data)
+    let userOrders = shopifyOrders;
+    if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
+      if (assignedLocations && assignedLocations.length > 0) {
+        const assignedLocationIds = assignedLocations.map(loc => parseInt(loc.id));
+        userOrders = shopifyOrders.filter(order => {
+          const orderLocationId = parseInt(order.location_id || 0);
+          return assignedLocationIds.includes(orderLocationId);
+        });
+      } else {
+        userOrders = [];
+      }
+    }
+
+    // Get current and previous date ranges
+    const now = new Date();
+    let currentDate, previousDate;
+    
+    if (dashboardDateFilter === 'today') {
+      currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      previousDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    } else if (dashboardDateFilter === 'yesterday') {
+      currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      previousDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2);
+    } else {
+      currentDate = dashboardCustomDate ? new Date(dashboardCustomDate) : new Date();
+      previousDate = new Date(currentDate);
+      previousDate.setDate(previousDate.getDate() - 1);
+    }
+
+    // Filter orders for current and previous periods (using Shopify date format)
+    const currentOrders = userOrders.filter(order => {
+      const orderDate = new Date(order.created_at || order.timestamp || order.createdAt);
+      return orderDate.toLocaleDateString('en-IN') === currentDate.toLocaleDateString('en-IN');
+    });
+
+    const previousOrders = userOrders.filter(order => {
+      const orderDate = new Date(order.created_at || order.timestamp || order.createdAt);
+      return orderDate.toLocaleDateString('en-IN') === previousDate.toLocaleDateString('en-IN');
+    });
+
+    // Calculate metrics (using Shopify total_price field)
+    const currentSales = currentOrders.reduce((sum, order) => {
+      const price = parseFloat(order.total_price || order.current_total_price || order.total || 0);
+      return sum + price;
+    }, 0);
+    const previousSales = previousOrders.reduce((sum, order) => {
+      const price = parseFloat(order.total_price || order.current_total_price || order.total || 0);
+      return sum + price;
+    }, 0);
+    
+    const currentOrdersCount = currentOrders.length;
+    const previousOrdersCount = previousOrders.length;
+    
+    console.log(`📊 Current period: ${currentOrdersCount} orders, ₹${currentSales.toFixed(2)}`);
+    console.log(`📊 Previous period: ${previousOrdersCount} orders, ₹${previousSales.toFixed(2)}`);
+    
+    // Mock sessions (you can integrate real analytics later)
+    const currentSessions = Math.floor(currentOrdersCount * (Math.random() * 2 + 1));
+    const previousSessions = Math.floor(previousOrdersCount * (Math.random() * 2 + 1));
+    
+    const currentConversion = currentSessions > 0 ? (currentOrdersCount / currentSessions) * 100 : 0;
+    const previousConversion = previousSessions > 0 ? (previousOrdersCount / previousSessions) * 100 : 0;
+
+    // Calculate comparison percentages
+    const salesComparison = previousSales > 0 ? ((currentSales - previousSales) / previousSales) * 100 : 0;
+    const ordersComparison = previousOrdersCount > 0 ? ((currentOrdersCount - previousOrdersCount) / previousOrdersCount) * 100 : 0;
+    const sessionsComparison = previousSessions > 0 ? ((currentSessions - previousSessions) / previousSessions) * 100 : 0;
+    const conversionComparison = previousConversion > 0 ? ((currentConversion - previousConversion) / previousConversion) * 100 : 0;
+
+    // Generate hourly chart data (using Shopify created_at)
+    const chartData = [];
+    for (let hour = 0; hour < 24; hour++) {
+      const currentHourOrders = currentOrders.filter(order => {
+        const orderHour = new Date(order.created_at || order.timestamp || order.createdAt).getHours();
+        return orderHour === hour;
+      });
+      const previousHourOrders = previousOrders.filter(order => {
+        const orderHour = new Date(order.created_at || order.timestamp || order.createdAt).getHours();
+        return orderHour === hour;
+      });
+      
+      chartData.push({
+        hour,
+        current: currentHourOrders.length,
+        previous: previousHourOrders.length
+      });
+    }
+
+    return {
+      current: {
+        sales: currentSales,
+        orders: currentOrdersCount,
+        sessions: currentSessions,
+        conversion: currentConversion
+      },
+      previous: {
+        sales: previousSales,
+        orders: previousOrdersCount,
+        sessions: previousSessions,
+        conversion: previousConversion
+      },
+      comparison: {
+        sales: salesComparison,
+        orders: ordersComparison,
+        sessions: sessionsComparison,
+        conversion: conversionComparison
+      },
+      chartData
     };
   };
 
@@ -3665,72 +3800,173 @@ function App() {
       </div>
 
       <div className="main-content">
-        {currentPage === 'dashboard' && (
-          <>
-            <div className="content-header">
-              <h1>Dashboard</h1>
-              <p>Welcome back, {user.firstName}!</p>
-            </div>
-
-            <div className="dashboard-content">
-              <div className="stats-grid">
-                {(() => {
-                  const stats = getDashboardStats();
-                  return (
-                    <>
-                <div className="stat-card">
-                  <h3>Today's Sales</h3>
-                        <p className="stat-value">₹{stats.todaySales.toLocaleString()}</p>
-                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                          {user?.role?.name === 'client' ? 'Your sales today' : 'All sales today'}
-                        </span>
-                </div>
-                <div className="stat-card">
-                  <h3>Total Products</h3>
-                        <p className="stat-value">{stats.totalProducts}</p>
-                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Shopify products</span>
-                      </div>
-                      <div className="stat-card">
-                        <h3>{user?.role?.name === 'client' ? 'Your Orders' : 'Total Orders'}</h3>
-                        <p className="stat-value">{stats.totalOrders}</p>
-                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                          {user?.role?.name === 'client' ? 'Orders you created' : 'All time orders'}
-                        </span>
-                </div>
-                <div className="stat-card">
-                  <h3>Locations</h3>
-                        <p className="stat-value">{stats.totalLocations}</p>
-                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Active stores</span>
-                </div>
-                    </>
-                  );
-                })()}
-              </div>
-
-              <div className="welcome-section">
-                <h2>Quick Actions</h2>
-                <p>Use the sidebar menu to navigate to different sections:</p>
-                <div className="action-tags">
-                  {user?.role?.name === 'admin' ? (
-                    <>
-                  <span className="tag">Products</span>
-                      <span className="tag">Invoice</span>
-                  <span className="tag">Location Analytics</span>
-                  <span className="tag">Sales</span>
-                  <span className="tag">Reports</span>
-                  <span className="tag">Data Management</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="tag">Sales</span>
-                      <span className="tag">POS</span>
-                    </>
-                  )}
+        {currentPage === 'dashboard' && (() => {
+          // Show loading state while fetching Shopify orders
+          if (ordersLoading) {
+            return (
+              <div className="analytics-dashboard">
+                <div className="loading-container" style={{ padding: '4rem', textAlign: 'center' }}>
+                  <div className="loading-spinner"></div>
+                  <p>Loading Shopify data for analytics...</p>
                 </div>
               </div>
+            );
+          }
+
+          const analytics = getEnhancedAnalytics();
+          const now = new Date();
+          const currentDateStr = dashboardDateFilter === 'today' ? now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) :
+                                 dashboardDateFilter === 'yesterday' ? new Date(now.setDate(now.getDate() - 1)).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) :
+                                 dashboardCustomDate ? new Date(dashboardCustomDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+          const prevDate = new Date(now);
+          prevDate.setDate(prevDate.getDate() - 1);
+          const prevDateStr = prevDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+
+          return (
+            <>
+              <div className="analytics-dashboard">
+                {/* Date Filter Header */}
+                <div className="analytics-header">
+                  <div className="date-filters">
+                    <button 
+                      className={`date-filter-btn ${dashboardDateFilter === 'today' ? 'active' : ''}`}
+                      onClick={() => setDashboardDateFilter('today')}
+                    >
+                      📅 Today
+                    </button>
+                    <button 
+                      className={`date-filter-btn ${dashboardDateFilter === 'yesterday' ? 'active' : ''}`}
+                      onClick={() => setDashboardDateFilter('yesterday')}
+                    >
+                      📆 Yesterday
+                    </button>
+                    <input
+                      type="date"
+                      className="date-filter-input"
+                      value={dashboardCustomDate}
+                      onChange={(e) => {
+                        setDashboardCustomDate(e.target.value);
+                        setDashboardDateFilter('custom');
+                      }}
+                    />
+                    <button 
+                      className="date-filter-btn"
+                      onClick={() => loadShopifyOrders('any')}
+                      style={{ background: '#10b981', color: 'white', borderColor: '#10b981' }}
+                    >
+                      🔄 Refresh Data
+                    </button>
+                  </div>
+                  <div className="live-indicator">
+                    <span className="live-dot"></span>
+                    <span>0 live visitors • {shopifyOrders.length} Shopify orders</span>
+                  </div>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="analytics-metrics-grid">
+                  <div className="analytics-metric-card">
+                    <div className="metric-header">
+                      <h3>Sessions</h3>
+                </div>
+                    <div className="metric-value">{analytics.current.sessions}</div>
+                    <div className={`metric-comparison ${analytics.comparison.sessions >= 0 ? 'positive' : 'negative'}`}>
+                      {analytics.comparison.sessions >= 0 ? '↗' : '↘'} {Math.abs(analytics.comparison.sessions).toFixed(0)}%
+                </div>
+                  </div>
+
+                  <div className="analytics-metric-card">
+                    <div className="metric-header">
+                      <h3>Total Sales</h3>
+                    </div>
+                    <div className="metric-value">₹{analytics.current.sales.toLocaleString()}</div>
+                    <div className={`metric-comparison ${analytics.comparison.sales >= 0 ? 'positive' : 'negative'}`}>
+                      {analytics.comparison.sales >= 0 ? '↗' : '↘'} {Math.abs(analytics.comparison.sales).toFixed(0)}%
+                </div>
+              </div>
+
+                  <div className="analytics-metric-card">
+                    <div className="metric-header">
+                      <h3>Orders</h3>
+                </div>
+                    <div className="metric-value">{analytics.current.orders}</div>
+                    <div className={`metric-comparison ${analytics.comparison.orders >= 0 ? 'positive' : 'negative'}`}>
+                      {analytics.comparison.orders >= 0 ? '↗' : '↘'} {Math.abs(analytics.comparison.orders).toFixed(0)}%
+              </div>
             </div>
-          </>
-        )}
+
+                  <div className="analytics-metric-card">
+                    <div className="metric-header">
+                      <h3>Conversion Rate</h3>
+                    </div>
+                    <div className="metric-value">{analytics.current.conversion.toFixed(1)}%</div>
+                    <div className={`metric-comparison ${analytics.comparison.conversion >= 0 ? 'positive' : 'negative'}`}>
+                      {analytics.comparison.conversion >= 0 ? '↗' : '↘'} {Math.abs(analytics.comparison.conversion).toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="analytics-chart-container">
+                  <div className="chart-legend">
+                    <span className="legend-item">
+                      <span className="legend-dot current"></span>
+                      {currentDateStr}
+                    </span>
+                    <span className="legend-item">
+                      <span className="legend-dot previous"></span>
+                      {prevDateStr}
+                    </span>
+                  </div>
+                  <div className="chart-wrapper">
+                    <svg className="analytics-chart" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                      {/* Grid lines */}
+                      <line x1="0" y1="0" x2="1000" y2="0" stroke="#e5e7eb" strokeWidth="1"/>
+                      <line x1="0" y1="75" x2="1000" y2="75" stroke="#e5e7eb" strokeWidth="1"/>
+                      <line x1="0" y1="150" x2="1000" y2="150" stroke="#e5e7eb" strokeWidth="1"/>
+                      <line x1="0" y1="225" x2="1000" y2="225" stroke="#e5e7eb" strokeWidth="1"/>
+                      <line x1="0" y1="300" x2="1000" y2="300" stroke="#e5e7eb" strokeWidth="1"/>
+                      
+                      {/* Chart lines */}
+                      {(() => {
+                        const maxValue = Math.max(...analytics.chartData.map(d => Math.max(d.current, d.previous)), 1);
+                        const scaleY = (value) => 280 - (value / maxValue) * 260;
+                        
+                        // Current period line
+                        const currentPath = analytics.chartData.map((d, i) => {
+                          const x = (i / 23) * 1000;
+                          const y = scaleY(d.current);
+                          return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+                        }).join(' ');
+                        
+                        // Previous period line
+                        const previousPath = analytics.chartData.map((d, i) => {
+                          const x = (i / 23) * 1000;
+                          const y = scaleY(d.previous);
+                          return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+                        }).join(' ');
+                        
+                        return (
+                          <>
+                            <path d={currentPath} fill="none" stroke="#3b82f6" strokeWidth="2" />
+                            <path d={previousPath} fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5,5" />
+                          </>
+                        );
+                      })()}
+                    </svg>
+                    <div className="chart-x-axis">
+                      <span>12 am</span>
+                      <span>6 am</span>
+                      <span>12 pm</span>
+                      <span>6 pm</span>
+                      <span>12 am</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
 
         {currentPage === 'products' && (
           <>
