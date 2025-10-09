@@ -59,22 +59,50 @@ class PDFInvoiceService {
     const leftMargin = 40;
     const rightMargin = pageWidth - 40;
     
-    // Company name - CENTERED and BOLD
-    doc
-      .fontSize(24)
-      .font('Helvetica-Bold')
-      .text('SS ENTERPRISES', 0, 45, { 
-        align: 'center',
-        width: pageWidth
-      });
+    // Try to add logo if it exists
+    const logoPath = path.join(__dirname, '../assets/logo.png');
+    let logoAdded = false;
+    
+    try {
+      if (fs.existsSync(logoPath)) {
+        // Add logo on the left side (where "V" was)
+        doc.image(logoPath, leftMargin, 40, { 
+          width: 60,
+          height: 60,
+          align: 'left'
+        });
+        logoAdded = true;
+        
+        // Company name - next to logo
+        doc
+          .fontSize(24)
+          .font('Helvetica-Bold')
+          .text('SS ENTERPRISES', leftMargin + 70, 55, { 
+            align: 'left'
+          });
+      }
+    } catch (error) {
+      console.log('Logo not found, using text only:', error.message);
+    }
+    
+    // Fallback: If no logo, show company name centered
+    if (!logoAdded) {
+      doc
+        .fontSize(24)
+        .font('Helvetica-Bold')
+        .text('SS ENTERPRISES', 0, 45, { 
+          align: 'center',
+          width: pageWidth
+        });
+    }
 
-    // Company details (left aligned, below company name)
+    // Company details (left aligned, below company name/logo)
     doc
       .fontSize(9)
       .font('Helvetica')
-      .text('C-7/31, Sector-7, Rohini Delhi-110085', leftMargin, 75, { align: 'left' })
-      .text('GSTIN/UIN: 08AGFPK7804C1ZQ', leftMargin, 88, { align: 'left' })
-      .text('E-Mail: ssenterprise255@gmail.com', leftMargin, 101, { align: 'left' });
+      .text('C-7/31, Sector-7, Rohini Delhi-110085', leftMargin, 110, { align: 'left' })
+      .text('GSTIN/UIN: 08AGFPK7804C1ZQ', leftMargin, 123, { align: 'left' })
+      .text('E-Mail: ssenterprise255@gmail.com', leftMargin, 136, { align: 'left' });
 
     // Invoice details box (right side) - BORDERED
     const boxX = 340;
