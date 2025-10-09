@@ -1021,17 +1021,23 @@ function App() {
     if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
       // If user has assigned locations, filter orders by those locations
       if (assignedLocations && assignedLocations.length > 0) {
-        const assignedLocationIds = assignedLocations.map(loc => 
-          parseInt(loc.shopifyLocationId || loc.id)
-        );
+        const assignedLocationIds = assignedLocations.map(loc => parseInt(loc.id));
+        
+        console.log(`🔒 Client filtering by assigned locations:`, assignedLocationIds);
+        console.log(`📦 Total orders before filter:`, filtered.length);
         
         filtered = filtered.filter(order => {
           const orderLocationId = parseInt(order.location?.shopifyLocationId || order.shopifyLocationId || 0);
-          return assignedLocationIds.includes(orderLocationId);
+          const isMatch = assignedLocationIds.includes(orderLocationId);
+          
+          if (isMatch) {
+            console.log(`✅ Order ${order.id} matches location ${orderLocationId}`);
+          }
+          
+          return isMatch;
         });
         
-        console.log(`🔒 Client filtered to ${assignedLocationIds.length} assigned locations:`, assignedLocationIds);
-        console.log(`📊 Showing ${filtered.length} orders from assigned locations`);
+        console.log(`📊 Showing ${filtered.length} orders from ${assignedLocationIds.length} assigned locations`);
       } else {
         // No assigned locations - show no orders
         console.log('⚠️ Client has no assigned locations - showing no orders');
@@ -1115,16 +1121,17 @@ function App() {
     if (user && user.role && (user.role.name === 'client' || user.role === 'client')) {
       // Client users see only sales from their assigned locations
       if (assignedLocations && assignedLocations.length > 0) {
-        const assignedLocationIds = assignedLocations.map(loc => 
-          parseInt(loc.shopifyLocationId || loc.id)
-        );
+        const assignedLocationIds = assignedLocations.map(loc => parseInt(loc.id));
         
         userOrders = salesData.orders.filter(order => {
           const orderLocationId = parseInt(order.location?.shopifyLocationId || order.shopifyLocationId || 0);
           return assignedLocationIds.includes(orderLocationId);
         });
+        
+        console.log(`📊 Dashboard stats: Showing ${userOrders.length} orders from ${assignedLocationIds.length} locations`);
       } else {
         // No assigned locations - show no orders
+        console.log('📊 Dashboard stats: No assigned locations - showing 0 orders');
         userOrders = [];
       }
     }
@@ -1760,11 +1767,22 @@ function App() {
           assignment => assignment.userId === user.id && assignment.isActive
         );
         
+        // Map database location IDs to Shopify location IDs
         const assignedLocationIds = userAssignments.map(a => a.locationId);
-        console.log(`✅ User assigned to ${assignedLocationIds.length} locations:`, assignedLocationIds);
+        console.log(`✅ User assigned to ${assignedLocationIds.length} database locations:`, assignedLocationIds);
         
-        setAssignedLocations(assignedLocationIds);
-        return assignedLocationIds;
+        // Fetch Shopify locations to map IDs
+        await fetchShopifyLocations();
+        
+        // Find matching Shopify locations
+        const matchedLocations = shopifyLocations.filter(loc => 
+          assignedLocationIds.includes(parseInt(loc.id))
+        );
+        
+        console.log(`📍 Matched ${matchedLocations.length} Shopify locations:`, matchedLocations.map(l => ({id: l.id, name: l.name})));
+        
+        setAssignedLocations(matchedLocations);
+        return matchedLocations.map(loc => parseInt(loc.id));
       }
     } catch (error) {
       console.error('Error loading user assigned locations:', error);
