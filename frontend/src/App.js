@@ -30,6 +30,10 @@ function App() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [customersLoading, setCustomersLoading] = useState(false);
   const [orderStatusFilter, setOrderStatusFilter] = useState('any');
+  const [ordersCurrentPage, setOrdersCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(100);
+  const [productsCurrentPage, setProductsCurrentPage] = useState(1);
+  const [productsPerPage] = useState(100);
   const [userFilter, setUserFilter] = useState('all'); // all, admin, client
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -855,6 +859,7 @@ function App() {
   useEffect(() => {
     if (currentPage === 'shopify-orders') {
       loadShopifyOrders(orderStatusFilter);
+      setOrdersCurrentPage(1); // Reset to first page when filter changes
     }
   }, [currentPage, orderStatusFilter]);
 
@@ -937,6 +942,11 @@ function App() {
     loadShopifyProducts(); // Load products for dashboard
     loadLocations(); // Load locations for dashboard
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset products pagination when search term changes
+  useEffect(() => {
+    setProductsCurrentPage(1);
+  }, [productSearchTerm]);
 
   // Load real invoice data when locations page is accessed
   useEffect(() => {
@@ -3660,26 +3670,34 @@ function App() {
                   <p>Loading products from Shopify...</p>
                 </div>
               ) : (
+                (() => {
+                  // Filter products first
+                  const filteredProducts = products.filter(product => 
+                    product.title.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                    (product.sku && product.sku.toLowerCase().includes(productSearchTerm.toLowerCase())) ||
+                    product.vendor.toLowerCase().includes(productSearchTerm.toLowerCase())
+                  );
+
+                  // Calculate pagination for filtered products
+                  const totalProducts = filteredProducts.length;
+                  const totalPages = Math.ceil(totalProducts / productsPerPage);
+                  const startIndex = (productsCurrentPage - 1) * productsPerPage;
+                  const endIndex = startIndex + productsPerPage;
+                  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+                  return (
                 <>
                   <div className="products-header">
                     <div className="products-stats">
-                      <span className="products-count">Total Products: {products.filter(p => 
-                        p.title.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-                        (p.sku && p.sku.toLowerCase().includes(productSearchTerm.toLowerCase())) ||
-                        p.vendor.toLowerCase().includes(productSearchTerm.toLowerCase())
-                      ).length}</span>
+                          <span className="products-count">Total Products: {totalProducts}</span>
                       <span className="shopify-badge">🔗 Synced from Shopify</span>
                     </div>
                   </div>
 
+                      {totalProducts > 0 ? (
+                        <>
                   <div className="products-grid">
-                    {products
-                      .filter(product => 
-                        product.title.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-                        (product.sku && product.sku.toLowerCase().includes(productSearchTerm.toLowerCase())) ||
-                        product.vendor.toLowerCase().includes(productSearchTerm.toLowerCase())
-                      )
-                      .map((product) => (
+                            {paginatedProducts.map((product) => (
                       <div key={product.id} className="product-card">
                         <div className="product-image">
                           <img src={product.image} alt={product.title} />
@@ -3702,13 +3720,56 @@ function App() {
                     ))}
                   </div>
 
-                  {products.length === 0 && (
+                          {totalPages > 1 && (
+                            <div className="table-footer">
+                              <span className="results-count">
+                                Showing {startIndex + 1}-{Math.min(endIndex, totalProducts)} of {totalProducts} products
+                              </span>
+                              <div className="pagination-controls">
+                                <button 
+                                  className="pagination-btn"
+                                  onClick={() => setProductsCurrentPage(1)}
+                                  disabled={productsCurrentPage === 1}
+                                >
+                                  ⟨⟨ First
+                                </button>
+                                <button 
+                                  className="pagination-btn"
+                                  onClick={() => setProductsCurrentPage(prev => Math.max(1, prev - 1))}
+                                  disabled={productsCurrentPage === 1}
+                                >
+                                  ⟨ Prev
+                                </button>
+                                <span className="page-info">
+                                  Page {productsCurrentPage} of {totalPages}
+                                </span>
+                                <button 
+                                  className="pagination-btn"
+                                  onClick={() => setProductsCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                  disabled={productsCurrentPage === totalPages}
+                                >
+                                  Next ⟩
+                                </button>
+                                <button 
+                                  className="pagination-btn"
+                                  onClick={() => setProductsCurrentPage(totalPages)}
+                                  disabled={productsCurrentPage === totalPages}
+                                >
+                                  Last ⟩⟩
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
                     <div className="empty-state">
                       <h3>No products found</h3>
-                      <p>Click "Sync from Shopify" to load your products</p>
+                          <p>{products.length === 0 ? 'Click "Sync from Shopify" to load your products' : 'No products match your search'}</p>
                     </div>
                   )}
                 </>
+                  );
+                })()
               )}
             </div>
           </>
@@ -5321,23 +5382,33 @@ function App() {
                 <p>Loading Shopify orders...</p>
               </div>
             ) : shopifyOrders.length > 0 ? (
-              <div className="shopify-orders-table-container">
-                <table className="shopify-orders-table">
-                  <thead>
-                    <tr>
-                      <th>Order</th>
-                      <th>Date</th>
-                      <th>Customer</th>
-                      <th>Channel</th>
-                      <th>Total</th>
-                      <th>Payment Status</th>
-                      <th>Fulfillment Status</th>
-                      <th>Items</th>
-                      <th>Delivery Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shopifyOrders.map((order) => {
+              (() => {
+                // Calculate pagination
+                const totalOrders = shopifyOrders.length;
+                const totalPages = Math.ceil(totalOrders / ordersPerPage);
+                const startIndex = (ordersCurrentPage - 1) * ordersPerPage;
+                const endIndex = startIndex + ordersPerPage;
+                const paginatedOrders = shopifyOrders.slice(startIndex, endIndex);
+
+                return (
+                  <>
+                    <div className="shopify-orders-table-container">
+                      <table className="shopify-orders-table">
+                        <thead>
+                          <tr>
+                            <th>Order</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Channel</th>
+                            <th>Total</th>
+                            <th>Payment Status</th>
+                            <th>Fulfillment Status</th>
+                            <th>Items</th>
+                            <th>Delivery Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedOrders.map((order) => {
                       const getShopifyOrderCustomerName = (o) => {
                         if (!o) return 'Guest';
                         if (o.customerName && String(o.customerName).trim()) return o.customerName;
@@ -5411,13 +5482,51 @@ function App() {
                           </td>
                         </tr>
                       );
-                    })}
-                  </tbody>
-                </table>
-                <div className="table-footer">
-                  <span className="results-count">Showing {shopifyOrders.length} orders</span>
-                </div>
-              </div>
+                          })}
+                        </tbody>
+                      </table>
+                      <div className="table-footer">
+                        <span className="results-count">
+                          Showing {startIndex + 1}-{Math.min(endIndex, totalOrders)} of {totalOrders} orders
+                        </span>
+                        <div className="pagination-controls">
+                          <button 
+                            className="pagination-btn"
+                            onClick={() => setOrdersCurrentPage(1)}
+                            disabled={ordersCurrentPage === 1}
+                          >
+                            ⟨⟨ First
+                          </button>
+                          <button 
+                            className="pagination-btn"
+                            onClick={() => setOrdersCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={ordersCurrentPage === 1}
+                          >
+                            ⟨ Prev
+                          </button>
+                          <span className="page-info">
+                            Page {ordersCurrentPage} of {totalPages}
+                          </span>
+                          <button 
+                            className="pagination-btn"
+                            onClick={() => setOrdersCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={ordersCurrentPage === totalPages}
+                          >
+                            Next ⟩
+                          </button>
+                          <button 
+                            className="pagination-btn"
+                            onClick={() => setOrdersCurrentPage(totalPages)}
+                            disabled={ordersCurrentPage === totalPages}
+                          >
+                            Last ⟩⟩
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()
             ) : (
               <div className="empty-state">
                 <div className="empty-icon">📦</div>

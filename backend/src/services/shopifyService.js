@@ -665,6 +665,13 @@ class ShopifyService {
       }
       
       for (let order of allOrders) {
+        // 🎯 PRIORITY 1: Check the NOTE field (POS orders store customer name here!)
+        if (order.note && order.note.trim()) {
+          order.customerName = order.note.trim();
+          matchedCount++;
+          continue;
+        }
+        
         // Try to get customer name from customer ID mapping
         if (order.customer && order.customer.id && customerMap[order.customer.id]) {
           order.customerName = customerMap[order.customer.id];
@@ -774,6 +781,8 @@ class ShopifyService {
             }
           }
         );
+        
+        console.log('🔍 GraphQL Response:', JSON.stringify(response.data, null, 2));
         
         if (response.data.data && response.data.data.customers) {
           const customers = response.data.data.customers.edges.map(edge => {
