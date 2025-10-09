@@ -59,7 +59,19 @@ class ShopifyService {
         headers: this.getAdminHeaders()
       });
 
-      console.log('📍 Shopify Locations:', response.data.locations.map(l => ({ id: l.id, name: l.name, city: l.city })));
+      console.log('📍 Shopify Locations:', response.data.locations.map(l => ({ 
+        id: l.id, 
+        name: l.name, 
+        city: l.city,
+        tax_registration: l.tax_registration,
+        localized_country_name: l.localized_country_name,
+        localized_province_name: l.localized_province_name
+      })));
+      
+      // Log full first location to see all available fields
+      if (response.data.locations.length > 0) {
+        console.log('📋 Full location data sample:', JSON.stringify(response.data.locations[0], null, 2));
+      }
 
       return {
         success: true,

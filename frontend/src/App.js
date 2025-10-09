@@ -3100,6 +3100,34 @@ function App() {
       if (selectedShopifyLocation) {
         console.log(`📍 Using selected Shopify location for invoice: ${selectedShopifyLocation.name} (${selectedShopifyLocation.city})`);
         
+        // Extract GST number from tax_registration field (if available)
+        let gstNumber = 'N/A';
+        if (selectedShopifyLocation.tax_registration) {
+          // Tax registration can be an array or object containing GST/tax IDs
+          if (Array.isArray(selectedShopifyLocation.tax_registration)) {
+            // Find GST registration (typically has tax_id or registration_number)
+            const gstReg = selectedShopifyLocation.tax_registration.find(reg => 
+              reg.country_iso === 'IN' || reg.tax_id || reg.registration_number
+            );
+            if (gstReg) {
+              gstNumber = gstReg.tax_id || gstReg.registration_number || gstReg.number || 'N/A';
+            }
+          } else if (typeof selectedShopifyLocation.tax_registration === 'object') {
+            gstNumber = selectedShopifyLocation.tax_registration.tax_id || 
+                       selectedShopifyLocation.tax_registration.registration_number || 
+                       selectedShopifyLocation.tax_registration.number || 'N/A';
+          } else if (typeof selectedShopifyLocation.tax_registration === 'string') {
+            gstNumber = selectedShopifyLocation.tax_registration;
+          }
+        }
+        
+        // Also check for GST in other possible fields
+        if (gstNumber === 'N/A' && selectedShopifyLocation.gst_number) {
+          gstNumber = selectedShopifyLocation.gst_number;
+        }
+        
+        console.log(`💳 GST Number for ${selectedShopifyLocation.name}: ${gstNumber}`);
+        
         locationInfo = {
           id: selectedShopifyLocation.id,
           shopifyLocationId: selectedShopifyLocation.id,
@@ -3108,7 +3136,7 @@ function App() {
           city: selectedShopifyLocation.city || selectedShopifyLocation.name,
           address: selectedShopifyLocation.address1 || 'N/A',
           country: selectedShopifyLocation.country_code || 'IN',
-          gstNumber: 'N/A',
+          gstNumber: gstNumber,
           phone: selectedShopifyLocation.phone || '',
           email: ''
         };
@@ -3124,6 +3152,29 @@ function App() {
         // Fallback if selected location not found
         console.warn('⚠️  Selected location not found in Shopify locations, using first available');
         const firstLocation = shopifyLocations[0];
+        
+        // Extract GST number from first location
+        let gstNumber = 'N/A';
+        if (firstLocation.tax_registration) {
+          if (Array.isArray(firstLocation.tax_registration)) {
+            const gstReg = firstLocation.tax_registration.find(reg => 
+              reg.country_iso === 'IN' || reg.tax_id || reg.registration_number
+            );
+            if (gstReg) {
+              gstNumber = gstReg.tax_id || gstReg.registration_number || gstReg.number || 'N/A';
+            }
+          } else if (typeof firstLocation.tax_registration === 'object') {
+            gstNumber = firstLocation.tax_registration.tax_id || 
+                       firstLocation.tax_registration.registration_number || 
+                       firstLocation.tax_registration.number || 'N/A';
+          } else if (typeof firstLocation.tax_registration === 'string') {
+            gstNumber = firstLocation.tax_registration;
+          }
+        }
+        if (gstNumber === 'N/A' && firstLocation.gst_number) {
+          gstNumber = firstLocation.gst_number;
+        }
+        
         locationInfo = {
           id: firstLocation.id,
           shopifyLocationId: firstLocation.id,
@@ -3132,7 +3183,7 @@ function App() {
           city: firstLocation.city || firstLocation.name,
           address: firstLocation.address1 || 'N/A',
           country: firstLocation.country_code || 'IN',
-          gstNumber: 'N/A',
+          gstNumber: gstNumber,
           phone: firstLocation.phone || '',
           email: ''
         };
