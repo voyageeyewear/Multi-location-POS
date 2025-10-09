@@ -63,8 +63,12 @@ class PDFInvoiceService {
     const logoPath = path.join(__dirname, '../assets/logo.png');
     let logoAdded = false;
     
+    console.log('🎨 Checking for logo at:', logoPath);
+    console.log('🎨 Logo exists?', fs.existsSync(logoPath));
+    
     try {
       if (fs.existsSync(logoPath)) {
+        console.log('✅ Logo found! Adding to PDF...');
         // Add logo on the left side (where "V" was)
         doc.image(logoPath, leftMargin, 40, { 
           width: 60,
@@ -72,6 +76,7 @@ class PDFInvoiceService {
           align: 'left'
         });
         logoAdded = true;
+        console.log('✅ Logo added successfully to PDF');
         
         // Company name - next to logo
         doc
@@ -80,9 +85,12 @@ class PDFInvoiceService {
           .text('SS ENTERPRISES', leftMargin + 70, 55, { 
             align: 'left'
           });
+      } else {
+        console.log('❌ Logo file not found at path');
       }
     } catch (error) {
-      console.log('Logo not found, using text only:', error.message);
+      console.log('❌ Error adding logo:', error.message);
+      console.error(error);
     }
     
     // Fallback: If no logo, show company name centered
