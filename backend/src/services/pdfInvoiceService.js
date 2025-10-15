@@ -258,14 +258,18 @@ class PDFInvoiceService {
     const leftMargin = 40;
     const rightMargin = 560;
     
-    // Column positions
-    const colSl = leftMargin;
-    const colDesc = 70;
-    const colHSN = 310;
-    const colQty = 370;
-    const colRate = 420;
-    const colPer = 470;
-    const colAmount = rightMargin - 70;
+    // Column positions for detailed view matching Image 2
+    const colSl = leftMargin + 5;
+    const colDesc = 55;
+    const colHSN = 185;
+    const colQty = 230;
+    const colUnitPrice = 265;
+    const colDiscount = 315;
+    const colTaxable = 365;
+    const colCGST = 415;
+    const colSGST = 455;
+    const colIGST = 495;
+    const colAmount = rightMargin - 65;
     
     // Draw table border
     doc
@@ -276,37 +280,72 @@ class PDFInvoiceService {
     
     // Table Header
     doc
-      .fontSize(8)
+      .fontSize(7)
       .font('Helvetica-Bold');
     
     let headerY = tableTop + 6;
-    doc.text('Sl No.', colSl + 3, headerY, { width: 35 });
-    doc.text('Description of Goods', colDesc, headerY, { width: 230 });
-    doc.text('HSN/SAC', colHSN, headerY, { width: 50 });
-    doc.text('Quantity', colQty, headerY, { width: 45 });
-    doc.text('Rate', colRate, headerY, { width: 40 });
-    doc.text('per', colPer, headerY, { width: 30 });
-    doc.text('Amount', colAmount, headerY, { width: 60, align: 'right' });
+    doc.text('SI', colSl, headerY, { width: 20, align: 'center' });
+    doc.text('Description', colDesc, headerY, { width: 120 });
+    doc.text('HSN', colHSN, headerY, { width: 35, align: 'center' });
+    doc.text('Qty', colQty, headerY, { width: 25, align: 'center' });
+    doc.text('Unit Price', colUnitPrice, headerY, { width: 45, align: 'center' });
+    doc.text('Discount', colDiscount, headerY, { width: 45, align: 'center' });
+    doc.text('Taxable', colTaxable, headerY, { width: 45, align: 'center' });
+    doc.text('CGST', colCGST, headerY, { width: 35, align: 'center' });
+    doc.text('SGST', colSGST, headerY, { width: 35, align: 'center' });
+    doc.text('IGST', colIGST, headerY, { width: 35, align: 'center' });
+    doc.text('Amount', colAmount, headerY, { width: 50, align: 'right' });
 
     // Table Rows
-    doc.fontSize(8).font('Helvetica');
+    doc.fontSize(7).font('Helvetica');
     let currentY = tableTop + 25;
     const rowHeight = 18;
 
-    let totalBeforeDiscount = 0;
+    let totalQty = 0;
+    let totalUnitPrice = 0;
     let totalDiscount = 0;
+    let totalTaxable = 0;
+    let totalCGST = 0;
+    let totalSGST = 0;
+    let totalIGST = 0;
+    let totalAmount = 0;
 
     orderData.items.forEach((item, index) => {
       const productName = item.title || item.name || 'Product';
       const hsnCode = item.hsnCode || '90041000';
       const quantity = item.quantity || 1;
-      const rate = item.price || 0;
-      const itemTotal = (rate * quantity).toFixed(2);
+      const unitPrice = item.price || 0;
+      const itemUnitPrice = unitPrice * quantity;
       
-      totalBeforeDiscount += parseFloat(itemTotal);
+      // Get GST rate based on product type (18% for sunglasses, 5% for eyeglasses)
+      const gstRate = item.gstRate || item.igstRate || 18;
+      const cgstRate = gstRate / 2;
+      const sgstRate = gstRate / 2;
       
-      const discountAmount = item.discountAmount || 0;
-      totalDiscount += discountAmount * quantity;
+      // Calculate discount
+      const discountPerItem = item.discountAmount || 0;
+      const discountTotal = discountPerItem * quantity;
+      
+      // Calculate taxable value (Unit Price - Discount)
+      const taxableValue = itemUnitPrice - discountTotal;
+      
+      // Calculate CGST and SGST on taxable value
+      const cgstAmount = (taxableValue * cgstRate) / 100;
+      const sgstAmount = (taxableValue * sgstRate) / 100;
+      const igstAmount = 0; // For intra-state, IGST is 0
+      
+      // Final amount = Taxable + CGST + SGST
+      const finalAmount = taxableValue + cgstAmount + sgstAmount;
+      
+      // Accumulate totals
+      totalQty += quantity;
+      totalUnitPrice += itemUnitPrice;
+      totalDiscount += discountTotal;
+      totalTaxable += taxableValue;
+      totalCGST += cgstAmount;
+      totalSGST += sgstAmount;
+      totalIGST += igstAmount;
+      totalAmount += finalAmount;
 
       // Draw row border
       doc
@@ -316,96 +355,85 @@ class PDFInvoiceService {
         .stroke();
       
       // Row data
-      doc.text((index + 1).toString(), colSl + 3, currentY, { width: 35 });
-      doc.text(productName, colDesc, currentY, { width: 230 });
-      doc.text(hsnCode, colHSN, currentY, { width: 50 });
-      doc.text(`${quantity} pcs`, colQty, currentY, { width: 45 });
-      doc.text(rate.toFixed(2), colRate, currentY, { width: 40 });
-      doc.text('pcs', colPer, currentY, { width: 30 });
-      doc.text(itemTotal, colAmount, currentY, { width: 60, align: 'right' });
+      doc.text((index + 1).toString(), colSl, currentY, { width: 20, align: 'center' });
+      doc.text(productName.substring(0, 35), colDesc, currentY, { width: 120 });
+      doc.text(hsnCode, colHSN, currentY, { width: 35, align: 'center' });
+      doc.text(quantity.toString(), colQty, currentY, { width: 25, align: 'center' });
+      doc.text(itemUnitPrice.toFixed(2), colUnitPrice, currentY, { width: 45, align: 'right' });
+      doc.text(discountTotal > 0 ? discountTotal.toFixed(2) : '0.00', colDiscount, currentY, { width: 45, align: 'right' });
+      doc.text(taxableValue.toFixed(2), colTaxable, currentY, { width: 45, align: 'right' });
+      doc.text(cgstAmount.toFixed(2), colCGST, currentY, { width: 35, align: 'right' });
+      doc.text(sgstAmount.toFixed(2), colSGST, currentY, { width: 35, align: 'right' });
+      doc.text(igstAmount.toFixed(2), colIGST, currentY, { width: 35, align: 'right' });
+      doc.text(finalAmount.toFixed(2), colAmount, currentY, { width: 50, align: 'right' });
       
       currentY += rowHeight;
     });
-
-    // Calculate IGST by product type (group by GST rate)
-    const igstBreakdown = {};
-    let totalIGST = 0;
-    
-    orderData.items.forEach(item => {
-      const itemTotal = (item.price * item.quantity);
-      const discountAmount = item.discountAmount || 0;
-      const discountedTotal = itemTotal - (discountAmount * item.quantity);
-      const igstRate = item.gstRate || item.igstRate || 18; // Default to 18% for sunglasses
-      const igstAmount = discountedTotal * (igstRate / 100);
-      
-      if (!igstBreakdown[igstRate]) {
-        igstBreakdown[igstRate] = 0;
-      }
-      igstBreakdown[igstRate] += igstAmount;
-      totalIGST += igstAmount;
-    });
-
-    const subtotalAfterDiscount = totalBeforeDiscount - totalDiscount;
-    const gstAmount = orderData.tax || totalIGST;
-    const totalBeforeRounding = subtotalAfterDiscount + gstAmount;
-    const roundedTotal = Math.round(totalBeforeRounding);
-    const roundingAdjustment = roundedTotal - totalBeforeRounding;
-
-    // Deductions & Total Section
-    currentY += 10;
-    const deductionX = 350;
-    const valueX = rightMargin - 70;
-
-    doc.fontSize(9).font('Helvetica');
-    
-    // Discount
-    if (totalDiscount > 0) {
-      doc.text('DISCOUNT ALLOWED:', deductionX, currentY);
-      doc.font('Helvetica-Bold').text(`(−) ${totalDiscount.toFixed(2)}`, valueX, currentY, { width: 60, align: 'right' });
-      doc.font('Helvetica');
-      currentY += 15;
-    }
-
-    // Show IGST breakdown by rate (e.g., IGST 18%, IGST 5%)
-    Object.keys(igstBreakdown).sort((a, b) => b - a).forEach(rate => {
-      const amount = igstBreakdown[rate];
-      doc.text(`IGST ${rate}%:`, deductionX, currentY);
-      doc.font('Helvetica-Bold').text(amount.toFixed(2), valueX, currentY, { width: 60, align: 'right' });
-      doc.font('Helvetica');
-      currentY += 15;
-    });
-
-    // Rounded OFF
-    if (Math.abs(roundingAdjustment) > 0.01) {
-      doc.text('Rounded OFF:', deductionX, currentY);
-      doc.font('Helvetica-Bold').text(
-        roundingAdjustment >= 0 ? roundingAdjustment.toFixed(2) : `(−) ${Math.abs(roundingAdjustment).toFixed(2)}`, 
-        valueX, 
-        currentY, 
-        { width: 60, align: 'right' }
-      );
-      doc.font('Helvetica');
-      currentY += 15;
-    }
 
     // Draw line before total
     doc
       .strokeColor('#000000')
       .lineWidth(1)
-      .moveTo(leftMargin, currentY)
-      .lineTo(rightMargin, currentY)
+      .moveTo(leftMargin, currentY - 5)
+      .lineTo(rightMargin, currentY - 5)
       .stroke();
 
-    // Grand Total
-    currentY += 10;
-    doc.fontSize(11).font('Helvetica-Bold');
-    doc.text('Total:', deductionX, currentY);
-    doc.text(`₹ ${roundedTotal.toFixed(2)}`, valueX, currentY, { width: 60, align: 'right' });
+    // Total Row
+    doc
+      .strokeColor('#000000')
+      .lineWidth(0.5)
+      .rect(leftMargin, currentY - 5, rightMargin - leftMargin, rowHeight)
+      .stroke();
+    
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('Total', colDesc, currentY, { width: 120 });
+    doc.text(totalQty.toString(), colQty, currentY, { width: 25, align: 'center' });
+    doc.text(totalUnitPrice.toFixed(2), colUnitPrice, currentY, { width: 45, align: 'right' });
+    doc.text(totalDiscount > 0 ? `-${totalDiscount.toFixed(2)}` : '0.00', colDiscount, currentY, { width: 45, align: 'right' });
+    doc.text(totalTaxable.toFixed(2), colTaxable, currentY, { width: 45, align: 'right' });
+    doc.text(totalCGST.toFixed(2), colCGST, currentY, { width: 35, align: 'right' });
+    doc.text(totalSGST.toFixed(2), colSGST, currentY, { width: 35, align: 'right' });
+    doc.text(totalIGST.toFixed(2), colIGST, currentY, { width: 35, align: 'right' });
+    doc.text(totalAmount.toFixed(2), colAmount, currentY, { width: 50, align: 'right' });
+    
+    currentY += rowHeight;
+
+    // Draw line after total
+    doc
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .moveTo(leftMargin, currentY - 5)
+      .lineTo(rightMargin, currentY - 5)
+      .stroke();
+
+    // Grand Total Row
+    doc
+      .strokeColor('#000000')
+      .lineWidth(0.5)
+      .rect(leftMargin, currentY - 5, rightMargin - leftMargin, rowHeight)
+      .stroke();
+    
+    doc.fontSize(9).font('Helvetica-Bold');
+    doc.text('Grand Total', colDesc, currentY, { width: 120 });
+    doc.text(`₹ ${Math.round(totalAmount).toFixed(2)}`, colAmount, currentY, { width: 50, align: 'right' });
+    
+    currentY += rowHeight;
+
+    // Draw line after grand total
+    doc
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .moveTo(leftMargin, currentY - 5)
+      .lineTo(rightMargin, currentY - 5)
+      .stroke();
 
     // Amount in words
-    currentY += 20;
+    currentY += 10;
+    doc.fontSize(9).font('Helvetica-Bold');
+    doc.text('Amount Chargeable (in words):', leftMargin, currentY);
+    currentY += 12;
     doc.fontSize(9).font('Helvetica');
-    doc.text(`Total (in words): INR ${this.numberToWords(roundedTotal)} Only`, leftMargin, currentY, { width: 500 });
+    doc.text(`INR ${this.numberToWords(Math.round(totalAmount))} Only`, leftMargin, currentY, { width: 500 });
 
     return currentY + 25;
   }
@@ -414,17 +442,14 @@ class PDFInvoiceService {
     const leftMargin = 40;
     const rightMargin = 560;
     
-    doc
-      .fontSize(10)
-      .font('Helvetica-Bold')
-      .text('Tax Summary', leftMargin, startY);
+    startY += 5;
     
-    startY += 20;
-    
-    // Column positions
-    const colHSN = leftMargin;
+    // Column positions for tax summary
+    const colHSN = leftMargin + 10;
     const colTaxable = 120;
-    const colIGST = 240;
+    const colCGST = 220;
+    const colSGST = 320;
+    const colIGST = 420;
     const colTotalTax = rightMargin - 80;
     
     // Draw table border
@@ -437,10 +462,12 @@ class PDFInvoiceService {
     // Table Header
     doc.fontSize(8).font('Helvetica-Bold');
     let headerY = startY + 6;
-    doc.text('HSN/SAC', colHSN + 5, headerY);
-    doc.text('Taxable Value', colTaxable, headerY);
-    doc.text('IGST (Rate & Amount)', colIGST, headerY);
-    doc.text('Total Tax Amount', colTotalTax, headerY);
+    doc.text('HSN/SAC', colHSN, headerY, { width: 80, align: 'center' });
+    doc.text('Taxable Value', colTaxable, headerY, { width: 80, align: 'center' });
+    doc.text('CGST', colCGST, headerY, { width: 80, align: 'center' });
+    doc.text('SGST', colSGST, headerY, { width: 80, align: 'center' });
+    doc.text('IGST', colIGST, headerY, { width: 80, align: 'center' });
+    doc.text('Total Tax', colTotalTax, headerY, { width: 80, align: 'center' });
 
     // Table Rows
     doc.fontSize(8).font('Helvetica');
@@ -448,33 +475,48 @@ class PDFInvoiceService {
     const rowHeight = 15;
     
     let totalTaxableValue = 0;
-    let totalIGST = 0;
+    let totalCGSTAmount = 0;
+    let totalSGSTAmount = 0;
+    let totalIGSTAmount = 0;
+    let totalTax = 0;
 
-    // Group items by HSN code (with proper discount calculation)
+    // Group items by HSN code (with proper discount and CGST/SGST calculation)
     const hsnGroups = {};
     orderData.items.forEach(item => {
       const hsnCode = item.hsnCode || '90041000';
       const itemTotal = (item.price * item.quantity);
       const discountAmount = (item.discountAmount || 0) * item.quantity;
       const taxableValue = itemTotal - discountAmount; // Apply discount before tax
-      const gstRate = item.gstRate || 18;
-      const gstAmount = taxableValue * (gstRate / 100); // Calculate IGST on discounted amount
+      const gstRate = item.gstRate || item.igstRate || 18;
+      const cgstRate = gstRate / 2;
+      const sgstRate = gstRate / 2;
+      
+      // Calculate CGST and SGST on taxable value
+      const cgstAmount = taxableValue * (cgstRate / 100);
+      const sgstAmount = taxableValue * (sgstRate / 100);
+      const igstAmount = 0; // For intra-state transactions
       
       if (!hsnGroups[hsnCode]) {
         hsnGroups[hsnCode] = {
           taxableValue: 0,
-          gstAmount: 0,
-          gstRate: gstRate
+          cgstAmount: 0,
+          sgstAmount: 0,
+          igstAmount: 0,
+          cgstRate: cgstRate,
+          sgstRate: sgstRate
         };
       }
       
       hsnGroups[hsnCode].taxableValue += taxableValue;
-      hsnGroups[hsnCode].gstAmount += gstAmount;
+      hsnGroups[hsnCode].cgstAmount += cgstAmount;
+      hsnGroups[hsnCode].sgstAmount += sgstAmount;
+      hsnGroups[hsnCode].igstAmount += igstAmount;
     });
 
     // Render HSN rows
     Object.keys(hsnGroups).forEach((hsnCode) => {
       const group = hsnGroups[hsnCode];
+      const rowTotalTax = group.cgstAmount + group.sgstAmount + group.igstAmount;
       
       // Draw row border
       doc
@@ -483,13 +525,18 @@ class PDFInvoiceService {
         .rect(leftMargin, currentY - 5, rightMargin - leftMargin, rowHeight)
         .stroke();
       
-      doc.text(hsnCode, colHSN + 5, currentY);
-      doc.text(group.taxableValue.toFixed(2), colTaxable, currentY);
-      doc.text(`${group.gstRate}% - ${group.gstAmount.toFixed(2)}`, colIGST, currentY);
-      doc.text(group.gstAmount.toFixed(2), colTotalTax, currentY);
+      doc.text(hsnCode, colHSN, currentY, { width: 80, align: 'center' });
+      doc.text(group.taxableValue.toFixed(2), colTaxable, currentY, { width: 80, align: 'center' });
+      doc.text(`${group.cgstRate}%\n${group.cgstAmount.toFixed(2)}`, colCGST, currentY - 2, { width: 80, align: 'center', lineGap: 2 });
+      doc.text(`${group.sgstRate}%\n${group.sgstAmount.toFixed(2)}`, colSGST, currentY - 2, { width: 80, align: 'center', lineGap: 2 });
+      doc.text(`0%\n${group.igstAmount.toFixed(2)}`, colIGST, currentY - 2, { width: 80, align: 'center', lineGap: 2 });
+      doc.text(rowTotalTax.toFixed(2), colTotalTax, currentY, { width: 80, align: 'center' });
       
       totalTaxableValue += group.taxableValue;
-      totalIGST += group.gstAmount;
+      totalCGSTAmount += group.cgstAmount;
+      totalSGSTAmount += group.sgstAmount;
+      totalIGSTAmount += group.igstAmount;
+      totalTax += rowTotalTax;
       
       currentY += rowHeight;
     });
@@ -502,15 +549,17 @@ class PDFInvoiceService {
       .stroke();
     
     doc.font('Helvetica-Bold');
-    doc.text('Total:', colHSN + 5, currentY);
-    doc.text(totalTaxableValue.toFixed(2), colTaxable, currentY);
-    doc.text(`IGST: ${totalIGST.toFixed(2)}`, colIGST, currentY);
-    doc.text(totalIGST.toFixed(2), colTotalTax, currentY);
+    doc.text('Total', colHSN, currentY, { width: 80, align: 'center' });
+    doc.text(totalTaxableValue.toFixed(2), colTaxable, currentY, { width: 80, align: 'center' });
+    doc.text(totalCGSTAmount.toFixed(2), colCGST, currentY, { width: 80, align: 'center' });
+    doc.text(totalSGSTAmount.toFixed(2), colSGST, currentY, { width: 80, align: 'center' });
+    doc.text(totalIGSTAmount.toFixed(2), colIGST, currentY, { width: 80, align: 'center' });
+    doc.text(totalTax.toFixed(2), colTotalTax, currentY, { width: 80, align: 'center' });
 
     // Tax amount in words
     currentY += 20;
     doc.fontSize(9).font('Helvetica');
-    doc.text(`Tax Amount (in words): INR ${this.numberToWords(totalIGST)} Only`, leftMargin, currentY, { width: 500 });
+    doc.text(`Tax Amount (in words): INR ${this.numberToWords(Math.round(totalTax))} Only`, leftMargin, currentY, { width: 500 });
 
     return currentY + 20;
   }
