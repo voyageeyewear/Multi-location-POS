@@ -8,8 +8,9 @@ const Joi = require('joi');
 // Apply authentication to all routes
 router.use(authenticateToken);
 
-// Generate invoice for a sale
+// Generate invoice for a sale (GET for database sales, POST for Shopify orders)
 router.get('/:saleId', InvoiceController.generateInvoice);
+router.post('/:saleId', InvoiceController.generateInvoice);
 
 // Preview invoice (HTML format)
 router.get('/:saleId/preview', (req, res, next) => {

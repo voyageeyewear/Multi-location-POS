@@ -17,10 +17,10 @@ class PDFInvoiceService {
         const fileName = `${orderData.invoiceNumber}.pdf`;
         const filePath = path.join(this.invoicesDir, fileName);
         
-        // Create PDF document
+        // Create PDF document with CUSTOM WIDER SIZE (portrait orientation)
         const doc = new PDFDocument({ 
           margin: 40,
-          size: 'A4'
+          size: [750, 1000]  // Custom size: 750pt wide x 1000pt tall (wider than A4)
         });
         
         // Pipe to file
@@ -69,20 +69,22 @@ class PDFInvoiceService {
     try {
       if (fs.existsSync(logoPath)) {
         console.log('✅ Logo found! Adding to PDF...');
-        // Add logo on the left side (where "V" was)
-        doc.image(logoPath, leftMargin, 40, { 
-          width: 60,
-          height: 60,
+        // Add logo on the left side (maintaining aspect ratio)
+        const logoWidth = 60;
+        const logoY = 45;
+        
+        doc.image(logoPath, leftMargin, logoY, { 
+          width: logoWidth,
           align: 'left'
         });
         logoAdded = true;
         console.log('✅ Logo added successfully to PDF');
         
-        // Company name - next to logo
+        // Company name - aligned on same line as logo
         doc
           .fontSize(24)
           .font('Helvetica-Bold')
-          .text('SS ENTERPRISES', leftMargin + 70, 55, { 
+          .text('SS ENTERPRISES', leftMargin + logoWidth + 10, logoY + 5, { 
             align: 'left'
           });
       } else {
@@ -113,9 +115,9 @@ class PDFInvoiceService {
       .text('E-Mail: ssenterprise255@gmail.com', leftMargin, 136, { align: 'left' });
 
     // Invoice details box (right side) - BORDERED
-    const boxX = 340;
+    const boxX = 490;
     const boxY = 40;
-    const boxWidth = 215;
+    const boxWidth = 220;
     const boxHeight = 155;
     
     doc
@@ -186,17 +188,18 @@ class PDFInvoiceService {
   generateCustomerInformation(doc, orderData) {
     const startY = 210;
     const leftBoxX = 40;
-    const rightBoxX = 305;
-    const boxWidth = 255;
+    const leftBoxWidth = 320;
+    const rightBoxX = 370;
+    const rightBoxWidth = 340;
     const boxHeight = 95;
     
     // Draw boxes
     doc
       .strokeColor('#000000')
       .lineWidth(1)
-      .rect(leftBoxX, startY, boxWidth, boxHeight)
+      .rect(leftBoxX, startY, leftBoxWidth, boxHeight)
       .stroke()
-      .rect(rightBoxX, startY, boxWidth, boxHeight)
+      .rect(rightBoxX, startY, rightBoxWidth, boxHeight)
       .stroke();
 
     const padding = 8;
@@ -256,20 +259,20 @@ class PDFInvoiceService {
   generateInvoiceTable(doc, orderData) {
     const tableTop = 320;
     const leftMargin = 40;
-    const rightMargin = 560;
+    const rightMargin = 710; // Custom wider portrait size
     
-    // Column positions for detailed view matching Image 2
+    // Column positions for detailed view with generous spacing (wider portrait)
     const colSl = leftMargin + 5;
-    const colDesc = 55;
-    const colHSN = 185;
-    const colQty = 230;
-    const colUnitPrice = 265;
-    const colDiscount = 315;
-    const colTaxable = 365;
-    const colCGST = 415;
-    const colSGST = 455;
-    const colIGST = 495;
-    const colAmount = rightMargin - 65;
+    const colDesc = 70;
+    const colHSN = 220;
+    const colQty = 280;
+    const colUnitPrice = 335;
+    const colDiscount = 395;
+    const colTaxable = 455;
+    const colCGST = 515;
+    const colSGST = 565;
+    const colIGST = 615;
+    const colAmount = 660;
     
     // Draw table border
     doc
@@ -285,16 +288,16 @@ class PDFInvoiceService {
     
     let headerY = tableTop + 6;
     doc.text('SI', colSl, headerY, { width: 20, align: 'center' });
-    doc.text('Description', colDesc, headerY, { width: 120 });
-    doc.text('HSN', colHSN, headerY, { width: 35, align: 'center' });
-    doc.text('Qty', colQty, headerY, { width: 25, align: 'center' });
-    doc.text('Unit Price', colUnitPrice, headerY, { width: 45, align: 'center' });
-    doc.text('Discount', colDiscount, headerY, { width: 45, align: 'center' });
-    doc.text('Taxable', colTaxable, headerY, { width: 45, align: 'center' });
-    doc.text('CGST', colCGST, headerY, { width: 35, align: 'center' });
-    doc.text('SGST', colSGST, headerY, { width: 35, align: 'center' });
-    doc.text('IGST', colIGST, headerY, { width: 35, align: 'center' });
-    doc.text('Amount', colAmount, headerY, { width: 50, align: 'right' });
+    doc.text('Description of Goods', colDesc, headerY, { width: 145 });
+    doc.text('HSN/SAC', colHSN, headerY, { width: 55, align: 'center' });
+    doc.text('Qty', colQty, headerY, { width: 50, align: 'center' });
+    doc.text('Unit Price', colUnitPrice, headerY, { width: 55, align: 'center' });
+    doc.text('Discount', colDiscount, headerY, { width: 55, align: 'center' });
+    doc.text('Taxable', colTaxable, headerY, { width: 55, align: 'center' });
+    doc.text('CGST', colCGST, headerY, { width: 45, align: 'center' });
+    doc.text('SGST', colSGST, headerY, { width: 45, align: 'center' });
+    doc.text('IGST', colIGST, headerY, { width: 40, align: 'center' });
+    doc.text('Amount', colAmount, headerY, { width: 48, align: 'center' });
 
     // Table Rows
     doc.fontSize(7).font('Helvetica');
@@ -356,16 +359,16 @@ class PDFInvoiceService {
       
       // Row data
       doc.text((index + 1).toString(), colSl, currentY, { width: 20, align: 'center' });
-      doc.text(productName.substring(0, 35), colDesc, currentY, { width: 120 });
-      doc.text(hsnCode, colHSN, currentY, { width: 35, align: 'center' });
-      doc.text(quantity.toString(), colQty, currentY, { width: 25, align: 'center' });
-      doc.text(itemUnitPrice.toFixed(2), colUnitPrice, currentY, { width: 45, align: 'right' });
-      doc.text(discountTotal > 0 ? discountTotal.toFixed(2) : '0.00', colDiscount, currentY, { width: 45, align: 'right' });
-      doc.text(taxableValue.toFixed(2), colTaxable, currentY, { width: 45, align: 'right' });
-      doc.text(cgstAmount.toFixed(2), colCGST, currentY, { width: 35, align: 'right' });
-      doc.text(sgstAmount.toFixed(2), colSGST, currentY, { width: 35, align: 'right' });
-      doc.text(igstAmount.toFixed(2), colIGST, currentY, { width: 35, align: 'right' });
-      doc.text(finalAmount.toFixed(2), colAmount, currentY, { width: 50, align: 'right' });
+      doc.text(productName.substring(0, 36), colDesc, currentY, { width: 145 });
+      doc.text(hsnCode, colHSN, currentY, { width: 55, align: 'center' });
+      doc.text(quantity.toString(), colQty, currentY, { width: 50, align: 'center' });
+      doc.text(itemUnitPrice.toFixed(2), colUnitPrice, currentY, { width: 55, align: 'center' });
+      doc.text(discountTotal > 0 ? discountTotal.toFixed(2) : '0.00', colDiscount, currentY, { width: 55, align: 'center' });
+      doc.text(taxableValue.toFixed(2), colTaxable, currentY, { width: 55, align: 'center' });
+      doc.text(cgstAmount.toFixed(2), colCGST, currentY, { width: 45, align: 'center' });
+      doc.text(sgstAmount.toFixed(2), colSGST, currentY, { width: 45, align: 'center' });
+      doc.text(igstAmount.toFixed(2), colIGST, currentY, { width: 40, align: 'center' });
+      doc.text(finalAmount.toFixed(2), colAmount, currentY, { width: 48, align: 'center' });
       
       currentY += rowHeight;
     });
@@ -386,15 +389,15 @@ class PDFInvoiceService {
       .stroke();
     
     doc.fontSize(8).font('Helvetica-Bold');
-    doc.text('Total', colDesc, currentY, { width: 120 });
-    doc.text(totalQty.toString(), colQty, currentY, { width: 25, align: 'center' });
-    doc.text(totalUnitPrice.toFixed(2), colUnitPrice, currentY, { width: 45, align: 'right' });
-    doc.text(totalDiscount > 0 ? `-${totalDiscount.toFixed(2)}` : '0.00', colDiscount, currentY, { width: 45, align: 'right' });
-    doc.text(totalTaxable.toFixed(2), colTaxable, currentY, { width: 45, align: 'right' });
-    doc.text(totalCGST.toFixed(2), colCGST, currentY, { width: 35, align: 'right' });
-    doc.text(totalSGST.toFixed(2), colSGST, currentY, { width: 35, align: 'right' });
-    doc.text(totalIGST.toFixed(2), colIGST, currentY, { width: 35, align: 'right' });
-    doc.text(totalAmount.toFixed(2), colAmount, currentY, { width: 50, align: 'right' });
+    doc.text('Total', colDesc, currentY, { width: 145 });
+    doc.text(totalQty.toString(), colQty, currentY, { width: 50, align: 'center' });
+    doc.text(totalUnitPrice.toFixed(2), colUnitPrice, currentY, { width: 55, align: 'center' });
+    doc.text(totalDiscount > 0 ? `-${totalDiscount.toFixed(2)}` : '0.00', colDiscount, currentY, { width: 55, align: 'center' });
+    doc.text(totalTaxable.toFixed(2), colTaxable, currentY, { width: 55, align: 'center' });
+    doc.text(totalCGST.toFixed(2), colCGST, currentY, { width: 45, align: 'center' });
+    doc.text(totalSGST.toFixed(2), colSGST, currentY, { width: 45, align: 'center' });
+    doc.text(totalIGST.toFixed(2), colIGST, currentY, { width: 40, align: 'center' });
+    doc.text(totalAmount.toFixed(2), colAmount, currentY, { width: 48, align: 'center' });
     
     currentY += rowHeight;
 
@@ -414,8 +417,8 @@ class PDFInvoiceService {
       .stroke();
     
     doc.fontSize(9).font('Helvetica-Bold');
-    doc.text('Grand Total', colDesc, currentY, { width: 120 });
-    doc.text(`₹ ${Math.round(totalAmount).toFixed(2)}`, colAmount, currentY, { width: 50, align: 'right' });
+    doc.text('Grand Total', colDesc, currentY, { width: 145 });
+    doc.text(Math.round(totalAmount).toFixed(2), colAmount, currentY, { width: 48, align: 'center' });
     
     currentY += rowHeight;
 
@@ -440,38 +443,85 @@ class PDFInvoiceService {
 
   generateTaxSummaryTable(doc, orderData, startY) {
     const leftMargin = 40;
-    const rightMargin = 560;
+    const rightMargin = 710; // Match wider portrait width
     
     startY += 5;
     
-    // Column positions for tax summary
-    const colHSN = leftMargin + 10;
-    const colTaxable = 120;
-    const colCGST = 220;
-    const colSGST = 320;
-    const colIGST = 420;
-    const colTotalTax = rightMargin - 80;
+    // Column positions with sub-columns for Rate and Amount
+    const colHSN = leftMargin + 15;
+    const colTaxable = 145;
     
-    // Draw table border
+    // CGST columns
+    const colCGSTRate = 240;
+    const colCGSTAmount = 290;
+    
+    // SGST columns
+    const colSGSTRate = 355;
+    const colSGSTAmount = 405;
+    
+    // IGST columns
+    const colIGSTRate = 470;
+    const colIGSTAmount = 520;
+    
+    const colTotalTax = 600;
+    
+    // Draw main table border for first header row
     doc
       .strokeColor('#000000')
       .lineWidth(1)
-      .rect(leftMargin, startY, rightMargin - leftMargin, 20)
+      .rect(leftMargin, startY, rightMargin - leftMargin, 15)
       .stroke();
     
-    // Table Header
+    // First Header Row - Main categories
     doc.fontSize(8).font('Helvetica-Bold');
-    let headerY = startY + 6;
-    doc.text('HSN/SAC', colHSN, headerY, { width: 80, align: 'center' });
-    doc.text('Taxable Value', colTaxable, headerY, { width: 80, align: 'center' });
-    doc.text('CGST', colCGST, headerY, { width: 80, align: 'center' });
-    doc.text('SGST', colSGST, headerY, { width: 80, align: 'center' });
-    doc.text('IGST', colIGST, headerY, { width: 80, align: 'center' });
-    doc.text('Total Tax', colTotalTax, headerY, { width: 80, align: 'center' });
+    let headerY = startY + 4;
+    doc.text('HSN/SAC', colHSN, headerY, { width: 90, align: 'center' });
+    doc.text('Taxable Value', colTaxable, headerY, { width: 85, align: 'center' });
+    doc.text('CGST', colCGSTRate + 15, headerY, { width: 80, align: 'center' });
+    doc.text('SGST', colSGSTRate + 15, headerY, { width: 80, align: 'center' });
+    doc.text('IGST', colIGSTRate + 15, headerY, { width: 80, align: 'center' });
+    doc.text('Total Tax', colTotalTax, headerY, { width: 100, align: 'center' });
+    
+    // Draw vertical dividers in first header
+    doc.moveTo(colTaxable - 5, startY).lineTo(colTaxable - 5, startY + 15).stroke();
+    doc.moveTo(colCGSTRate - 5, startY).lineTo(colCGSTRate - 5, startY + 15).stroke();
+    doc.moveTo(colSGSTRate - 5, startY).lineTo(colSGSTRate - 5, startY + 15).stroke();
+    doc.moveTo(colIGSTRate - 5, startY).lineTo(colIGSTRate - 5, startY + 15).stroke();
+    doc.moveTo(colTotalTax - 10, startY).lineTo(colTotalTax - 10, startY + 15).stroke();
+    
+    // Second Header Row - Sub-columns (Rate | Amount)
+    startY += 15;
+    doc
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .rect(leftMargin, startY, rightMargin - leftMargin, 12)
+      .stroke();
+    
+    headerY = startY + 3;
+    doc.fontSize(7).font('Helvetica-Bold');
+    
+    // Sub-headers for CGST
+    doc.text('Rate', colCGSTRate, headerY, { width: 40, align: 'center' });
+    doc.text('Amount', colCGSTAmount, headerY, { width: 50, align: 'center' });
+    
+    // Sub-headers for SGST
+    doc.text('Rate', colSGSTRate, headerY, { width: 40, align: 'center' });
+    doc.text('Amount', colSGSTAmount, headerY, { width: 50, align: 'center' });
+    
+    // Sub-headers for IGST
+    doc.text('Rate', colIGSTRate, headerY, { width: 40, align: 'center' });
+    doc.text('Amount', colIGSTAmount, headerY, { width: 50, align: 'center' });
+    
+    // Draw vertical dividers in second header (only main column separators)
+    doc.moveTo(colTaxable - 5, startY).lineTo(colTaxable - 5, startY + 12).stroke();
+    doc.moveTo(colCGSTRate - 5, startY).lineTo(colCGSTRate - 5, startY + 12).stroke();
+    doc.moveTo(colSGSTRate - 5, startY).lineTo(colSGSTRate - 5, startY + 12).stroke();
+    doc.moveTo(colIGSTRate - 5, startY).lineTo(colIGSTRate - 5, startY + 12).stroke();
+    doc.moveTo(colTotalTax - 10, startY).lineTo(colTotalTax - 10, startY + 12).stroke();
 
     // Table Rows
     doc.fontSize(8).font('Helvetica');
-    let currentY = startY + 25;
+    let currentY = startY + 17;
     const rowHeight = 15;
     
     let totalTaxableValue = 0;
@@ -525,12 +575,30 @@ class PDFInvoiceService {
         .rect(leftMargin, currentY - 5, rightMargin - leftMargin, rowHeight)
         .stroke();
       
-      doc.text(hsnCode, colHSN, currentY, { width: 80, align: 'center' });
-      doc.text(group.taxableValue.toFixed(2), colTaxable, currentY, { width: 80, align: 'center' });
-      doc.text(`${group.cgstRate}%\n${group.cgstAmount.toFixed(2)}`, colCGST, currentY - 2, { width: 80, align: 'center', lineGap: 2 });
-      doc.text(`${group.sgstRate}%\n${group.sgstAmount.toFixed(2)}`, colSGST, currentY - 2, { width: 80, align: 'center', lineGap: 2 });
-      doc.text(`0%\n${group.igstAmount.toFixed(2)}`, colIGST, currentY - 2, { width: 80, align: 'center', lineGap: 2 });
-      doc.text(rowTotalTax.toFixed(2), colTotalTax, currentY, { width: 80, align: 'center' });
+      doc.text(hsnCode, colHSN, currentY, { width: 90, align: 'center' });
+      doc.text(group.taxableValue.toFixed(2), colTaxable, currentY, { width: 85, align: 'center' });
+      
+      // CGST - Rate and Amount in separate columns
+      doc.fontSize(8);
+      doc.text(`${group.cgstRate}%`, colCGSTRate, currentY, { width: 40, align: 'center' });
+      doc.text(group.cgstAmount.toFixed(2), colCGSTAmount, currentY, { width: 50, align: 'center' });
+      
+      // SGST - Rate and Amount in separate columns
+      doc.text(`${group.sgstRate}%`, colSGSTRate, currentY, { width: 40, align: 'center' });
+      doc.text(group.sgstAmount.toFixed(2), colSGSTAmount, currentY, { width: 50, align: 'center' });
+      
+      // IGST - Rate and Amount in separate columns
+      doc.text(`0%`, colIGSTRate, currentY, { width: 40, align: 'center' });
+      doc.text(group.igstAmount.toFixed(2), colIGSTAmount, currentY, { width: 50, align: 'center' });
+      
+      doc.text(rowTotalTax.toFixed(2), colTotalTax, currentY, { width: 100, align: 'center' });
+      
+      // Draw vertical dividers in data row (only main column separators)
+      doc.moveTo(colTaxable - 5, currentY - 5).lineTo(colTaxable - 5, currentY + 10).stroke();
+      doc.moveTo(colCGSTRate - 5, currentY - 5).lineTo(colCGSTRate - 5, currentY + 10).stroke();
+      doc.moveTo(colSGSTRate - 5, currentY - 5).lineTo(colSGSTRate - 5, currentY + 10).stroke();
+      doc.moveTo(colIGSTRate - 5, currentY - 5).lineTo(colIGSTRate - 5, currentY + 10).stroke();
+      doc.moveTo(colTotalTax - 10, currentY - 5).lineTo(colTotalTax - 10, currentY + 10).stroke();
       
       totalTaxableValue += group.taxableValue;
       totalCGSTAmount += group.cgstAmount;
@@ -549,12 +617,21 @@ class PDFInvoiceService {
       .stroke();
     
     doc.font('Helvetica-Bold');
-    doc.text('Total', colHSN, currentY, { width: 80, align: 'center' });
-    doc.text(totalTaxableValue.toFixed(2), colTaxable, currentY, { width: 80, align: 'center' });
-    doc.text(totalCGSTAmount.toFixed(2), colCGST, currentY, { width: 80, align: 'center' });
-    doc.text(totalSGSTAmount.toFixed(2), colSGST, currentY, { width: 80, align: 'center' });
-    doc.text(totalIGSTAmount.toFixed(2), colIGST, currentY, { width: 80, align: 'center' });
-    doc.text(totalTax.toFixed(2), colTotalTax, currentY, { width: 80, align: 'center' });
+    doc.text('Total', colHSN, currentY, { width: 90, align: 'center' });
+    doc.text(totalTaxableValue.toFixed(2), colTaxable, currentY, { width: 85, align: 'center' });
+    
+    // Total amounts only (no rates in total row)
+    doc.text(totalCGSTAmount.toFixed(2), colCGSTAmount, currentY, { width: 50, align: 'center' });
+    doc.text(totalSGSTAmount.toFixed(2), colSGSTAmount, currentY, { width: 50, align: 'center' });
+    doc.text(totalIGSTAmount.toFixed(2), colIGSTAmount, currentY, { width: 50, align: 'center' });
+    doc.text(totalTax.toFixed(2), colTotalTax, currentY, { width: 100, align: 'center' });
+    
+    // Draw vertical dividers in total row (only main column separators)
+    doc.moveTo(colTaxable - 5, currentY - 5).lineTo(colTaxable - 5, currentY + 10).stroke();
+    doc.moveTo(colCGSTRate - 5, currentY - 5).lineTo(colCGSTRate - 5, currentY + 10).stroke();
+    doc.moveTo(colSGSTRate - 5, currentY - 5).lineTo(colSGSTRate - 5, currentY + 10).stroke();
+    doc.moveTo(colIGSTRate - 5, currentY - 5).lineTo(colIGSTRate - 5, currentY + 10).stroke();
+    doc.moveTo(colTotalTax - 10, currentY - 5).lineTo(colTotalTax - 10, currentY + 10).stroke();
 
     // Tax amount in words
     currentY += 20;
@@ -587,30 +664,31 @@ class PDFInvoiceService {
     position += 12;
     doc.text('Branch & IFSC Code: KKBK0004485', leftMargin, position);
     
-    // Declaration (starts at same Y as bank details)
+    // Declaration (right side aligned)
     let declarationY = 680;
+    const declarationX = 420;
     doc
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('Declaration:', 300, declarationY);
+      .text('Declaration:', declarationX, declarationY);
     
     declarationY += 15;
     doc
       .fontSize(8)
       .font('Helvetica')
-      .text('We declare that this invoice shows the actual price of the goods', 300, declarationY, { width: 250 })
-      .text('described and that all particulars are true and correct.', 300, declarationY + 10, { width: 250 });
+      .text('We declare that this invoice shows the actual price of the goods', declarationX, declarationY, { width: 280 })
+      .text('described and that all particulars are true and correct.', declarationX, declarationY + 10, { width: 280 });
     
     // Company signature (right side)
     position += 20;
     doc
       .fontSize(9)
       .font('Helvetica')
-      .text('for SS ENTERPRISES', 420, position);
+      .text('for SS ENTERPRISES', declarationX + 130, position, { align: 'center' });
     
     doc
       .fontSize(9)
-      .text('Authorised Signatory', 420, position + 40);
+      .text('Authorised Signatory', declarationX + 130, position + 40, { align: 'center' });
   }
 
   numberToWords(num) {

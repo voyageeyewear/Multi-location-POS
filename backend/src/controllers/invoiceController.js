@@ -1,6 +1,8 @@
+const AppDataSource = require('../config/database');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const pdfInvoiceService = require('../services/pdfInvoiceService');
 
 class InvoiceController {
   static async generateInvoice(req, res, next) {
@@ -8,22 +10,60 @@ class InvoiceController {
       const { saleId } = req.params;
       const { format = 'pdf' } = req.query; // pdf or html
       
+      // Check if order data is passed in request body (for Shopify orders)
+      const orderData = req.body || req.query;
+      
+      if (orderData && orderData.invoiceNumber) {
+        // Direct order data provided (from frontend)
+        console.log('📄 Generating invoice for order:', orderData.invoiceNumber);
+        
+        const invoicePayload = {
+          invoiceNumber: orderData.invoiceNumber || saleId,
+          timestamp: orderData.timestamp || orderData.createdAt || new Date().toISOString(),
+          customerName: orderData.customerName || 'Customer',
+          location: orderData.location || {
+            city: orderData.city || 'Mumbai',
+            state: orderData.state || 'Maharashtra',
+            gstNumber: '08AGFPK7804C1ZQ'
+          },
+          items: (orderData.items || []).map(item => ({
+            title: item.title || item.name || 'Product',
+            hsnCode: item.hsnCode || '90041000',
+            quantity: item.quantity || 1,
+            price: parseFloat(item.price || 0),
+            gstRate: item.gstRate || 18,
+            discountAmount: parseFloat(item.discountAmount || 0)
+          }))
+        };
+        
+        // Generate PDF using new service
+        const result = await pdfInvoiceService.generateInvoicePDF(invoicePayload);
+        
+        // Send the PDF file
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 
+          format === 'html' 
+            ? `inline; filename="${result.fileName}"` 
+            : `attachment; filename="${result.fileName}"`
+        );
+        return res.sendFile(result.filePath);
+      }
+      
+      // Fallback: Try to get from database (for POS sales)
       const saleRepository = AppDataSource.getRepository('Sale');
       const saleItemRepository = AppDataSource.getRepository('SaleItem');
-      const productRepository = AppDataSource.getRepository('Product');
       const companyRepository = AppDataSource.getRepository('Company');
-      const locationRepository = AppDataSource.getRepository('Location');
       
       // Get sale with all related data
       const sale = await saleRepository.findOne({
-        where: { id: saleId, companyId: req.companyId },
+        where: { id: saleId },
         relations: ['location']
       });
       
       if (!sale) {
         return res.status(404).json({
           success: false,
-          message: 'Sale not found'
+          message: 'Sale not found. Please ensure the sale exists in the database.'
         });
       }
       
@@ -35,82 +75,43 @@ class InvoiceController {
       
       // Get company information
       const company = await companyRepository.findOne({
-        where: { id: req.companyId }
+        where: { id: req.companyId || 1 }
       });
       
-      if (!company) {
-        return res.status(404).json({
-          success: false,
-          message: 'Company not found'
-        });
-      }
-      
-      // Calculate tax amounts
-      const cgstRate = parseFloat(company.cgstRate) || 9.00;
-      const sgstRate = parseFloat(company.sgstRate) || 9.00;
-      const taxableAmount = parseFloat(sale.subtotal);
-      const cgstAmount = (taxableAmount * cgstRate) / 100;
-      const sgstAmount = (taxableAmount * sgstRate) / 100;
-      const totalTaxAmount = cgstAmount + sgstAmount;
-      
-      // Prepare invoice data
-      const invoiceData = {
-        // Company details
-        company: {
-          name: company.name,
-          address: company.address,
-          gstin: company.gstin,
-          stateName: company.stateName,
-          stateCode: company.stateCode,
-          phone: company.phone,
-          email: company.email
+      // Map database sale to order format
+      const invoicePayload = {
+        invoiceNumber: sale.orderNumber,
+        timestamp: sale.createdAt,
+        customerName: sale.customerName || 'Walk-in Customer',
+        location: {
+          city: sale.location?.city || company?.stateName || 'Mumbai',
+          state: sale.location?.state || company?.stateName || 'Maharashtra',
+          gstNumber: company?.gstin || '08AGFPK7804C1ZQ'
         },
-        // Customer details
-        customer: {
-          name: sale.customerName || 'Walk-in Customer',
-          address: sale.customerEmail || '',
-          gstin: '', // Customer GSTIN if available
-          stateName: company.stateName, // Assuming same state for now
-          stateCode: company.stateCode
-        },
-        // Invoice details
-        invoice: {
-          number: sale.orderNumber,
-          date: new Date(sale.createdAt).toLocaleDateString('en-IN'),
-          items: saleItems.map(item => ({
-            description: item.product?.name || 'Product',
-            hsn: item.product?.hsnCode || '1005',
-            quantity: item.quantity,
-            unit: 'No',
-            rate: parseFloat(item.unitPrice),
-            amount: parseFloat(item.totalPrice),
-            discount: parseFloat(item.discountAmount) || 0
-          })),
-          subtotal: taxableAmount,
-          cgstRate: cgstRate,
-          sgstRate: sgstRate,
-          cgstAmount: cgstAmount,
-          sgstAmount: sgstAmount,
-          totalTaxAmount: totalTaxAmount,
-          total: parseFloat(sale.total)
-        }
+        items: saleItems.map(item => ({
+          title: item.product?.name || 'Product',
+          hsnCode: item.product?.hsnCode || '90041000',
+          quantity: item.quantity,
+          price: parseFloat(item.unitPrice),
+          gstRate: item.product?.gstRate || 18,
+          discountAmount: parseFloat(item.discountAmount) || 0
+        }))
       };
       
-      if (format === 'html') {
-        // Return HTML for preview
-        const html = InvoiceController.generateInvoiceHTML(invoiceData);
-        res.setHeader('Content-Type', 'text/html');
-        return res.send(html);
-      } else {
-        // Generate PDF
-        const pdfBuffer = await InvoiceController.generateInvoicePDF(invoiceData);
-        
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="invoice-${sale.orderNumber}.pdf"`);
-        return res.send(pdfBuffer);
-      }
+      // Generate PDF using new service
+      const result = await pdfInvoiceService.generateInvoicePDF(invoicePayload);
+      
+      // Send the PDF file
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 
+        format === 'html' 
+          ? `inline; filename="${result.fileName}"` 
+          : `attachment; filename="${result.fileName}"`
+      );
+      return res.sendFile(result.filePath);
       
     } catch (error) {
+      console.error('Error generating invoice:', error);
       next(error);
     }
   }

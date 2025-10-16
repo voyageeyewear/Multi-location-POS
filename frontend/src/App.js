@@ -2587,40 +2587,114 @@ function App() {
 
   const downloadInvoice = async (order) => {
     try {
-      // Generate invoice HTML content
-      const invoiceHTML = generateInvoiceHTML(order);
+      toast.loading('Generating invoice PDF...', { id: 'download-invoice' });
+      
+      const token = Cookies.get('token') || 'demo-token';
+      
+      // Prepare order data for PDF generation
+      const orderData = {
+        invoiceNumber: order.id,
+        timestamp: order.createdAt || order.date || new Date().toISOString(),
+        customerName: order.customerName || 'Customer',
+        location: order.location || {
+          city: order.city || 'Mumbai',
+          state: order.state || 'Maharashtra',
+          gstNumber: '08AGFPK7804C1ZQ'
+        },
+        items: (order.items || []).map(item => ({
+          title: item.title || item.name || 'Product',
+          name: item.title || item.name || 'Product',
+          hsnCode: item.hsnCode || '90041000',
+          quantity: item.quantity || 1,
+          price: item.price || 0,
+          gstRate: item.gstRate || 18,
+          discountAmount: item.discountAmount || 0
+        }))
+      };
+      
+      const response = await axios.post(
+        `${API_URL}/api/invoices/${order.id}`,
+        orderData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          responseType: 'blob' // Important for downloading files
+        }
+      );
       
       // Create download link
-      const blob = new Blob([invoiceHTML], { type: 'text/html' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `invoice-${order.id}.html`;
+      a.download = `${order.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Invoice downloaded successfully!');
+      toast.success('Invoice downloaded successfully!', { id: 'download-invoice' });
     } catch (error) {
       console.error('Error downloading invoice:', error);
-      toast.error('Failed to download invoice');
+      toast.error('Failed to download invoice: ' + (error.response?.data?.message || error.message), { id: 'download-invoice' });
     }
   };
 
   const previewInvoice = async (order) => {
     try {
-      // Generate invoice HTML content
-      const invoiceHTML = generateInvoiceHTML(order);
+      toast.loading('Generating invoice preview...', { id: 'preview-invoice' });
       
-      // Open in new window
-      const newWindow = window.open('', '_blank');
-      newWindow.document.write(invoiceHTML);
-      newWindow.document.close();
+      const token = Cookies.get('token') || 'demo-token';
       
+      // Prepare order data for PDF generation
+      const orderData = {
+        invoiceNumber: order.id,
+        timestamp: order.createdAt || order.date || new Date().toISOString(),
+        customerName: order.customerName || 'Customer',
+        location: order.location || {
+          city: order.city || 'Mumbai',
+          state: order.state || 'Maharashtra',
+          gstNumber: '08AGFPK7804C1ZQ'
+        },
+        items: (order.items || []).map(item => ({
+          title: item.title || item.name || 'Product',
+          name: item.title || item.name || 'Product',
+          hsnCode: item.hsnCode || '90041000',
+          quantity: item.quantity || 1,
+          price: item.price || 0,
+          gstRate: item.gstRate || 18,
+          discountAmount: item.discountAmount || 0
+        }))
+      };
+      
+      const response = await axios.post(
+        `${API_URL}/api/invoices/${order.id}?format=html`,
+        orderData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          responseType: 'blob' // Get as blob for PDF
+        }
+      );
+      
+      // Create blob URL and open in new window for preview
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Clean up after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      toast.success('Opening invoice preview...', { id: 'preview-invoice' });
     } catch (error) {
       console.error('Error previewing invoice:', error);
-      toast.error('Failed to preview invoice');
+      toast.error('Failed to preview invoice: ' + (error.response?.data?.message || error.message), { id: 'preview-invoice' });
     }
   };
 
