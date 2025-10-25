@@ -16,6 +16,10 @@ class InvoiceController {
       if (orderData && orderData.invoiceNumber) {
         // Direct order data provided (from frontend)
         console.log('📄 Generating invoice for order:', orderData.invoiceNumber);
+        console.log('📋 Customer Name:', orderData.customerName);
+        console.log('📋 Customer Address:', orderData.customerAddress);
+        console.log('📋 Customer GST:', orderData.customerGstNumber);
+        console.log('📋 Full order data:', JSON.stringify(orderData, null, 2));
         
         const invoicePayload = {
           invoiceNumber: orderData.invoiceNumber || saleId,

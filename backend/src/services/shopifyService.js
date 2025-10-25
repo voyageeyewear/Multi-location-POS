@@ -735,17 +735,22 @@ class ShopifyService {
       
       // Extract customer details from note_attributes
       console.log('📝 Extracting customer details from note_attributes...');
+      let extractedCount = 0;
       allOrders.forEach(order => {
         if (order.note_attributes && Array.isArray(order.note_attributes)) {
+          let hadCustomerData = false;
           order.note_attributes.forEach(attr => {
             if (attr.name === 'Customer Name' && attr.value) {
               order.customerName = attr.value;
+              hadCustomerData = true;
             }
             if (attr.name === 'Customer Address' && attr.value) {
               order.customerAddress = attr.value;
+              hadCustomerData = true;
             }
             if (attr.name === 'Customer GST Number' && attr.value) {
               order.customerGstNumber = attr.value;
+              hadCustomerData = true;
             }
             if (attr.name === 'Customer Phone' && attr.value) {
               order.customerPhone = attr.value;
@@ -754,9 +759,13 @@ class ShopifyService {
               order.customerEmail = attr.value;
             }
           });
+          if (hadCustomerData) {
+            extractedCount++;
+            console.log(`✅ Extracted customer data from order ${order.name}: Name="${order.customerName}", Address="${order.customerAddress}", GST="${order.customerGstNumber}"`);
+          }
         }
       });
-      console.log('✅ Customer details extracted from note_attributes');
+      console.log(`✅ Customer details extracted from note_attributes (${extractedCount} orders with customer data)`);
       
       return {
         success: true,
