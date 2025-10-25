@@ -190,10 +190,9 @@ class PDFInvoiceService {
     } else {
       doc.text(orderData.location?.city || 'Mumbai', leftBoxX + padding, leftY);
       leftY += lineHeight;
+      doc.text(orderData.location?.state || 'Maharashtra', leftBoxX + padding, leftY);
+      leftY += lineHeight;
     }
-    
-    doc.text(orderData.location?.state || 'Maharashtra', leftBoxX + padding, leftY);
-    leftY += lineHeight;
     
     // Show customer GST if provided, otherwise N/A
     const customerGst = orderData.customerGstNumber || 'N/A';
@@ -219,10 +218,9 @@ class PDFInvoiceService {
     } else {
       doc.text(orderData.location?.city || 'Mumbai', rightBoxX + padding, rightY);
       rightY += lineHeight;
+      doc.text(orderData.location?.state || 'Maharashtra', rightBoxX + padding, rightY);
+      rightY += lineHeight;
     }
-    
-    doc.text(orderData.location?.state || 'Maharashtra', rightBoxX + padding, rightY);
-    rightY += lineHeight;
     
     // Show customer GST if provided, otherwise N/A
     doc.text(`GSTIN/UIN: ${customerGst}`, rightBoxX + padding, rightY);
