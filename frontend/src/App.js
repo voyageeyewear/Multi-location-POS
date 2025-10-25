@@ -2592,6 +2592,13 @@ function App() {
       
       const token = Cookies.get('token') || 'demo-token';
       
+      // DEBUG: Check what customer data is in the order
+      console.log('🔍 ORDER OBJECT:', order);
+      console.log('🔍 Customer Name from order:', order.customerName);
+      console.log('🔍 Customer Address from order:', order.customerAddress);
+      console.log('🔍 Customer GST from order:', order.customerGstNumber);
+      console.log('🔍 Note Attributes:', order.note_attributes);
+      
       // Prepare order data for PDF generation
       const orderData = {
         invoiceNumber: order.id,
@@ -2650,6 +2657,13 @@ function App() {
       toast.loading('Generating invoice preview...', { id: 'preview-invoice' });
       
       const token = Cookies.get('token') || 'demo-token';
+      
+      // DEBUG: Check what customer data is in the order
+      console.log('🔍 ORDER OBJECT:', order);
+      console.log('🔍 Customer Name from order:', order.customerName);
+      console.log('🔍 Customer Address from order:', order.customerAddress);
+      console.log('🔍 Customer GST from order:', order.customerGstNumber);
+      console.log('🔍 Note Attributes:', order.note_attributes);
       
       // Prepare order data for PDF generation
       const orderData = {
