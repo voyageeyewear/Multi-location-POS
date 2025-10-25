@@ -114,11 +114,11 @@ class PDFInvoiceService {
       .text('GSTIN/UIN: 08AGFPK7804C1ZQ', leftMargin, 123, { align: 'left' })
       .text('E-Mail: ssenterprise255@gmail.com', leftMargin, 136, { align: 'left' });
 
-    // Invoice details box (right side) - BORDERED
+    // Invoice details box (right side) - BORDERED (Simplified)
     const boxX = 490;
     const boxY = 40;
     const boxWidth = 220;
-    const boxHeight = 155;
+    const boxHeight = 50; // Reduced height for only 2 fields
     
     doc
       .strokeColor('#000000')
@@ -130,18 +130,13 @@ class PDFInvoiceService {
     const labelX = boxX + 8;
     const valueX = boxX + 95;
     let currentY = boxY + 10;
-    const lineHeight = 13;
+    const lineHeight = 15;
     
-    doc.fontSize(8).font('Helvetica');
+    doc.fontSize(9).font('Helvetica');
     
     // Invoice No
     doc.font('Helvetica-Bold').text('Invoice No.:', labelX, currentY, { width: 85 });
     doc.font('Helvetica').text(orderData.invoiceNumber || 'MUMBVOYA-00030', valueX, currentY, { width: 110 });
-    currentY += lineHeight;
-    
-    // e-Way Bill No
-    doc.font('Helvetica-Bold').text('e-Way Bill No.:', labelX, currentY, { width: 85 });
-    doc.font('Helvetica').text('TT1866418', valueX, currentY, { width: 110 });
     currentY += lineHeight;
     
     // Dated
@@ -151,38 +146,6 @@ class PDFInvoiceService {
       month: 'short',
       year: 'numeric'
     }), valueX, currentY, { width: 110 });
-    currentY += lineHeight;
-    
-    // Delivery Note
-    doc.font('Helvetica-Bold').text('Delivery Note:', labelX, currentY, { width: 85 });
-    doc.font('Helvetica').text('Mode/Terms of Payment', valueX, currentY, { width: 110 });
-    currentY += lineHeight;
-    
-    // Reference No & Date
-    doc.font('Helvetica-Bold').text('Reference No. & Date:', labelX, currentY, { width: 85 });
-    doc.font('Helvetica').text('Other References', valueX, currentY, { width: 110 });
-    currentY += lineHeight;
-    
-    // Buyer's Order No
-    doc.font('Helvetica-Bold').text('Buyer\'s Order No.:', labelX, currentY, { width: 85 });
-    currentY += lineHeight;
-    
-    // Dated (blank)
-    doc.font('Helvetica-Bold').text('Dated:', labelX, currentY, { width: 85 });
-    currentY += lineHeight;
-    
-    // Dispatch Doc No
-    doc.font('Helvetica-Bold').text('Dispatch Doc No.:', labelX, currentY, { width: 85 });
-    doc.font('Helvetica').text('Delivery Note Date', valueX, currentY, { width: 110 });
-    currentY += lineHeight;
-    
-    // Dispatched through
-    doc.font('Helvetica-Bold').text('Dispatched through:', labelX, currentY, { width: 85 });
-    doc.font('Helvetica').text('Destination', valueX, currentY, { width: 110 });
-    currentY += lineHeight;
-    
-    // Terms of Delivery
-    doc.font('Helvetica-Bold').text('Terms of Delivery:', labelX, currentY, { width: 85 });
   }
 
   generateCustomerInformation(doc, orderData) {
