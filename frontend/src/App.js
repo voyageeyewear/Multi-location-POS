@@ -6,9 +6,7 @@ import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
 // API URL configuration - works in both development and production
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:8000' 
-  : window.location.origin;
+const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
