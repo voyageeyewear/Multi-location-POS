@@ -2590,26 +2590,31 @@ function App() {
       
       const token = Cookies.get('token') || 'demo-token';
       
-      // DEBUG: Check what customer data is in the order
-      console.log('🔍 ORDER OBJECT:', order);
-      console.log('🔍 Customer Name from order:', order.customerName);
-      console.log('🔍 Customer Address from order:', order.customerAddress);
-      console.log('🔍 Customer GST from order:', order.customerGstNumber);
-      console.log('🔍 Note Attributes:', order.note_attributes);
+      // 🔥 AGGRESSIVE FIX: Check localStorage for order with customer data FIRST!
+      const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const localOrder = localSalesData.orders?.find(o => o.id === order.id);
+      
+      // Use local order if found (has full customer data), otherwise use passed order
+      const orderToUse = localOrder || order;
+      
+      console.log('🔥 AGGRESSIVE FIX - Order source:', localOrder ? '✅ localStorage (has customer data)' : '❌ Shopify (missing customer data)');
+      console.log('🔍 Customer Name:', orderToUse.customerName);
+      console.log('🔍 Customer Address:', orderToUse.customerAddress);
+      console.log('🔍 Customer GST:', orderToUse.customerGstNumber);
       
       // Prepare order data for PDF generation
       const orderData = {
-        invoiceNumber: order.id,
-        timestamp: order.createdAt || order.date || new Date().toISOString(),
-        customerName: order.customerName || 'Customer',
-        customerAddress: order.customerAddress || '',
-        customerGstNumber: order.customerGstNumber || '',
-        location: order.location || {
-          city: order.city || 'Mumbai',
-          state: order.state || 'Maharashtra',
+        invoiceNumber: orderToUse.id,
+        timestamp: orderToUse.createdAt || orderToUse.date || new Date().toISOString(),
+        customerName: orderToUse.customerName || 'Customer',
+        customerAddress: orderToUse.customerAddress || '',
+        customerGstNumber: orderToUse.customerGstNumber || '',
+        location: orderToUse.location || {
+          city: orderToUse.city || 'Mumbai',
+          state: orderToUse.state || 'Maharashtra',
           gstNumber: '08AGFPK7804C1ZQ'
         },
-        items: (order.items || []).map(item => ({
+        items: (orderToUse.items || []).map(item => ({
           title: item.title || item.name || 'Product',
           name: item.title || item.name || 'Product',
           hsnCode: item.hsnCode || '90041000',
@@ -2656,26 +2661,31 @@ function App() {
       
       const token = Cookies.get('token') || 'demo-token';
       
-      // DEBUG: Check what customer data is in the order
-      console.log('🔍 ORDER OBJECT:', order);
-      console.log('🔍 Customer Name from order:', order.customerName);
-      console.log('🔍 Customer Address from order:', order.customerAddress);
-      console.log('🔍 Customer GST from order:', order.customerGstNumber);
-      console.log('🔍 Note Attributes:', order.note_attributes);
+      // 🔥 AGGRESSIVE FIX: Check localStorage for order with customer data FIRST!
+      const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const localOrder = localSalesData.orders?.find(o => o.id === order.id);
+      
+      // Use local order if found (has full customer data), otherwise use passed order
+      const orderToUse = localOrder || order;
+      
+      console.log('🔥 AGGRESSIVE FIX - Order source:', localOrder ? '✅ localStorage (has customer data)' : '❌ Shopify (missing customer data)');
+      console.log('🔍 Customer Name:', orderToUse.customerName);
+      console.log('🔍 Customer Address:', orderToUse.customerAddress);
+      console.log('🔍 Customer GST:', orderToUse.customerGstNumber);
       
       // Prepare order data for PDF generation
       const orderData = {
-        invoiceNumber: order.id,
-        timestamp: order.createdAt || order.date || new Date().toISOString(),
-        customerName: order.customerName || 'Customer',
-        customerAddress: order.customerAddress || '',
-        customerGstNumber: order.customerGstNumber || '',
-        location: order.location || {
-          city: order.city || 'Mumbai',
-          state: order.state || 'Maharashtra',
+        invoiceNumber: orderToUse.id,
+        timestamp: orderToUse.createdAt || orderToUse.date || new Date().toISOString(),
+        customerName: orderToUse.customerName || 'Customer',
+        customerAddress: orderToUse.customerAddress || '',
+        customerGstNumber: orderToUse.customerGstNumber || '',
+        location: orderToUse.location || {
+          city: orderToUse.city || 'Mumbai',
+          state: orderToUse.state || 'Maharashtra',
           gstNumber: '08AGFPK7804C1ZQ'
         },
-        items: (order.items || []).map(item => ({
+        items: (orderToUse.items || []).map(item => ({
           title: item.title || item.name || 'Product',
           name: item.title || item.name || 'Product',
           hsnCode: item.hsnCode || '90041000',
