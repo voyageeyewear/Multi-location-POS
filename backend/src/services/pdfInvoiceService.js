@@ -198,9 +198,6 @@ class PDFInvoiceService {
     // Show customer GST if provided, otherwise N/A
     const customerGst = orderData.customerGstNumber || 'N/A';
     doc.text(`GSTIN/UIN: ${customerGst}`, leftBoxX + padding, leftY);
-    leftY += lineHeight;
-    
-    doc.text(`State Name: ${orderData.location?.state || 'Maharashtra'}, Code: 08`, leftBoxX + padding, leftY);
 
     // Buyer (Bill to) - Right side
     doc
