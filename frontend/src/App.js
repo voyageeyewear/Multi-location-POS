@@ -3480,6 +3480,7 @@ function App() {
     const newOrder = {
       id: orderId,
       clientName: clientInfo.name,
+      customerName: clientInfo.name, // ← ADD THIS for invoice generation
       shopifyLocationId: locationInfo.shopifyLocationId, // Store Shopify location ID for filtering
           location: {
         id: locationInfo.id,
