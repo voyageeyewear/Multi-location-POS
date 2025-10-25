@@ -21,6 +21,8 @@ class InvoiceController {
           invoiceNumber: orderData.invoiceNumber || saleId,
           timestamp: orderData.timestamp || orderData.createdAt || new Date().toISOString(),
           customerName: orderData.customerName || 'Customer',
+          customerAddress: orderData.customerAddress || '',
+          customerGstNumber: orderData.customerGstNumber || '',
           location: orderData.location || {
             city: orderData.city || 'Mumbai',
             state: orderData.state || 'Maharashtra',

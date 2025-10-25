@@ -180,16 +180,24 @@ class PDFInvoiceService {
     doc
       .fontSize(8)
       .font('Helvetica')
-      .text(orderData.customerName || 'Dhruv', leftBoxX + padding, leftY);
+      .text(orderData.customerName || 'Customer', leftBoxX + padding, leftY);
     leftY += lineHeight;
     
-    doc.text(orderData.location?.city || 'Mumbai', leftBoxX + padding, leftY);
-    leftY += lineHeight;
+    // Show customer address if provided, otherwise show location
+    if (orderData.customerAddress) {
+      doc.text(orderData.customerAddress, leftBoxX + padding, leftY, { width: leftBoxWidth - padding * 2 });
+      leftY += lineHeight * 2; // Account for potential multiline address
+    } else {
+      doc.text(orderData.location?.city || 'Mumbai', leftBoxX + padding, leftY);
+      leftY += lineHeight;
+    }
     
     doc.text(orderData.location?.state || 'Maharashtra', leftBoxX + padding, leftY);
     leftY += lineHeight;
     
-    doc.text(`GSTIN/UIN: ${orderData.location?.gstNumber || '08AGFPK7804C1ZQ'}`, leftBoxX + padding, leftY);
+    // Show customer GST if provided, otherwise N/A
+    const customerGst = orderData.customerGstNumber || 'N/A';
+    doc.text(`GSTIN/UIN: ${customerGst}`, leftBoxX + padding, leftY);
     leftY += lineHeight;
     
     doc.text(`State Name: ${orderData.location?.state || 'Maharashtra'}, Code: 08`, leftBoxX + padding, leftY);
@@ -204,19 +212,23 @@ class PDFInvoiceService {
     doc
       .fontSize(8)
       .font('Helvetica')
-      .text(orderData.customerName || 'Dhruv', rightBoxX + padding, rightY);
+      .text(orderData.customerName || 'Customer', rightBoxX + padding, rightY);
     rightY += lineHeight;
     
-    doc.text(orderData.location?.city || 'Mumbai', rightBoxX + padding, rightY);
-    rightY += lineHeight;
+    // Show customer address if provided, otherwise show location
+    if (orderData.customerAddress) {
+      doc.text(orderData.customerAddress, rightBoxX + padding, rightY, { width: rightBoxWidth - padding * 2 });
+      rightY += lineHeight * 2; // Account for potential multiline address
+    } else {
+      doc.text(orderData.location?.city || 'Mumbai', rightBoxX + padding, rightY);
+      rightY += lineHeight;
+    }
     
     doc.text(orderData.location?.state || 'Maharashtra', rightBoxX + padding, rightY);
     rightY += lineHeight;
     
-    doc.text('Buyer\'s Order No.:', rightBoxX + padding, rightY);
-    rightY += lineHeight;
-    
-    doc.text('Dated:', rightBoxX + padding, rightY);
+    // Show customer GST if provided, otherwise N/A
+    doc.text(`GSTIN/UIN: ${customerGst}`, rightBoxX + padding, rightY);
   }
 
   generateInvoiceTable(doc, orderData) {

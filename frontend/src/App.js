@@ -109,7 +109,8 @@ function App() {
     name: '',
     address: '',
     phone: '',
-    email: ''
+    email: '',
+    gstNumber: ''
   });
 
   const handleLogin = (email, password) => {
@@ -2596,6 +2597,8 @@ function App() {
         invoiceNumber: order.id,
         timestamp: order.createdAt || order.date || new Date().toISOString(),
         customerName: order.customerName || 'Customer',
+        customerAddress: order.customerAddress || '',
+        customerGstNumber: order.customerGstNumber || '',
         location: order.location || {
           city: order.city || 'Mumbai',
           state: order.state || 'Maharashtra',
@@ -2653,6 +2656,8 @@ function App() {
         invoiceNumber: order.id,
         timestamp: order.createdAt || order.date || new Date().toISOString(),
         customerName: order.customerName || 'Customer',
+        customerAddress: order.customerAddress || '',
+        customerGstNumber: order.customerGstNumber || '',
         location: order.location || {
           city: order.city || 'Mumbai',
           state: order.state || 'Maharashtra',
@@ -3500,6 +3505,7 @@ function App() {
           customerEmail: clientInfo.email || user.email,
           customerPhone: clientInfo.phone,
           customerAddress: clientInfo.address,
+          customerGstNumber: clientInfo.gstNumber || '',
       status: 'completed',
       invoiceNumber: invoiceNumber,
       notes: `Order created via POS at ${locationInfo.name} (${kioskInfo.name}) by ${clientInfo.role}`,
@@ -3563,6 +3569,7 @@ function App() {
           customerEmail: clientInfo.email,
           customerPhone: clientInfo.phone,
           customerAddress: clientInfo.address,
+          customerGstNumber: clientInfo.gstNumber || '',
           invoiceNumber: invoiceNumber,
           paymentMethod: selectedPaymentMethod,
           location: locationInfo,
@@ -3635,6 +3642,7 @@ function App() {
           customerPhone: clientInfo.phone,
           customerEmail: clientInfo.email,
           customerAddress: clientInfo.address,
+          customerGstNumber: clientInfo.gstNumber || '',
           items: cart.map(item => ({
             title: item.name || item.title,
             name: item.name || item.title,
@@ -3689,7 +3697,7 @@ function App() {
     
     // Close customer form and reset customer info
     setShowCustomerForm(false);
-    setCustomerInfo({ name: '', address: '', phone: '', email: '' });
+    setCustomerInfo({ name: '', address: '', phone: '', email: '', gstNumber: '' });
   };
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -6068,7 +6076,7 @@ function App() {
                 <button 
                   onClick={() => {
                     setShowCustomerForm(false);
-                    setCustomerInfo({ name: '', address: '', phone: '', email: '' });
+                    setCustomerInfo({ name: '', address: '', phone: '', email: '', gstNumber: '' });
                   }} 
                   className="close-btn"
                 >×</button>
@@ -6122,6 +6130,17 @@ function App() {
                       placeholder="customer@example.com"
                     />
                   </div>
+
+                  <div className="form-group">
+                    <label>GST Number (Optional)</label>
+                    <input
+                      type="text"
+                      value={customerInfo.gstNumber}
+                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))}
+                      placeholder="e.g., 22AAAAA0000A1Z5"
+                      maxLength="15"
+                    />
+                  </div>
                 </div>
 
                 <div className="form-footer">
@@ -6129,7 +6148,7 @@ function App() {
                     type="button" 
                     onClick={() => {
                       setShowCustomerForm(false);
-                      setCustomerInfo({ name: '', address: '', phone: '', email: '' });
+                      setCustomerInfo({ name: '', address: '', phone: '', email: '', gstNumber: '' });
                     }} 
                     className="btn-secondary"
                   >
