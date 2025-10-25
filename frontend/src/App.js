@@ -3300,6 +3300,7 @@ function App() {
       email: customerInfo.email || user.email,
       phone: customerInfo.phone,
       address: customerInfo.address,
+      gstNumber: customerInfo.gstNumber || '',
       role: user.role.name
     };
 

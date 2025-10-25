@@ -419,7 +419,12 @@ class ShopifyService {
           { name: 'POS Invoice Number', value: orderData.invoiceNumber || '' },
           { name: 'Payment Method', value: orderData.paymentMethod || 'Cash' },
           { name: 'Location', value: `${orderData.location?.city || 'N/A'}, ${orderData.location?.state || 'N/A'}` },
-          { name: 'Created By', value: typeof orderData.createdBy === 'string' ? orderData.createdBy : orderData.createdBy?.email || orderData.createdBy?.firstName || 'POS User' }
+          { name: 'Created By', value: typeof orderData.createdBy === 'string' ? orderData.createdBy : orderData.createdBy?.email || orderData.createdBy?.firstName || 'POS User' },
+          { name: 'Customer Name', value: orderData.customerName || '' },
+          { name: 'Customer Address', value: orderData.customerAddress || '' },
+          { name: 'Customer GST Number', value: orderData.customerGstNumber || '' },
+          { name: 'Customer Phone', value: orderData.customerPhone || '' },
+          { name: 'Customer Email', value: orderData.customerEmail || '' }
         ].filter(attr => attr.value),  // Remove any attributes with empty values
         tags: 'POS, ' + (orderData.location?.city || ''),
         currency: 'INR',
@@ -727,6 +732,31 @@ class ShopifyService {
       
       console.log(`✅ Customer names enriched successfully!`);
       console.log(`📊 Stats: ${matchedCount} matched from customer map, ${unmatchedCount} used fallback`);
+      
+      // Extract customer details from note_attributes
+      console.log('📝 Extracting customer details from note_attributes...');
+      allOrders.forEach(order => {
+        if (order.note_attributes && Array.isArray(order.note_attributes)) {
+          order.note_attributes.forEach(attr => {
+            if (attr.name === 'Customer Name' && attr.value) {
+              order.customerName = attr.value;
+            }
+            if (attr.name === 'Customer Address' && attr.value) {
+              order.customerAddress = attr.value;
+            }
+            if (attr.name === 'Customer GST Number' && attr.value) {
+              order.customerGstNumber = attr.value;
+            }
+            if (attr.name === 'Customer Phone' && attr.value) {
+              order.customerPhone = attr.value;
+            }
+            if (attr.name === 'Customer Email' && attr.value) {
+              order.customerEmail = attr.value;
+            }
+          });
+        }
+      });
+      console.log('✅ Customer details extracted from note_attributes');
       
       return {
         success: true,
