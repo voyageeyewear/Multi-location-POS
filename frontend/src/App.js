@@ -870,6 +870,44 @@ function App() {
     }
   };
 
+  // 🚨 FINAL DEBUG TOOL: Add console helper to inspect localStorage orders
+  useEffect(() => {
+    // Add global helper function to window object
+    window.inspectOrders = () => {
+      const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const orders = salesData.orders || [];
+      
+      console.log('═══════════════════════════════════════');
+      console.log('📦 LOCALSTORAGE ORDERS INSPECTOR');
+      console.log('═══════════════════════════════════════');
+      console.log(`Total orders in localStorage: ${orders.length}`);
+      console.log('---');
+      
+      orders.slice(0, 10).forEach((order, index) => {
+        console.log(`\n📋 Order #${index + 1}: ${order.id}`);
+        console.log(`  👤 Customer Name: ${order.customerName || order.clientName || '(NONE)'}`);
+        console.log(`  🏠 Address: ${order.customerAddress || order.address || '(NONE)'}`);
+        console.log(`  📝 GST: ${order.customerGstNumber || order.gstNumber || '(NONE)'}`);
+        console.log(`  📅 Date: ${order.transactionDate || order.date || '(NONE)'}`);
+        console.log(`  💰 Total: ₹${order.total || 0}`);
+      });
+      
+      console.log('\n═══════════════════════════════════════');
+      console.log('💡 TIP: To test customer details on invoice:');
+      console.log('1. Go to POS page');
+      console.log('2. Add a product to cart');
+      console.log('3. Click "Complete Sale"');
+      console.log('4. Fill in customer details (Name, Phone, Address, GST)');
+      console.log('5. Complete the sale');
+      console.log('6. Go to Invoice page and click Preview on that NEW order');
+      console.log('═══════════════════════════════════════');
+      
+      return orders;
+    };
+    
+    console.log('✅ Debug tool loaded! Type window.inspectOrders() in console to inspect orders');
+  }, []);
+
   // Ensure data loads when selectedDate changes
   useEffect(() => {
     if (currentPage === 'locations' && selectedDate) {
@@ -2621,13 +2659,24 @@ function App() {
       // localStorage uses: clientName, address, gstNumber
       // Shopify uses: customerName, customerAddress, customerGstNumber
       const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
-      const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
+      const customerAddress = orderToUse.customerAddress || orderToUse.address || orderToUse.customerAddress || '';
       const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
       
-      console.log('🔥 DOWNLOAD - Order source:', localOrder ? '✅ localStorage' : '❌ Shopify');
-      console.log('🔍 Extracted Name:', customerName);
-      console.log('🔍 Extracted Address:', customerAddress);
-      console.log('🔍 Extracted GST:', customerGstNumber);
+      // 🚨 FINAL DEBUG: Show EVERYTHING about this order
+      console.log('═══════════════════════════════════════');
+      console.log('📥 INVOICE DOWNLOAD DEBUG - Order:', order.id);
+      console.log('═══════════════════════════════════════');
+      console.log('📦 Order source:', localOrder ? '✅ localStorage (HAS customer data)' : '❌ Shopify (NO customer data)');
+      console.log('✅ EXTRACTED Customer Data:');
+      console.log('  👤 Name:', customerName);
+      console.log('  🏠 Address:', customerAddress || '(EMPTY - will show location city/state)');
+      console.log('  📝 GST:', customerGstNumber || '(EMPTY - will show N/A)');
+      console.log('═══════════════════════════════════════');
+      
+      // 🚨 ALERT user if this is an old Shopify order without customer data
+      if (!localOrder && (customerName === 'Customer' || !customerAddress)) {
+        toast.error('⚠️ This order has no customer details. Create a new order to test!', { id: 'download-invoice', duration: 5000 });
+      }
       
       // Prepare order data for PDF generation
       const orderData = {
@@ -2699,13 +2748,28 @@ function App() {
       // localStorage uses: clientName, address, gstNumber
       // Shopify uses: customerName, customerAddress, customerGstNumber
       const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
-      const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
+      const customerAddress = orderToUse.customerAddress || orderToUse.address || orderToUse.customerAddress || '';
       const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
       
-      console.log('🔥 PREVIEW - Order source:', localOrder ? '✅ localStorage' : '❌ Shopify');
-      console.log('🔍 Extracted Name:', customerName);
-      console.log('🔍 Extracted Address:', customerAddress);
-      console.log('🔍 Extracted GST:', customerGstNumber);
+      // 🚨 FINAL DEBUG: Show EVERYTHING about this order
+      console.log('═══════════════════════════════════════');
+      console.log('🔍 INVOICE PREVIEW DEBUG - Order:', order.id);
+      console.log('═══════════════════════════════════════');
+      console.log('📦 Order source:', localOrder ? '✅ localStorage (HAS customer data)' : '❌ Shopify (NO customer data)');
+      console.log('📋 Raw order object:', orderToUse);
+      console.log('---');
+      console.log('✅ EXTRACTED Customer Data:');
+      console.log('  👤 Name:', customerName);
+      console.log('  🏠 Address:', customerAddress || '(EMPTY - will show location city/state)');
+      console.log('  📝 GST:', customerGstNumber || '(EMPTY - will show N/A)');
+      console.log('═══════════════════════════════════════');
+      
+      // 🚨 ALERT user if this is an old Shopify order without customer data
+      if (!localOrder && (customerName === 'Customer' || !customerAddress)) {
+        console.warn('⚠️  WARNING: This is an OLD Shopify order without customer details!');
+        console.warn('💡 TIP: Create a NEW order in POS with customer details to test the feature');
+        toast.error('⚠️ This order has no customer details. Create a new order to test!', { id: 'preview-invoice', duration: 5000 });
+      }
       
       // Prepare order data for PDF generation
       const orderData = {
