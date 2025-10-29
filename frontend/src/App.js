@@ -2617,18 +2617,25 @@ function App() {
       // Use local order if found (has full customer data), otherwise use passed order
       const orderToUse = localOrder || order;
       
-      console.log('🔥 AGGRESSIVE FIX - Order source:', localOrder ? '✅ localStorage (has customer data)' : '❌ Shopify (missing customer data)');
-      console.log('🔍 Customer Name:', orderToUse.customerName);
-      console.log('🔍 Customer Address:', orderToUse.customerAddress);
-      console.log('🔍 Customer GST:', orderToUse.customerGstNumber);
+      // 🚀 SUPER AGGRESSIVE: Extract customer details with MULTIPLE fallback field names!
+      // localStorage uses: clientName, address, gstNumber
+      // Shopify uses: customerName, customerAddress, customerGstNumber
+      const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
+      const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
+      const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
+      
+      console.log('🔥 DOWNLOAD - Order source:', localOrder ? '✅ localStorage' : '❌ Shopify');
+      console.log('🔍 Extracted Name:', customerName);
+      console.log('🔍 Extracted Address:', customerAddress);
+      console.log('🔍 Extracted GST:', customerGstNumber);
       
       // Prepare order data for PDF generation
       const orderData = {
         invoiceNumber: orderToUse.id,
         timestamp: orderToUse.createdAt || orderToUse.date || new Date().toISOString(),
-        customerName: orderToUse.customerName || 'Customer',
-        customerAddress: orderToUse.customerAddress || '',
-        customerGstNumber: orderToUse.customerGstNumber || '',
+        customerName: customerName,
+        customerAddress: customerAddress,
+        customerGstNumber: customerGstNumber,
         location: orderToUse.location || {
           city: orderToUse.city || 'Mumbai',
           state: orderToUse.state || 'Maharashtra',
@@ -2688,18 +2695,25 @@ function App() {
       // Use local order if found (has full customer data), otherwise use passed order
       const orderToUse = localOrder || order;
       
-      console.log('🔥 AGGRESSIVE FIX - Order source:', localOrder ? '✅ localStorage (has customer data)' : '❌ Shopify (missing customer data)');
-      console.log('🔍 Customer Name:', orderToUse.customerName);
-      console.log('🔍 Customer Address:', orderToUse.customerAddress);
-      console.log('🔍 Customer GST:', orderToUse.customerGstNumber);
+      // 🚀 SUPER AGGRESSIVE: Extract customer details with MULTIPLE fallback field names!
+      // localStorage uses: clientName, address, gstNumber
+      // Shopify uses: customerName, customerAddress, customerGstNumber
+      const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
+      const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
+      const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
+      
+      console.log('🔥 PREVIEW - Order source:', localOrder ? '✅ localStorage' : '❌ Shopify');
+      console.log('🔍 Extracted Name:', customerName);
+      console.log('🔍 Extracted Address:', customerAddress);
+      console.log('🔍 Extracted GST:', customerGstNumber);
       
       // Prepare order data for PDF generation
       const orderData = {
         invoiceNumber: orderToUse.id,
         timestamp: orderToUse.createdAt || orderToUse.date || new Date().toISOString(),
-        customerName: orderToUse.customerName || 'Customer',
-        customerAddress: orderToUse.customerAddress || '',
-        customerGstNumber: orderToUse.customerGstNumber || '',
+        customerName: customerName,
+        customerAddress: customerAddress,
+        customerGstNumber: customerGstNumber,
         location: orderToUse.location || {
           city: orderToUse.city || 'Mumbai',
           state: orderToUse.state || 'Maharashtra',
