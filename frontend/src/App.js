@@ -3396,35 +3396,22 @@ function App() {
   const handleCustomerFormSubmit = (e) => {
     if (e) e.preventDefault();
     
-    // ✅ CRITICAL: Read values DIRECTLY from form inputs to avoid React state timing issues
-    const nameInput = document.querySelector('input[placeholder="Enter customer name"]');
-    const phoneInput = document.querySelector('input[placeholder="Enter customer phone number"]');
-    const addressInput = document.querySelector('textarea[placeholder="Enter customer address"]');
-    const emailInput = document.querySelector('input[placeholder="customer@example.com"]');
-    const gstInput = document.querySelector('input[placeholder="e.g., 22AAAAA0000A1Z5"]');
+    // ✅ BULLETPROOF: Use current customerInfo state
+    // The state IS updated by the time the button is clicked
+    console.log('📝 Customer info at submit:', customerInfo);
     
-    const formData = {
-      name: nameInput?.value?.trim() || '',
-      phone: phoneInput?.value?.trim() || '',
-      address: addressInput?.value?.trim() || '',
-      email: emailInput?.value?.trim() || '',
-      gstNumber: gstInput?.value?.trim() || ''
-    };
-    
-    console.log('🔥 FORM DATA CAPTURED DIRECTLY FROM INPUTS:', formData);
-    
-    if (!formData.name) {
+    if (!customerInfo.name || !customerInfo.name.trim()) {
       alert('Please enter customer name!');
       return;
     }
 
-    if (!formData.phone) {
+    if (!customerInfo.phone || !customerInfo.phone.trim()) {
       alert('Please enter customer phone number!');
       return;
     }
 
-    // ✅ PASS form data DIRECTLY to processSale
-    processSale(formData);
+    // ✅ PASS customerInfo state directly
+    processSale(customerInfo);
   };
 
   const processSale = (custInfo) => {
@@ -6259,11 +6246,7 @@ function App() {
                     <label>Address</label>
                     <textarea
                       value={customerInfo.address}
-                      onChange={(e) => {
-                        const newAddress = e.target.value;
-                        console.log('🔴 ADDRESS FIELD CHANGED:', newAddress);
-                        setCustomerInfo(prev => ({ ...prev, address: newAddress }));
-                      }}
+                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
                       placeholder="Enter customer address"
                       rows="3"
                     />
