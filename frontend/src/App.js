@@ -2765,6 +2765,7 @@ function App() {
       const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
       
       console.log('📄 Generating invoice:', order.id, '| Customer:', customerName, '| Address:', customerAddress || '(none)');
+      alert(`PREVIEW INVOICE DATA:\nFrom localStorage? ${!!localOrder}\nCustomer: ${customerName}\nAddress: "${customerAddress}"\nGST: ${customerGstNumber}`);
       
       // Prepare order data for PDF generation
       const orderData = {
@@ -3655,6 +3656,7 @@ function App() {
 
     // Log order creation
     console.log('✅ Order created:', newOrder.id, '| Customer:', newOrder.customerName, '| Address:', newOrder.customerAddress || '(empty)');
+    alert(`ORDER CREATED IN LOCALSTORAGE:\nID: ${newOrder.id}\nCustomer: ${newOrder.customerName}\nAddress: "${newOrder.customerAddress}"\nGST: ${newOrder.customerGstNumber}`);
 
     // Add to existing sales data
     if (salesData && salesData.orders) {
