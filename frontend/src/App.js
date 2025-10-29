@@ -3674,6 +3674,12 @@ function App() {
     console.log('  📝 customerGstNumber:', newOrder.customerGstNumber);
     console.log('═══════════════════════════════════════');
 
+    // 🚨 SHOW TOAST WITH SAVED ADDRESS FOR VERIFICATION
+    toast.success(`✅ Order Saved!\n👤 Name: ${newOrder.customerName}\n🏠 Address: ${newOrder.customerAddress || '⚠️ NO ADDRESS SAVED!'}\n📝 GST: ${newOrder.customerGstNumber || 'N/A'}`, {
+      duration: 6000,
+      style: { whiteSpace: 'pre-line', fontSize: '14px' }
+    });
+
     // Add to existing sales data
     if (salesData && salesData.orders) {
       const updatedSalesData = {
