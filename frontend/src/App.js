@@ -3439,38 +3439,38 @@ function App() {
       return;
     }
 
-    // 🚨 CRITICAL DEBUG: Show what address is being captured
-    const addressValue = customerInfo.address || '';
-    alert(`🔍 DEBUG CHECK:\n\n👤 Name: ${customerInfo.name}\n📞 Phone: ${customerInfo.phone}\n🏠 Address: ${addressValue.length > 0 ? addressValue : '⚠️ EMPTY! You did not type an address!'}\n📝 GST: ${customerInfo.gstNumber || 'N/A'}\n\nThis is what will be saved!`);
-
-    // Proceed with sale completion
-    processSale();
+    // ✅ PASS customerInfo DIRECTLY to processSale to avoid state timing issues
+    processSale(customerInfo);
   };
 
-  const processSale = () => {
+  const processSale = (custInfo) => {
+    // ✅ Use the passed customerInfo directly (avoid state timing issues)
+    const customerData = custInfo || customerInfo;
+    
     // 🔍 DEBUG: Log customer info from form
     console.log('═══════════════════════════════════════');
     console.log('🛒 PROCESS SALE - Customer Info from Form:');
     console.log('═══════════════════════════════════════');
-    console.log('📋 Full customerInfo state:', JSON.stringify(customerInfo, null, 2));
-    console.log('  👤 Name:', customerInfo.name);
-    console.log('  📞 Phone:', customerInfo.phone);
-    console.log('  🏠 Address:', customerInfo.address);
-    console.log('  📧 Email:', customerInfo.email);
-    console.log('  📝 GST:', customerInfo.gstNumber);
+    console.log('📋 Full customerInfo:', JSON.stringify(customerData, null, 2));
+    console.log('  👤 Name:', customerData.name);
+    console.log('  📞 Phone:', customerData.phone);
+    console.log('  🏠 Address:', customerData.address);
+    console.log('  📧 Email:', customerData.email);
+    console.log('  📝 GST:', customerData.gstNumber);
     console.log('═══════════════════════════════════════');
     
     // Use customer information from form
     const clientInfo = {
-      name: customerInfo.name,
-      email: customerInfo.email || user.email,
-      phone: customerInfo.phone,
-      address: customerInfo.address,
-      gstNumber: customerInfo.gstNumber || '',
+      name: customerData.name,
+      email: customerData.email || user.email,
+      phone: customerData.phone,
+      address: customerData.address || '', // ✅ Ensure address is never undefined
+      gstNumber: customerData.gstNumber || '',
       role: user.role.name
     };
     
     console.log('📦 ClientInfo object created:', JSON.stringify(clientInfo, null, 2));
+    console.log('  🏠 ClientInfo Address:', clientInfo.address);
     console.log('═══════════════════════════════════════');
 
     // Get location info from SELECTED SHOPIFY LOCATION
@@ -3703,16 +3703,23 @@ function App() {
     console.log('  👤 customerName:', newOrder.customerName);
     console.log('  👤 clientName:', newOrder.clientName);
     console.log('  🏠 customerAddress:', newOrder.customerAddress);
+    console.log('  🏠 customerAddress LENGTH:', newOrder.customerAddress?.length || 0);
     console.log('  📧 customerEmail:', newOrder.customerEmail);
     console.log('  📞 customerPhone:', newOrder.customerPhone);
     console.log('  📝 customerGstNumber:', newOrder.customerGstNumber);
+    console.log('📦 FULL ORDER JSON:', JSON.stringify(newOrder, null, 2));
     console.log('═══════════════════════════════════════');
 
-    // 🚨 SHOW TOAST WITH SAVED ADDRESS FOR VERIFICATION
-    toast.success(`✅ Order Saved!\n👤 Name: ${newOrder.customerName}\n🏠 Address: ${newOrder.customerAddress || '⚠️ NO ADDRESS SAVED!'}\n📝 GST: ${newOrder.customerGstNumber || 'N/A'}`, {
-      duration: 6000,
-      style: { whiteSpace: 'pre-line', fontSize: '14px' }
-    });
+    // ✅ Show success toast (clean, no debug info)
+    if (newOrder.customerAddress && newOrder.customerAddress.trim()) {
+      toast.success(`✅ Order ${newOrder.id} created successfully!\n👤 Customer: ${newOrder.customerName}`, {
+        duration: 4000
+      });
+    } else {
+      toast.warn(`⚠️ Order ${newOrder.id} created but NO ADDRESS was saved!\nPlease check console for details.`, {
+        duration: 6000
+      });
+    }
 
     // Add to existing sales data
     if (salesData && salesData.orders) {
