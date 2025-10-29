@@ -800,15 +800,35 @@ function App() {
 
       const data = await response.json();
       if (data.success) {
-        setShopifyOrders(data.data.orders || []);
-        toast.success(`Loaded ${data.data.count} orders`);
+        const shopifyOrdersList = data.data.orders || [];
+        
+        // 🔥 MERGE localStorage orders with Shopify orders
+        const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+        const localOrders = localSalesData.orders || [];
+        
+        // Filter out localStorage orders that already exist in Shopify (by ID)
+        const shopifyOrderIds = new Set(shopifyOrdersList.map(o => o.id));
+        const uniqueLocalOrders = localOrders.filter(o => !shopifyOrderIds.has(o.id));
+        
+        // Merge: localStorage orders first (most recent), then Shopify orders
+        const mergedOrders = [...uniqueLocalOrders, ...shopifyOrdersList];
+        
+        console.log(`🔥 Merged orders: ${uniqueLocalOrders.length} from localStorage + ${shopifyOrdersList.length} from Shopify = ${mergedOrders.length} total`);
+        
+        setShopifyOrders(mergedOrders);
+        toast.success(`Loaded ${mergedOrders.length} orders (${uniqueLocalOrders.length} local + ${shopifyOrdersList.length} Shopify)`);
       } else {
         toast.error('Failed to load orders');
       }
     } catch (error) {
       console.error('Error loading orders:', error);
       toast.error('Failed to load orders');
-      setShopifyOrders([]);
+      
+      // 🔥 Even if Shopify fails, show localStorage orders
+      const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const localOrders = localSalesData.orders || [];
+      setShopifyOrders(localOrders);
+      console.log(`🔥 Shopify failed, showing ${localOrders.length} localStorage orders only`);
     } finally {
       setOrdersLoading(false);
     }
