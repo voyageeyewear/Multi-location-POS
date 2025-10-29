@@ -2752,54 +2752,19 @@ function App() {
       
       const token = Cookies.get('token') || 'demo-token';
       
-      // 🔥 AGGRESSIVE FIX: Check localStorage for order with customer data FIRST!
+      // Check localStorage for order with customer data FIRST!
       const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
       const localOrder = localSalesData.orders?.find(o => o.id === order.id);
       
       // Use local order if found (has full customer data), otherwise use passed order
       const orderToUse = localOrder || order;
       
-      // 🔍 SUPER DEBUG: Show RAW order data BEFORE extraction
-      console.log('═══════════════════════════════════════');
-      console.log('🔬 RAW ORDER DATA BEFORE EXTRACTION (PREVIEW):');
-      console.log('═══════════════════════════════════════');
-      console.log('📦 Full order object:', JSON.stringify(orderToUse, null, 2));
-      console.log('---');
-      console.log('🔑 Available fields:');
-      console.log('  orderToUse.customerName:', orderToUse.customerName);
-      console.log('  orderToUse.clientName:', orderToUse.clientName);
-      console.log('  orderToUse.customerAddress:', orderToUse.customerAddress);
-      console.log('  orderToUse.address:', orderToUse.address);
-      console.log('  orderToUse.customerGstNumber:', orderToUse.customerGstNumber);
-      console.log('  orderToUse.gstNumber:', orderToUse.gstNumber);
-      console.log('═══════════════════════════════════════');
-      
-      // 🚀 SUPER AGGRESSIVE: Extract customer details with MULTIPLE fallback field names!
-      // localStorage uses: clientName, address, gstNumber
-      // Shopify uses: customerName, customerAddress, customerGstNumber
+      // Extract customer details with fallback field names
       const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
       const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
       const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
       
-      // 🚨 FINAL DEBUG: Show EVERYTHING about this order
-      console.log('═══════════════════════════════════════');
-      console.log('🔍 INVOICE PREVIEW DEBUG - Order:', order.id);
-      console.log('═══════════════════════════════════════');
-      console.log('📦 Order source:', localOrder ? '✅ localStorage (HAS customer data)' : '❌ Shopify (NO customer data)');
-      console.log('📋 Raw order object:', orderToUse);
-      console.log('---');
-      console.log('✅ EXTRACTED Customer Data:');
-      console.log('  👤 Name:', customerName);
-      console.log('  🏠 Address:', customerAddress || '(EMPTY - will show location city/state)');
-      console.log('  📝 GST:', customerGstNumber || '(EMPTY - will show N/A)');
-      console.log('═══════════════════════════════════════');
-      
-      // 🚨 ALERT user if this is an old Shopify order without customer data
-      if (!localOrder && (customerName === 'Customer' || !customerAddress)) {
-        console.warn('⚠️  WARNING: This is an OLD Shopify order without customer details!');
-        console.warn('💡 TIP: Create a NEW order in POS with customer details to test the feature');
-        toast.error('⚠️ This order has no customer details. Create a new order to test!', { id: 'preview-invoice', duration: 5000 });
-      }
+      console.log('📄 Generating invoice:', order.id, '| Customer:', customerName, '| Address:', customerAddress || '(none)');
       
       // Prepare order data for PDF generation
       const orderData = {
@@ -3428,50 +3393,55 @@ function App() {
     setShowCustomerForm(true);
   };
 
-  const handleCustomerFormSubmit = () => {
-    if (!customerInfo.name.trim()) {
+  const handleCustomerFormSubmit = (e) => {
+    if (e) e.preventDefault();
+    
+    // ✅ CRITICAL: Read values DIRECTLY from form inputs to avoid React state timing issues
+    const nameInput = document.querySelector('input[placeholder="Enter customer name"]');
+    const phoneInput = document.querySelector('input[placeholder="Enter customer phone number"]');
+    const addressInput = document.querySelector('textarea[placeholder="Enter customer address"]');
+    const emailInput = document.querySelector('input[placeholder="customer@example.com"]');
+    const gstInput = document.querySelector('input[placeholder="e.g., 22AAAAA0000A1Z5"]');
+    
+    const formData = {
+      name: nameInput?.value?.trim() || '',
+      phone: phoneInput?.value?.trim() || '',
+      address: addressInput?.value?.trim() || '',
+      email: emailInput?.value?.trim() || '',
+      gstNumber: gstInput?.value?.trim() || ''
+    };
+    
+    console.log('🔥 FORM DATA CAPTURED DIRECTLY FROM INPUTS:', formData);
+    
+    if (!formData.name) {
       alert('Please enter customer name!');
       return;
     }
 
-    if (!customerInfo.phone.trim()) {
+    if (!formData.phone) {
       alert('Please enter customer phone number!');
       return;
     }
 
-    // ✅ PASS customerInfo DIRECTLY to processSale to avoid state timing issues
-    processSale(customerInfo);
+    // ✅ PASS form data DIRECTLY to processSale
+    processSale(formData);
   };
 
   const processSale = (custInfo) => {
     // ✅ Use the passed customerInfo directly (avoid state timing issues)
     const customerData = custInfo || customerInfo;
     
-    // 🔍 DEBUG: Log customer info from form
-    console.log('═══════════════════════════════════════');
-    console.log('🛒 PROCESS SALE - Customer Info from Form:');
-    console.log('═══════════════════════════════════════');
-    console.log('📋 Full customerInfo:', JSON.stringify(customerData, null, 2));
-    console.log('  👤 Name:', customerData.name);
-    console.log('  📞 Phone:', customerData.phone);
-    console.log('  🏠 Address:', customerData.address);
-    console.log('  📧 Email:', customerData.email);
-    console.log('  📝 GST:', customerData.gstNumber);
-    console.log('═══════════════════════════════════════');
-    
     // Use customer information from form
     const clientInfo = {
-      name: customerData.name,
+      name: customerData.name || '',
       email: customerData.email || user.email,
-      phone: customerData.phone,
-      address: customerData.address || '', // ✅ Ensure address is never undefined
+      phone: customerData.phone || '',
+      address: customerData.address || '',
       gstNumber: customerData.gstNumber || '',
       role: user.role.name
     };
     
-    console.log('📦 ClientInfo object created:', JSON.stringify(clientInfo, null, 2));
-    console.log('  🏠 ClientInfo Address:', clientInfo.address);
-    console.log('═══════════════════════════════════════');
+    console.log('✅ Processing sale with customer:', clientInfo.name, 'Address:', clientInfo.address);
 
     // Get location info from SELECTED SHOPIFY LOCATION
     let locationInfo;
@@ -3695,33 +3665,8 @@ function App() {
       }
     };
 
-    // 🔍 DEBUG: Log the newly created order object
-    console.log('═══════════════════════════════════════');
-    console.log('📦 NEW ORDER OBJECT CREATED:');
-    console.log('═══════════════════════════════════════');
-    console.log('  ID:', newOrder.id);
-    console.log('  👤 customerName:', newOrder.customerName);
-    console.log('  👤 clientName:', newOrder.clientName);
-    console.log('  🏠 customerAddress:', newOrder.customerAddress);
-    console.log('  🏠 customerAddress LENGTH:', newOrder.customerAddress?.length || 0);
-    console.log('  📧 customerEmail:', newOrder.customerEmail);
-    console.log('  📞 customerPhone:', newOrder.customerPhone);
-    console.log('  📝 customerGstNumber:', newOrder.customerGstNumber);
-    console.log('📦 FULL ORDER JSON:', JSON.stringify(newOrder, null, 2));
-    console.log('═══════════════════════════════════════');
-
-    // ✅ Show success toast with ADDRESS VERIFICATION
-    if (newOrder.customerAddress && newOrder.customerAddress.trim()) {
-      toast.success(`✅ Order ${newOrder.id} saved!\n👤 ${newOrder.customerName}\n🏠 Address: ${newOrder.customerAddress.substring(0, 30)}${newOrder.customerAddress.length > 30 ? '...' : ''}`, {
-        duration: 6000
-      });
-      console.log('✅✅✅ SUCCESS! Address was saved:', newOrder.customerAddress);
-    } else {
-      toast.error(`❌ Order ${newOrder.id} - ADDRESS NOT SAVED!\n⚠️ The address field was EMPTY when you clicked Complete Sale!`, {
-        duration: 8000
-      });
-      console.error('❌❌❌ ERROR! Address is EMPTY:', newOrder.customerAddress);
-    }
+    // Log order creation
+    console.log('✅ Order created:', newOrder.id, '| Customer:', newOrder.customerName, '| Address:', newOrder.customerAddress || '(empty)');
 
     // Add to existing sales data
     if (salesData && salesData.orders) {
@@ -6321,26 +6266,7 @@ function App() {
                       }}
                       placeholder="Enter customer address"
                       rows="3"
-                      style={{ border: customerInfo.address ? '2px solid green' : '2px solid red' }}
                     />
-                    {/* 🚨 LIVE DEBUG DISPLAY */}
-                    <div style={{ 
-                      marginTop: '5px', 
-                      padding: '10px', 
-                      background: customerInfo.address ? '#d4edda' : '#f8d7da',
-                      border: customerInfo.address ? '1px solid #28a745' : '1px solid #dc3545',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontFamily: 'monospace'
-                    }}>
-                      <strong>🔍 LIVE DEBUG:</strong><br/>
-                      Address Length: {customerInfo.address.length} characters<br/>
-                      {customerInfo.address.length > 0 ? (
-                        <span style={{ color: '#155724' }}>✅ Address: "{customerInfo.address}"</span>
-                      ) : (
-                        <span style={{ color: '#721c24' }}>⚠️ NO ADDRESS TYPED YET!</span>
-                      )}
-                    </div>
                   </div>
 
                   <div className="form-group">
