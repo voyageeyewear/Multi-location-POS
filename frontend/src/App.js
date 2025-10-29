@@ -3409,6 +3409,10 @@ function App() {
       return;
     }
 
+    // 🚨 CRITICAL DEBUG: Show what address is being captured
+    const addressValue = customerInfo.address || '';
+    alert(`🔍 DEBUG CHECK:\n\n👤 Name: ${customerInfo.name}\n📞 Phone: ${customerInfo.phone}\n🏠 Address: ${addressValue.length > 0 ? addressValue : '⚠️ EMPTY! You did not type an address!'}\n📝 GST: ${customerInfo.gstNumber || 'N/A'}\n\nThis is what will be saved!`);
+
     // Proceed with sale completion
     processSale();
   };
