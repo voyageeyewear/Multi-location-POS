@@ -2655,11 +2655,26 @@ function App() {
       // Use local order if found (has full customer data), otherwise use passed order
       const orderToUse = localOrder || order;
       
+      // 🔍 SUPER DEBUG: Show RAW order data BEFORE extraction
+      console.log('═══════════════════════════════════════');
+      console.log('🔬 RAW ORDER DATA BEFORE EXTRACTION:');
+      console.log('═══════════════════════════════════════');
+      console.log('📦 Full order object:', JSON.stringify(orderToUse, null, 2));
+      console.log('---');
+      console.log('🔑 Available fields:');
+      console.log('  orderToUse.customerName:', orderToUse.customerName);
+      console.log('  orderToUse.clientName:', orderToUse.clientName);
+      console.log('  orderToUse.customerAddress:', orderToUse.customerAddress);
+      console.log('  orderToUse.address:', orderToUse.address);
+      console.log('  orderToUse.customerGstNumber:', orderToUse.customerGstNumber);
+      console.log('  orderToUse.gstNumber:', orderToUse.gstNumber);
+      console.log('═══════════════════════════════════════');
+      
       // 🚀 SUPER AGGRESSIVE: Extract customer details with MULTIPLE fallback field names!
       // localStorage uses: clientName, address, gstNumber
       // Shopify uses: customerName, customerAddress, customerGstNumber
       const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
-      const customerAddress = orderToUse.customerAddress || orderToUse.address || orderToUse.customerAddress || '';
+      const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
       const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
       
       // 🚨 FINAL DEBUG: Show EVERYTHING about this order
@@ -2744,11 +2759,26 @@ function App() {
       // Use local order if found (has full customer data), otherwise use passed order
       const orderToUse = localOrder || order;
       
+      // 🔍 SUPER DEBUG: Show RAW order data BEFORE extraction
+      console.log('═══════════════════════════════════════');
+      console.log('🔬 RAW ORDER DATA BEFORE EXTRACTION (PREVIEW):');
+      console.log('═══════════════════════════════════════');
+      console.log('📦 Full order object:', JSON.stringify(orderToUse, null, 2));
+      console.log('---');
+      console.log('🔑 Available fields:');
+      console.log('  orderToUse.customerName:', orderToUse.customerName);
+      console.log('  orderToUse.clientName:', orderToUse.clientName);
+      console.log('  orderToUse.customerAddress:', orderToUse.customerAddress);
+      console.log('  orderToUse.address:', orderToUse.address);
+      console.log('  orderToUse.customerGstNumber:', orderToUse.customerGstNumber);
+      console.log('  orderToUse.gstNumber:', orderToUse.gstNumber);
+      console.log('═══════════════════════════════════════');
+      
       // 🚀 SUPER AGGRESSIVE: Extract customer details with MULTIPLE fallback field names!
       // localStorage uses: clientName, address, gstNumber
       // Shopify uses: customerName, customerAddress, customerGstNumber
       const customerName = orderToUse.customerName || orderToUse.clientName || 'Customer';
-      const customerAddress = orderToUse.customerAddress || orderToUse.address || orderToUse.customerAddress || '';
+      const customerAddress = orderToUse.customerAddress || orderToUse.address || '';
       const customerGstNumber = orderToUse.customerGstNumber || orderToUse.gstNumber || '';
       
       // 🚨 FINAL DEBUG: Show EVERYTHING about this order
