@@ -3396,9 +3396,9 @@ function App() {
   const handleCustomerFormSubmit = (e) => {
     if (e) e.preventDefault();
     
-    // ✅ BULLETPROOF: Use current customerInfo state
-    // The state IS updated by the time the button is clicked
-    console.log('📝 Customer info at submit:', customerInfo);
+    // 🔥 DEBUG: Show full customerInfo state
+    console.log('🔥 FULL CUSTOMER INFO AT SUBMIT:', JSON.stringify(customerInfo, null, 2));
+    alert(`DEBUG CHECK:\nName: ${customerInfo.name}\nPhone: ${customerInfo.phone}\nAddress: "${customerInfo.address}"\nGST: ${customerInfo.gstNumber}`);
     
     if (!customerInfo.name || !customerInfo.name.trim()) {
       alert('Please enter customer name!');
@@ -3428,7 +3428,8 @@ function App() {
       role: user.role.name
     };
     
-    console.log('✅ Processing sale with customer:', clientInfo.name, 'Address:', clientInfo.address);
+    console.log('🔥 CLIENT INFO CREATED:', JSON.stringify(clientInfo, null, 2));
+    alert(`CLIENT INFO:\nName: ${clientInfo.name}\nAddress: "${clientInfo.address}"\nGST: ${clientInfo.gstNumber}`);
 
     // Get location info from SELECTED SHOPIFY LOCATION
     let locationInfo;
