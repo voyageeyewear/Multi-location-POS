@@ -803,7 +803,7 @@ function App() {
         const shopifyOrdersList = data.data.orders || [];
         
         // 🔥 MERGE localStorage orders with Shopify orders
-        const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+        const localSalesData = JSON.parse(localStorage.getItem('pos_sales_data') || '{}');
         const localOrders = localSalesData.orders || [];
         
         // Filter out localStorage orders that already exist in Shopify (by ID)
@@ -874,7 +874,7 @@ function App() {
   useEffect(() => {
     // Add global helper function to window object
     window.inspectOrders = () => {
-      const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const salesData = JSON.parse(localStorage.getItem('pos_sales_data') || '{}');
       const orders = salesData.orders || [];
       
       console.log('═══════════════════════════════════════');
@@ -2649,7 +2649,7 @@ function App() {
       const token = Cookies.get('token') || 'demo-token';
       
       // 🔥 AGGRESSIVE FIX: Check localStorage for order with customer data FIRST!
-      const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const localSalesData = JSON.parse(localStorage.getItem('pos_sales_data') || '{}');
       const localOrder = localSalesData.orders?.find(o => o.id === order.id);
       
       // Use local order if found (has full customer data), otherwise use passed order
@@ -2753,7 +2753,7 @@ function App() {
       const token = Cookies.get('token') || 'demo-token';
       
       // Check localStorage for order with customer data FIRST!
-      const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      const localSalesData = JSON.parse(localStorage.getItem('pos_sales_data') || '{}');
       const localOrder = localSalesData.orders?.find(o => o.id === order.id);
       
       // Use local order if found (has full customer data), otherwise use passed order
