@@ -6275,10 +6275,33 @@ function App() {
                     <label>Address</label>
                     <textarea
                       value={customerInfo.address}
-                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
+                      onChange={(e) => {
+                        const newAddress = e.target.value;
+                        console.log('🔴 ADDRESS FIELD CHANGED:', newAddress);
+                        setCustomerInfo(prev => ({ ...prev, address: newAddress }));
+                      }}
                       placeholder="Enter customer address"
                       rows="3"
+                      style={{ border: customerInfo.address ? '2px solid green' : '2px solid red' }}
                     />
+                    {/* 🚨 LIVE DEBUG DISPLAY */}
+                    <div style={{ 
+                      marginTop: '5px', 
+                      padding: '10px', 
+                      background: customerInfo.address ? '#d4edda' : '#f8d7da',
+                      border: customerInfo.address ? '1px solid #28a745' : '1px solid #dc3545',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace'
+                    }}>
+                      <strong>🔍 LIVE DEBUG:</strong><br/>
+                      Address Length: {customerInfo.address.length} characters<br/>
+                      {customerInfo.address.length > 0 ? (
+                        <span style={{ color: '#155724' }}>✅ Address: "{customerInfo.address}"</span>
+                      ) : (
+                        <span style={{ color: '#721c24' }}>⚠️ NO ADDRESS TYPED YET!</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group">
