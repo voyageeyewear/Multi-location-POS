@@ -3710,15 +3710,17 @@ function App() {
     console.log('📦 FULL ORDER JSON:', JSON.stringify(newOrder, null, 2));
     console.log('═══════════════════════════════════════');
 
-    // ✅ Show success toast (clean, no debug info)
+    // ✅ Show success toast with ADDRESS VERIFICATION
     if (newOrder.customerAddress && newOrder.customerAddress.trim()) {
-      toast.success(`✅ Order ${newOrder.id} created successfully!\n👤 Customer: ${newOrder.customerName}`, {
-        duration: 4000
-      });
-    } else {
-      toast.warn(`⚠️ Order ${newOrder.id} created but NO ADDRESS was saved!\nPlease check console for details.`, {
+      toast.success(`✅ Order ${newOrder.id} saved!\n👤 ${newOrder.customerName}\n🏠 Address: ${newOrder.customerAddress.substring(0, 30)}${newOrder.customerAddress.length > 30 ? '...' : ''}`, {
         duration: 6000
       });
+      console.log('✅✅✅ SUCCESS! Address was saved:', newOrder.customerAddress);
+    } else {
+      toast.error(`❌ Order ${newOrder.id} - ADDRESS NOT SAVED!\n⚠️ The address field was EMPTY when you clicked Complete Sale!`, {
+        duration: 8000
+      });
+      console.error('❌❌❌ ERROR! Address is EMPTY:', newOrder.customerAddress);
     }
 
     // Add to existing sales data
