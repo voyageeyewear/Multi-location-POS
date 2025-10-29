@@ -3414,6 +3414,18 @@ function App() {
   };
 
   const processSale = () => {
+    // 🔍 DEBUG: Log customer info from form
+    console.log('═══════════════════════════════════════');
+    console.log('🛒 PROCESS SALE - Customer Info from Form:');
+    console.log('═══════════════════════════════════════');
+    console.log('📋 Full customerInfo state:', JSON.stringify(customerInfo, null, 2));
+    console.log('  👤 Name:', customerInfo.name);
+    console.log('  📞 Phone:', customerInfo.phone);
+    console.log('  🏠 Address:', customerInfo.address);
+    console.log('  📧 Email:', customerInfo.email);
+    console.log('  📝 GST:', customerInfo.gstNumber);
+    console.log('═══════════════════════════════════════');
+    
     // Use customer information from form
     const clientInfo = {
       name: customerInfo.name,
@@ -3423,6 +3435,9 @@ function App() {
       gstNumber: customerInfo.gstNumber || '',
       role: user.role.name
     };
+    
+    console.log('📦 ClientInfo object created:', JSON.stringify(clientInfo, null, 2));
+    console.log('═══════════════════════════════════════');
 
     // Get location info from SELECTED SHOPIFY LOCATION
     let locationInfo;
@@ -3645,6 +3660,19 @@ function App() {
         locationSpecific: true
       }
     };
+
+    // 🔍 DEBUG: Log the newly created order object
+    console.log('═══════════════════════════════════════');
+    console.log('📦 NEW ORDER OBJECT CREATED:');
+    console.log('═══════════════════════════════════════');
+    console.log('  ID:', newOrder.id);
+    console.log('  👤 customerName:', newOrder.customerName);
+    console.log('  👤 clientName:', newOrder.clientName);
+    console.log('  🏠 customerAddress:', newOrder.customerAddress);
+    console.log('  📧 customerEmail:', newOrder.customerEmail);
+    console.log('  📞 customerPhone:', newOrder.customerPhone);
+    console.log('  📝 customerGstNumber:', newOrder.customerGstNumber);
+    console.log('═══════════════════════════════════════');
 
     // Add to existing sales data
     if (salesData && salesData.orders) {
