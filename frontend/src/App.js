@@ -5525,7 +5525,6 @@ function App() {
                       </button>
                   </div>
                 </div>
-                </div>
 
                 {/* Floating Complete Button - Mobile Only */}
                 <button 
