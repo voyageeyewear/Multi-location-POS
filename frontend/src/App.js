@@ -2396,92 +2396,116 @@ function App() {
         console.log('No products found in Shopify store for POS');
       }
     } catch (error) {
-      console.error('Error fetching POS Shopify products:', error);
+      console.error('❌ Error fetching POS Shopify products:', error);
+      console.error('❌ Error details:', error.message);
+      console.error('❌ API URL was:', `${API_URL}/api/shopify/products`);
+      
+      toast.error('⚠️ Could not connect to Shopify. Please check your Shopify credentials in environment variables!');
       
       // Fallback to demo products if Shopify API fails
+      // Format these to match Shopify product structure
       const demoProducts = [
         {
           id: 1,
-          name: "Designer Sunglasses",
-          description: "Premium designer sunglasses with UV protection",
-          price: 2999,
-          image: "🕶️",
+          title: "Designer Sunglasses",
+          body_html: "Premium designer sunglasses with UV protection",
           vendor: "Voyage Eyewear",
+          product_type: "Sunglasses",
+          variants: [{
+            id: 101,
+            price: "2999",
           sku: "DES-SUN-001",
-             inventory: 50,
-             productType: "sunglasses",
-             hsnCode: "90041000",
-             gstRate: 18
+            inventory_quantity: 50
+          }],
+          image: { src: "https://cdn.shopify.com/s/files/1/0000/0000/products/sunglasses.jpg" },
+          images: [{ src: "https://cdn.shopify.com/s/files/1/0000/0000/products/sunglasses.jpg" }],
+          inventory_levels: []
         },
         {
           id: 2,
-             name: "Sports Sunglasses",
-             description: "Durable sports sunglasses for active lifestyle",
-          price: 1799,
-          image: "🥽",
+          title: "Sports Sunglasses",
+          body_html: "Durable sports sunglasses for active lifestyle",
           vendor: "Voyage Eyewear",
+          product_type: "Sunglasses",
+          variants: [{
+            id: 102,
+            price: "1799",
              sku: "SPO-SUN-002",
-             inventory: 30,
-             productType: "sunglasses",
-             hsnCode: "90041000",
-             gstRate: 18
+            inventory_quantity: 30
+          }],
+          image: { src: "https://cdn.shopify.com/s/files/1/0000/0000/products/sports.jpg" },
+          images: [{ src: "https://cdn.shopify.com/s/files/1/0000/0000/products/sports.jpg" }],
+          inventory_levels: []
         },
         {
           id: 3,
-             name: "Premium Eyeglasses",
-             description: "High-quality eyeglasses for prescription lenses",
-          price: 999,
-          image: "👓",
+          title: "Premium Eyeglasses",
+          body_html: "High-quality eyeglasses for prescription lenses",
           vendor: "Voyage Eyewear",
+          product_type: "Eyeglasses",
+          variants: [{
+            id: 103,
+            price: "999",
              sku: "EYE-PRE-003",
-             inventory: 25,
-             productType: "eyeglasses",
-             hsnCode: "90031900",
-             gstRate: 5
+            inventory_quantity: 25
+          }],
+          image: { src: "https://cdn.shopify.com/s/files/1/0000/0000/products/eyeglasses.jpg" },
+          images: [{ src: "https://cdn.shopify.com/s/files/1/0000/0000/products/eyeglasses.jpg" }],
+          inventory_levels: []
         },
         {
           id: 4,
-             name: "Classic Sunglasses",
-          description: "Classic sunglasses for everyday wear",
-          price: 1299,
-          image: "🌞",
+          title: "Classic Sunglasses",
+          body_html: "Classic sunglasses for everyday wear",
           vendor: "Voyage Eyewear",
+          product_type: "Sunglasses",
+          variants: [{
+            id: 104,
+            price: "1299",
           sku: "SUN-CLA-004",
-             inventory: 40,
-             productType: "sunglasses",
-             hsnCode: "90041000",
-             gstRate: 18
+            inventory_quantity: 40
+          }],
+          image: { src: "https://cdn.shopify.com/s/files/1/0000/0000/products/classic.jpg" },
+          images: [{ src: "https://cdn.shopify.com/s/files/1/0000/0000/products/classic.jpg" }],
+          inventory_levels: []
            },
            {
              id: 5,
-             name: "Designer Eyeglasses",
-             description: "Elegant designer eyeglasses for prescription glasses",
-             price: 1499,
-             image: "👓",
+          title: "Designer Eyeglasses",
+          body_html: "Elegant designer eyeglasses for prescription glasses",
              vendor: "Voyage Eyewear",
+          product_type: "Eyeglasses",
+          variants: [{
+            id: 105,
+            price: "1499",
              sku: "EYE-DES-005",
-             inventory: 35,
-             productType: "eyeglasses",
-             hsnCode: "90031900",
-             gstRate: 5
+            inventory_quantity: 35
+          }],
+          image: { src: "https://cdn.shopify.com/s/files/1/0000/0000/products/designer.jpg" },
+          images: [{ src: "https://cdn.shopify.com/s/files/1/0000/0000/products/designer.jpg" }],
+          inventory_levels: []
            },
            {
              id: 6,
-             name: "Polarized Sunglasses",
-             description: "Polarized sunglasses with anti-glare protection",
-             price: 2199,
-             image: "🕶️",
+          title: "Polarized Sunglasses",
+          body_html: "Polarized sunglasses with anti-glare protection",
              vendor: "Voyage Eyewear",
+          product_type: "Sunglasses",
+          variants: [{
+            id: 106,
+            price: "2199",
              sku: "SUN-POL-006",
-             inventory: 20,
-             productType: "sunglasses",
-             hsnCode: "90041000",
-             gstRate: 18
+            inventory_quantity: 20
+          }],
+          image: { src: "https://cdn.shopify.com/s/files/1/0000/0000/products/polarized.jpg" },
+          images: [{ src: "https://cdn.shopify.com/s/files/1/0000/0000/products/polarized.jpg" }],
+          inventory_levels: []
         }
       ];
       
       setPosProducts(demoProducts);
-      console.log('Using demo POS products - Shopify API failed');
+      console.warn('⚠️ Using demo POS products - Shopify API connection failed');
+      console.warn('💡 To fix: Set SHOPIFY_STORE_URL, SHOPIFY_ACCESS_TOKEN in backend .env file');
     } finally {
       setPosLoading(false);
     }
@@ -5549,7 +5573,7 @@ function App() {
                 </div>
 
                 {/* Floating Complete Button - Mobile Only */}
-                <button 
+                        <button 
                   className="pos-floating-complete"
                   onClick={() => setShowCart(true)}
                   disabled={cart.length === 0}
@@ -5560,12 +5584,12 @@ function App() {
                     <span className="cart-count">{cart.length}</span>
                   )}
                   <span>₹{getCartTotalWithGST().toLocaleString()}</span>
-                </button>
-              </div>
-            </div>
+                              </button>
+                            </div>
+                          </div>
           </>
-          );
-        })()}
+                  );
+                })()}
 
         {currentPage === 'assign-locations' && (
           <>
