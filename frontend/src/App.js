@@ -41,6 +41,7 @@ function App() {
   const [editingUser, setEditingUser] = useState(null);
   const [editingLocation, setEditingLocation] = useState(undefined);
   const [locations, setLocations] = useState([]);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showAddLocationModal, setShowAddLocationModal] = useState(false);
   const [newLocation, setNewLocation] = useState({
     name: '',
@@ -174,10 +175,12 @@ function App() {
     setUser(null);
     setIsLoggedIn(false);
     setCurrentPage('dashboard');
+    setIsMobileSidebarOpen(false); // Close mobile menu on logout
   };
 
   const handleNavigation = (page) => {
     setCurrentPage(page);
+    setIsMobileSidebarOpen(false); // Close mobile menu when navigating
     
     if (page === 'dashboard') {
       // Refresh dashboard data
@@ -3973,7 +3976,26 @@ function App() {
 
   return (
     <div className="app">
-      <div className="sidebar">
+      {/* Mobile Menu Toggle Button */}
+      <button 
+        className="mobile-menu-toggle"
+        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        aria-label="Toggle Menu"
+      >
+        {isMobileSidebarOpen ? (
+          <FiX size={24} />
+        ) : (
+          <FiMenu size={24} />
+        )}
+      </button>
+
+      {/* Mobile Sidebar Overlay */}
+      <div 
+        className={`sidebar-overlay ${isMobileSidebarOpen ? 'active' : ''}`}
+        onClick={() => setIsMobileSidebarOpen(false)}
+      />
+
+      <div className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>POS System</h2>
         </div>
