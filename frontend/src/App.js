@@ -801,7 +801,13 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        console.warn('⚠️ Could not fetch Shopify orders (likely credentials not configured)');
+        // Load only local orders if Shopify fails
+        const localSalesData = JSON.parse(localStorage.getItem('pos_sales_data') || '{}');
+        const localOrders = localSalesData.orders || [];
+        setShopifyOrders(localOrders);
+        setOrdersLoading(false);
+        return;
       }
 
       const data = await response.json();
@@ -827,14 +833,12 @@ function App() {
         toast.error('Failed to load orders');
       }
     } catch (error) {
-      console.error('Error loading orders:', error);
-      toast.error('Failed to load orders');
-      
-      // 🔥 Even if Shopify fails, show localStorage orders
-      const localSalesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+      console.warn('⚠️ Error loading orders (using local orders only):', error.message);
+      // Don't show toast error - just use local data gracefully
+      const localSalesData = JSON.parse(localStorage.getItem('pos_sales_data') || '{}');
       const localOrders = localSalesData.orders || [];
       setShopifyOrders(localOrders);
-      console.log(`🔥 Shopify failed, showing ${localOrders.length} localStorage orders only`);
+      console.log(`📦 Using ${localOrders.length} local orders`);
     } finally {
       setOrdersLoading(false);
     }
@@ -5356,7 +5360,7 @@ function App() {
                                   className="product-image"
                                 />
                                 <h4>{product.title}</h4>
-                                <p className="product-price">₹{product.variants[0]?.price}</p>
+                                <p className="product-price">₹{product.variants?.[0]?.price || '0'}</p>
                                 {selectedLocationId && !showAllLocations && (
                                   <p className="product-stock">Stock: {availableQuantity}</p>
                                 )}
