@@ -8866,4 +8866,28 @@ body {
     background: #cbd5e1;
     border-radius: 10px;
   }
+
+  /* Hide desktop-only elements on mobile */
+  .desktop-cart-title {
+    display: none;
+  }
+}
+
+/* Desktop - Hide mobile-only elements */
+@media (min-width: 769px) {
+  .pos-cart-overlay,
+  .pos-floating-complete,
+  .pos-cart-modal-header {
+    display: none !important;
+  }
+
+  .pos-sidebar {
+    position: relative !important;
+    transform: none !important;
+    max-height: none !important;
+  }
+
+  .desktop-cart-title {
+    display: block;
+  }
 }

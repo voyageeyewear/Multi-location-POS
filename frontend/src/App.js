@@ -57,6 +57,7 @@ function App() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [posSearchTerm, setPosSearchTerm] = useState('');
   const [selectedLocationForAnalytics, setSelectedLocationForAnalytics] = useState('');
+  const [showCart, setShowCart] = useState(false); // Mobile cart modal visibility
   
   // Location-based inventory state
   const [shopifyLocations, setShopifyLocations] = useState([]);
@@ -5275,11 +5276,113 @@ function App() {
             )}
 
             <div className="pos-container">
+              {/* Cart Overlay for mobile */}
+              <div 
+                className={`pos-cart-overlay ${showCart ? 'active' : ''}`}
+                onClick={() => setShowCart(false)}
+              />
+
               <div className="pos-main">
-                <div className="pos-screen">
-                  <h2>Sales Terminal</h2>
-                  <div className="cart-section">
+                {/* Products Section - Always visible on mobile */}
+                <div className="pos-products">
+                  <div className="pos-products-header">
+                  <h3>Products</h3>
+                    <div className="pos-search-bar">
+                      <FiSearch className="search-icon" />
+                      <input
+                        type="text"
+                        placeholder="Search products by name, SKU, or category..."
+                        value={posSearchTerm}
+                        onChange={(e) => setPosSearchTerm(e.target.value)}
+                        className="pos-search-input"
+                      />
+                      {posSearchTerm && (
+                        <button 
+                          className="clear-search-btn"
+                          onClick={() => setPosSearchTerm('')}
+                          title="Clear search"
+                        >
+                          <FiX />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {posLoading ? (
+                    <div className="pos-loading">
+                      <div className="loading-spinner"></div>
+                      <p>Loading products...</p>
+                    </div>
+                  ) : filteredPosProducts.length === 0 ? (
+                    <div className="no-products">
+                      <p>No products available</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="pos-products-grid">
+                        {filteredPosProducts
+                          .slice(
+                            (posCurrentPage - 1) * posProductsPerPage,
+                            posCurrentPage * posProductsPerPage
+                          )
+                          .map((product) => {
+                            const inventoryItem = product.inventory_levels?.find(inv => 
+                              showAllLocations ? true : inv.location_id?.toString() === selectedLocationId?.toString()
+                            );
+                            const availableQuantity = inventoryItem?.available || 0;
+
+                            return (
+                              <div key={product.id} className="pos-product-card" onClick={() => addToCart(product)}>
+                                <img 
+                                  src={product.image?.src || 'https://via.placeholder.com/150'} 
+                                  alt={product.title}
+                                  className="product-image"
+                                />
+                                <h4>{product.title}</h4>
+                                <p className="product-price">₹{product.variants[0]?.price}</p>
+                                {selectedLocationId && !showAllLocations && (
+                                  <p className="product-stock">Stock: {availableQuantity}</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                      {totalPosPages > 1 && (
+                        <div className="pos-pagination">
+                          <button 
+                            onClick={() => setPosCurrentPage(Math.max(1, posCurrentPage - 1))}
+                            disabled={posCurrentPage === 1}
+                          >
+                            Previous
+                          </button>
+                          <span>Page {posCurrentPage} of {totalPosPages}</span>
+                          <button 
+                            onClick={() => setPosCurrentPage(Math.min(totalPosPages, posCurrentPage + 1))}
+                            disabled={posCurrentPage === totalPosPages}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Cart/Checkout Section - Modal on mobile */}
+                <div className={`pos-sidebar ${showCart ? 'show-cart' : ''}`}>
+                  {/* Cart Modal Header - mobile only */}
+                  <div className="pos-cart-modal-header">
                     <h3>Shopping Cart</h3>
+                    <button 
+                      className="pos-cart-close-btn"
+                      onClick={() => setShowCart(false)}
+                      aria-label="Close cart"
+                    >
+                      <FiX size={20} />
+                    </button>
+                  </div>
+
+                  <div className="pos-cart">
+                    <h3 className="desktop-cart-title">Shopping Cart</h3>
                     {cart.length === 0 ? (
                       <div className="empty-cart">
                         <p>Cart is empty</p>
@@ -5422,102 +5525,21 @@ function App() {
                       </button>
                   </div>
                 </div>
-
-                <div className="pos-products">
-                  <div className="pos-products-header">
-                  <h3>Products</h3>
-                    <div className="pos-search-bar">
-                      <FiSearch className="search-icon" />
-                      <input
-                        type="text"
-                        placeholder="Search products by name, SKU, or category..."
-                        value={posSearchTerm}
-                        onChange={(e) => setPosSearchTerm(e.target.value)}
-                        className="pos-search-input"
-                      />
-                      {posSearchTerm && (
-                        <button 
-                          className="clear-search-btn"
-                          onClick={() => setPosSearchTerm('')}
-                          title="Clear search"
-                        >
-                          <FiX />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {posLoading ? (
-                    <div className="loading-products">
-                      <p>Loading products from Shopify...</p>
-                    </div>
-                  ) : (
-                    <>
-                      {(() => {
-                        const filteredProducts = posProducts.filter(product => {
-                          if (!posSearchTerm) return true;
-                          const searchLower = posSearchTerm.toLowerCase();
-                          return (
-                            (product.name && product.name.toLowerCase().includes(searchLower)) ||
-                            (product.sku && product.sku.toLowerCase().includes(searchLower)) ||
-                            (product.category && product.category.toLowerCase().includes(searchLower))
-                          );
-                        });
-
-                        if (filteredProducts.length === 0 && posSearchTerm) {
-                          return (
-                            <div className="no-search-results">
-                              <FiSearch size={48} />
-                              <h3>No products found</h3>
-                              <p>No products match "{posSearchTerm}"</p>
-                              <button 
-                                className="clear-filters-btn"
-                                onClick={() => setPosSearchTerm('')}
-                              >
-                                Clear Search
-                              </button>
-                            </div>
-                          );
-                        }
-
-                        return (
-                    <div className="product-grid">
-                            {filteredProducts.map((product) => (
-                        <div key={product.id} className="product-item">
-                          <div className="product-image">
-                            {product.image.startsWith('http') ? (
-                              <img 
-                                src={product.image} 
-                                alt={product.name}
-                                crossOrigin="anonymous"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.style.display = 'none';
-                                  e.target.parentElement.innerHTML = '🕶️';
-                                }}
-                              />
-                            ) : (
-                              product.image
-                            )}
-                          </div>
-                          <div className="product-name">{product.name}</div>
-                          <div className="product-price">₹{product.price.toLocaleString()}</div>
-                          <div className="product-sku">SKU: {product.sku}</div>
-                          <div className="product-inventory">Stock: {product.inventory}</div>
-                          <button 
-                            className="add-to-cart"
-                            onClick={() => addToCart(product)}
-                            disabled={product.inventory <= 0}
-                          >
-                            {product.inventory <= 0 ? 'Out of Stock' : 'Add to Cart'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </>
-                  )}
                 </div>
+
+                {/* Floating Complete Button - Mobile Only */}
+                <button 
+                  className="pos-floating-complete"
+                  onClick={() => setShowCart(true)}
+                  disabled={cart.length === 0}
+                >
+                  <FiShoppingCart size={20} />
+                  <span>View Cart</span>
+                  {cart.length > 0 && (
+                    <span className="cart-count">{cart.length}</span>
+                  )}
+                  <span>₹{getCartTotalWithGST().toLocaleString()}</span>
+                </button>
               </div>
             </div>
           </>
