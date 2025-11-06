@@ -58,6 +58,8 @@ function App() {
   const [posSearchTerm, setPosSearchTerm] = useState('');
   const [selectedLocationForAnalytics, setSelectedLocationForAnalytics] = useState('');
   const [showCart, setShowCart] = useState(false); // Mobile cart modal visibility
+  const [posCurrentPage, setPosCurrentPage] = useState(1);
+  const [posProductsPerPage] = useState(12); // Products per page
   
   // Location-based inventory state
   const [shopifyLocations, setShopifyLocations] = useState([]);
@@ -5205,7 +5207,23 @@ function App() {
           </>
         )}
 
-        {currentPage === 'pos' && (
+        {currentPage === 'pos' && (() => {
+          // Compute filtered POS products based on search term
+          const filteredPosProducts = posProducts.filter(product => {
+            if (!posSearchTerm) return true;
+            const searchLower = posSearchTerm.toLowerCase();
+            return (
+              product.title?.toLowerCase().includes(searchLower) ||
+              product.variants?.[0]?.sku?.toLowerCase().includes(searchLower) ||
+              product.product_type?.toLowerCase().includes(searchLower) ||
+              product.vendor?.toLowerCase().includes(searchLower)
+            );
+          });
+
+          // Calculate total pages
+          const totalPosPages = Math.ceil(filteredPosProducts.length / posProductsPerPage);
+
+          return (
           <>
             <div className="content-header">
               <h1>Point of Sale (POS)</h1>
@@ -5542,7 +5560,8 @@ function App() {
               </div>
             </div>
           </>
-        )}
+          );
+        })()}
 
         {currentPage === 'assign-locations' && (
           <>
