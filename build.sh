@@ -16,7 +16,7 @@ NODE_OPTIONS="--max_old_space_size=4096" npm install --legacy-peer-deps --no-opt
 
 # Build frontend
 echo "🔨 Building frontend..."
-NODE_OPTIONS="--max_old_space_size=4096" GENERATE_SOURCEMAP=false npm run build
+CI=false NODE_OPTIONS="--max_old_space_size=4096" GENERATE_SOURCEMAP=false npm run build
 
 # Copy build to backend
 echo "📂 Copying frontend build to backend..."

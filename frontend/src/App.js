@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FiHome, FiShoppingBag, FiMapPin, FiTrendingUp, FiBarChart3, FiDatabase, FiUsers, FiShield, FiLogOut, FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiSearch, FiFilter, FiRefreshCw, FiX, FiMenu, FiShoppingCart, FiCreditCard, FiDollarSign, FiCheck } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiRefreshCw, FiX, FiMenu, FiShoppingCart } from 'react-icons/fi';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
@@ -5701,7 +5701,7 @@ function App() {
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {assignments.map((assignment) => {
                     const assignedUser = usersData?.users?.find(u => u.id === assignment.userId);
-                    const assignedLocation = shopifyLocations?.find(l => l.id == assignment.locationId);
+                    const assignedLocation = shopifyLocations?.find(l => l.id === assignment.locationId);
                     
                     return (
                       <div
