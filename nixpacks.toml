@@ -6,7 +6,7 @@ nixPkgs = ["nodejs", "chromium"]
 [phases.install]
 cmds = [
   "cd backend && npm ci --only=production",
-  "cd frontend && npm ci"
+  "cd frontend && npm install --legacy-peer-deps"
 ]
 
 [phases.build]
