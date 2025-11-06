@@ -8297,3 +8297,456 @@ body {
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
   }
 }
+
+/* ========================================
+   ULTRA-SIMPLE POS SCREEN FOR MOBILE
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* POS Container - Remove padding */
+  .pos-container {
+    padding: 0 !important;
+    background: #f8fafc;
+  }
+
+  /* POS Main - Simple stack */
+  .pos-main {
+    flex-direction: column;
+    gap: 0;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* POS Screen - Clean & Simple */
+  .pos-screen {
+    background: #f8fafc;
+    border: none;
+    border-radius: 0;
+    padding: 1rem;
+    min-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .pos-screen h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+  }
+
+  /* POS Sidebar - Clean Cart Section */
+  .pos-sidebar {
+    background: white;
+    border-radius: 16px 16px 0 0;
+    padding: 1.25rem;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    bottom: 0;
+    max-height: 50vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Location Banner - Simpler */
+  .pos-location-banner,
+  .location-banner {
+    background: white;
+    padding: 0.875rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+  }
+
+  .pos-location-banner h3,
+  .location-banner h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.375rem;
+  }
+
+  .pos-location-banner p,
+  .location-banner p {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+  }
+
+  /* Purple Notification Banner - Simpler */
+  .pos-notice,
+  .info-banner,
+  div[style*="background: linear-gradient"][style*="667eea"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    padding: 0.875rem 1rem !important;
+    border-radius: 10px !important;
+    margin-bottom: 1rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Cart Section */
+  .pos-cart {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    max-height: calc(50vh - 200px);
+  }
+
+  .pos-cart h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.875rem;
+  }
+
+  /* Empty Cart */
+  .empty-cart {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #94a3b8;
+  }
+
+  .empty-cart p {
+    font-size: 0.9375rem;
+    color: #64748b;
+    margin: 0.5rem 0;
+  }
+
+  /* Cart Items */
+  .pos-cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .pos-cart-item {
+    background: #f8fafc;
+    padding: 0.875rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .pos-cart-item-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1e293b;
+    flex: 1;
+  }
+
+  .pos-cart-item-price {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .pos-cart-item-qty {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pos-cart-item-qty button {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .pos-cart-item-qty span {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  /* Cart Total */
+  .pos-cart-total {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .pos-cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .pos-cart-total-row:last-child {
+    margin-bottom: 0;
+    padding-top: 0.75rem;
+    border-top: 1.5px solid #e2e8f0;
+  }
+
+  .pos-cart-total-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .pos-cart-total-value {
+    font-size: 0.875rem;
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  .pos-cart-total-row:last-child .pos-cart-total-label {
+    font-size: 1rem;
+    color: #1e293b;
+    font-weight: 700;
+  }
+
+  .pos-cart-total-row:last-child .pos-cart-total-value {
+    font-size: 1.25rem;
+    color: #3b82f6;
+    font-weight: 700;
+  }
+
+  /* Payment Section - Ultra Simple */
+  .pos-payment {
+    margin-bottom: 1rem;
+  }
+
+  .pos-payment h4 {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+  }
+
+  .pos-payment-methods {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .payment-method-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+
+  .payment-method-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+  }
+
+  .payment-method-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Complete Sale Button - Prominent */
+  .complete-sale-btn,
+  .pos-complete-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: 0 2px 12px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .complete-sale-btn:active,
+  .pos-complete-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 6px rgba(16, 185, 129, 0.3);
+  }
+
+  .complete-sale-btn:disabled,
+  .pos-complete-btn:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Products Grid - Simple 2 Column */
+  .products-grid,
+  .pos-products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 0;
+  }
+
+  /* Product Card - Ultra Simple */
+  .product-card,
+  .pos-product-card {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.875rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .product-card:active,
+  .pos-product-card:active {
+    transform: scale(0.97);
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  }
+
+  .product-card .product-image,
+  .pos-product-card .product-image {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 0.625rem;
+    background: #f8fafc;
+  }
+
+  .product-card h3,
+  .pos-product-card h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.375rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .product-card .price,
+  .pos-product-card .price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #3b82f6;
+  }
+
+  .product-card .stock,
+  .pos-product-card .stock {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+
+  /* Product Search - Simple */
+  .pos-search,
+  .product-search {
+    margin-bottom: 1rem;
+  }
+
+  .pos-search input,
+  .product-search input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    background: white;
+  }
+
+  /* Product Filters - Simple Pills */
+  .product-filters {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .product-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-pill {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+
+  .filter-pill.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  /* Pagination - Simple */
+  .pos-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0;
+  }
+
+  .pos-pagination button {
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .pos-pagination button.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  /* Remove Extra Spacing */
+  .pos-header {
+    display: none; /* Hide on mobile for simplicity */
+  }
+
+  /* Cleaner Scrollbars */
+  .pos-cart::-webkit-scrollbar,
+  .pos-screen::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .pos-cart::-webkit-scrollbar-track,
+  .pos-screen::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .pos-cart::-webkit-scrollbar-thumb,
+  .pos-screen::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+}
