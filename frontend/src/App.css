@@ -8556,7 +8556,7 @@ body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 240px;
+    padding-bottom: 210px;
   }
 
   /* Cart Items - Card Style */
@@ -8903,7 +8903,7 @@ body {
     right: 0;
     background: white;
     border-top: 2px solid #e2e8f0;
-    padding: 1rem 0 0;
+    padding: 0.75rem 0 0;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
     z-index: 10;
   }
@@ -8911,17 +8911,17 @@ body {
   /* Payment Section - Compact & Bold */
   .payment-section,
   .pos-payment {
-    padding: 0 1.25rem 0;
+    padding: 0.75rem 1.25rem 0;
     background: white;
   }
 
   .payment-section h3,
   .pos-payment h3,
   .pos-payment h4 {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 700;
     color: #64748b;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -8931,12 +8931,12 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.625rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .payment-btn,
   .payment-method-btn {
-    padding: 0.875rem 0.5rem;
+    padding: 0.75rem 0.5rem;
     border-radius: 10px;
     border: 2px solid transparent;
     background: white;
@@ -8996,13 +8996,13 @@ body {
   .complete-sale-btn,
   .pos-complete-btn {
     width: calc(100% - 2.5rem);
-    margin: 0.75rem 1.25rem 1.25rem;
-    padding: 1.125rem;
+    margin: 0.625rem 1.25rem 1rem;
+    padding: 1rem;
     border-radius: 14px;
     background: linear-gradient(135deg, #10b981, #059669);
     color: white;
     border: none;
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
