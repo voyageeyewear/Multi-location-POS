@@ -2403,7 +2403,10 @@ function App() {
       toast.error('⚠️ Could not connect to Shopify. Please check your Shopify credentials in environment variables!');
       
       // Fallback to demo products if Shopify API fails
-      // Format these to match Shopify product structure with valid placeholder images
+      // Format these to match Shopify product structure
+      // Using simple placeholder that doesn't require external network calls
+      const placeholderImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' font-family='sans-serif' font-size='40' dy='100' dx='50'%3E🕶️%3C/text%3E%3C/svg%3E";
+      
       const demoProducts = [
         {
           id: 1,
@@ -2414,11 +2417,11 @@ function App() {
           variants: [{
             id: 101,
             price: "2999",
-            sku: "DES-SUN-001",
+          sku: "DES-SUN-001",
             inventory_quantity: 50
           }],
-          image: { src: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop" },
-          images: [{ src: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop" }],
+          image: { src: placeholderImage },
+          images: [{ src: placeholderImage }],
           inventory_levels: []
         },
         {
@@ -2430,11 +2433,11 @@ function App() {
           variants: [{
             id: 102,
             price: "1799",
-            sku: "SPO-SUN-002",
+             sku: "SPO-SUN-002",
             inventory_quantity: 30
           }],
-          image: { src: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=400&fit=crop" },
-          images: [{ src: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=400&fit=crop" }],
+          image: { src: placeholderImage },
+          images: [{ src: placeholderImage }],
           inventory_levels: []
         },
         {
@@ -2446,11 +2449,11 @@ function App() {
           variants: [{
             id: 103,
             price: "999",
-            sku: "EYE-PRE-003",
+             sku: "EYE-PRE-003",
             inventory_quantity: 25
           }],
-          image: { src: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=400&h=400&fit=crop" },
-          images: [{ src: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=400&h=400&fit=crop" }],
+          image: { src: placeholderImage },
+          images: [{ src: placeholderImage }],
           inventory_levels: []
         },
         {
@@ -2462,43 +2465,43 @@ function App() {
           variants: [{
             id: 104,
             price: "1299",
-            sku: "SUN-CLA-004",
+          sku: "SUN-CLA-004",
             inventory_quantity: 40
           }],
-          image: { src: "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400&h=400&fit=crop" },
-          images: [{ src: "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400&h=400&fit=crop" }],
+          image: { src: placeholderImage },
+          images: [{ src: placeholderImage }],
           inventory_levels: []
-        },
-        {
-          id: 5,
+           },
+           {
+             id: 5,
           title: "Designer Eyeglasses",
           body_html: "Elegant designer eyeglasses for prescription glasses",
-          vendor: "Voyage Eyewear",
+             vendor: "Voyage Eyewear",
           product_type: "Eyeglasses",
           variants: [{
             id: 105,
             price: "1499",
-            sku: "EYE-DES-005",
+             sku: "EYE-DES-005",
             inventory_quantity: 35
           }],
-          image: { src: "https://images.unsplash.com/photo-1530653435271-52c1c7d29c16?w=400&h=400&fit=crop" },
-          images: [{ src: "https://images.unsplash.com/photo-1530653435271-52c1c7d29c16?w=400&h=400&fit=crop" }],
+          image: { src: placeholderImage },
+          images: [{ src: placeholderImage }],
           inventory_levels: []
-        },
-        {
-          id: 6,
+           },
+           {
+             id: 6,
           title: "Polarized Sunglasses",
           body_html: "Polarized sunglasses with anti-glare protection",
-          vendor: "Voyage Eyewear",
+             vendor: "Voyage Eyewear",
           product_type: "Sunglasses",
           variants: [{
             id: 106,
             price: "2199",
-            sku: "SUN-POL-006",
+             sku: "SUN-POL-006",
             inventory_quantity: 20
           }],
-          image: { src: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=400&h=400&fit=crop" },
-          images: [{ src: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=400&h=400&fit=crop" }],
+          image: { src: placeholderImage },
+          images: [{ src: placeholderImage }],
           inventory_levels: []
         }
       ];
