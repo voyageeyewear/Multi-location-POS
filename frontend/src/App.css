@@ -8554,14 +8554,10 @@ body {
 
   /* Scrollable Cart Content - Takes space minus footer */
   .pos-cart-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 280px;
+    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 1rem;
+    padding-bottom: 280px;
   }
 
   /* Cart Items - Card Style */
@@ -8902,7 +8898,7 @@ body {
 
   /* Payment Footer - Absolute at Bottom */
   .pos-payment-footer {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
@@ -8911,7 +8907,6 @@ body {
     padding: 1rem 0 0;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
     z-index: 10;
-    max-height: 280px;
   }
 
   /* Payment Section - Compact & Bold */
@@ -9002,7 +8997,7 @@ body {
   .complete-sale-btn,
   .pos-complete-btn {
     width: calc(100% - 2.5rem);
-    margin: 0.75rem 1.25rem 1rem;
+    margin: 0.75rem 1.25rem 1.25rem;
     padding: 1.125rem;
     border-radius: 14px;
     background: linear-gradient(135deg, #10b981, #059669);
