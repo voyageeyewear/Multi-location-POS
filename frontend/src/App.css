@@ -8516,16 +8516,14 @@ body {
     line-height: 1.5 !important;
   }
 
-  /* Cart Section - Full Screen with bottom padding for fixed payment */
+  /* Cart Section - Full Screen with absolute positioning */
   .pos-cart {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin-bottom: 0;
+    position: relative;
     height: calc(100vh - 64px);
     background: #f8fafc;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .pos-cart h3 {
@@ -8554,9 +8552,13 @@ body {
     margin: 0.5rem 0;
   }
 
-  /* Scrollable Cart Content */
+  /* Scrollable Cart Content - Takes space minus footer */
   .pos-cart-content {
-    flex: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 280px;
     overflow-y: auto;
     overflow-x: hidden;
     padding-bottom: 1rem;
@@ -8898,17 +8900,18 @@ body {
     font-weight: 600;
   }
 
-  /* Payment Footer - Fixed at Bottom */
+  /* Payment Footer - Absolute at Bottom */
   .pos-payment-footer {
-    position: sticky;
+    position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     background: white;
     border-top: 2px solid #e2e8f0;
     padding: 1rem 0 0;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
     z-index: 10;
+    max-height: 280px;
   }
 
   /* Payment Section - Compact & Bold */
@@ -8999,7 +9002,7 @@ body {
   .complete-sale-btn,
   .pos-complete-btn {
     width: calc(100% - 2.5rem);
-    margin: 0.875rem 1.25rem 1rem;
+    margin: 0.75rem 1.25rem 1rem;
     padding: 1.125rem;
     border-radius: 14px;
     background: linear-gradient(135deg, #10b981, #059669);
