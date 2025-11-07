@@ -5253,6 +5253,9 @@ function App() {
 
           // Calculate total pages
           const totalPosPages = Math.ceil(filteredPosProducts.length / posProductsPerPage);
+          
+          // Inline SVG placeholder - no external network calls needed
+          const productPlaceholderImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23f0f0f0' width='200' height='200'/%3E%3Ctext fill='%23999' font-family='sans-serif' font-size='50' dy='115' dx='65'%3E🕶️%3C/text%3E%3C/svg%3E";
 
           return (
           <>
@@ -5382,7 +5385,7 @@ function App() {
                             return (
                               <div key={product.id} className="pos-product-card" onClick={() => addToCart(product)}>
                                 <img 
-                                  src={product.image?.src || 'https://via.placeholder.com/150'} 
+                                  src={product.image?.src || productPlaceholderImage} 
                                   alt={product.title}
                                   className="product-image"
                                 />
