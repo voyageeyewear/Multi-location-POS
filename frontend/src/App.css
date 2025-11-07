@@ -8551,13 +8551,11 @@ body {
     margin: 0.5rem 0;
   }
 
-  /* Scrollable Cart Content - Minimal padding */
+  /* Scrollable Cart Content - No extra spacing */
   .pos-cart-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 10px;
-    margin-bottom: 190px;
   }
 
   /* Cart Items - Card Style */
@@ -8566,7 +8564,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1rem 1.25rem 0.5rem;
+    padding: 1rem 1.25rem 200px;
   }
 
   .cart-item,
