@@ -8551,11 +8551,12 @@ body {
     margin: 0.5rem 0;
   }
 
-  /* Scrollable Cart Content - No extra spacing */
+  /* Scrollable Cart Content - Grows to fill space */
   .pos-cart-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    min-height: 0;
   }
 
   /* Cart Items - Card Style */
@@ -8564,7 +8565,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1rem 1.25rem 200px;
+    padding: 1rem 1.25rem 1rem;
   }
 
   .cart-item,
@@ -8894,17 +8895,13 @@ body {
     font-weight: 600;
   }
 
-  /* Payment Footer - Absolute at Bottom */
+  /* Payment Footer - Sticky at Bottom of Container */
   .pos-payment-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    flex-shrink: 0;
     background: white;
     border-top: 2px solid #e2e8f0;
     padding: 0.75rem 0 0;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
-    z-index: 10;
   }
 
   /* Payment Section - Compact & Bold */
