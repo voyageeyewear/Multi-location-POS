@@ -8342,17 +8342,20 @@ body {
   /* POS Sidebar - Hidden by default, shows as modal */
   .pos-sidebar {
     position: fixed;
+    top: 0;
     bottom: 0;
     left: 0;
     right: 0;
     background: white;
-    border-radius: 20px 20px 0 0;
-    padding: 1.5rem;
-    box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.15);
-    max-height: 85vh;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: -4px 0 32px rgba(0, 0, 0, 0.2);
+    height: 100vh;
+    max-height: 100vh;
+    width: 100vw;
     display: flex;
     flex-direction: column;
-    transform: translateY(100%);
+    transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
     overflow: hidden;
@@ -8360,21 +8363,22 @@ body {
 
   /* Show cart modal when active */
   .pos-sidebar.show-cart {
-    transform: translateY(0);
+    transform: translateX(0);
   }
 
-  /* Cart overlay */
+  /* Cart overlay - Darker for full screen */
   .pos-cart-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     z-index: 999;
+    backdrop-filter: blur(4px);
   }
 
   .pos-cart-overlay.active {
@@ -8429,22 +8433,23 @@ body {
     padding: 0 0.5rem;
   }
 
-  /* Cart modal header */
+  /* Cart modal header - Full Screen */
   .pos-cart-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0;
-    padding: 1.25rem 1.25rem 1rem 1.25rem;
+    padding: 1rem 1.25rem;
     border-bottom: 2px solid #e2e8f0;
-    background: linear-gradient(to bottom, white, #f8fafc);
+    background: white;
     position: sticky;
     top: 0;
     z-index: 10;
+    min-height: 64px;
   }
 
   .pos-cart-modal-header h3 {
-    font-size: 1.375rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: #0f172a;
     margin: 0;
@@ -8452,8 +8457,8 @@ body {
   }
 
   .pos-cart-close-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
     background: #fee2e2;
     border: none;
@@ -8463,6 +8468,7 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-size: 1.25rem;
   }
 
   .pos-cart-close-btn:active {
@@ -8510,13 +8516,13 @@ body {
     line-height: 1.5 !important;
   }
 
-  /* Cart Section */
+  /* Cart Section - Full Screen */
   .pos-cart {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     margin-bottom: 0;
-    height: calc(85vh - 80px);
+    height: calc(100vh - 64px);
     background: #f8fafc;
   }
 
