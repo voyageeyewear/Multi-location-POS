@@ -8516,9 +8516,8 @@ body {
     line-height: 1.5 !important;
   }
 
-  /* Cart Section - Full Screen with absolute positioning */
+  /* Cart Section - Full Screen */
   .pos-cart {
-    position: relative;
     height: calc(100vh - 64px);
     background: #f8fafc;
     display: flex;
@@ -8552,12 +8551,12 @@ body {
     margin: 0.5rem 0;
   }
 
-  /* Scrollable Cart Content - Takes space minus footer */
+  /* Scrollable Cart Content - Scrolls behind fixed footer */
   .pos-cart-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 280px;
+    padding-bottom: 240px;
   }
 
   /* Cart Items - Card Style */
@@ -8566,7 +8565,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1rem 1.25rem;
+    padding: 1rem 1.25rem 0.5rem;
   }
 
   .cart-item,
@@ -8827,7 +8826,7 @@ body {
   .pos-cart-total {
     background: white;
     padding: 1rem 1.25rem;
-    margin: 0 1.25rem 0.875rem;
+    margin: 0.75rem 1.25rem 1rem;
     border-radius: 12px;
     border: 2px solid #e2e8f0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
