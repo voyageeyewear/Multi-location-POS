@@ -5451,6 +5451,7 @@ function App() {
                   </div>
 
                   <div className="pos-cart">
+                    <div className="pos-cart-content">
                     <h3 className="desktop-cart-title">Shopping Cart</h3>
                     {cart.length === 0 ? (
                       <div className="empty-cart">
@@ -5556,8 +5557,10 @@ function App() {
                         </div>
                       </>
                     )}
-                  </div>
-                  
+                    </div>
+                    
+                    {/* Payment Footer - Fixed at Bottom */}
+                    <div className="pos-payment-footer">
                   <div className="payment-section">
                     <h3>Payment</h3>
                     <div className="payment-methods">
@@ -5592,6 +5595,8 @@ function App() {
                       >
                         Complete Sale
                       </button>
+                  </div>
+                    </div>
                   </div>
                 </div>
 
