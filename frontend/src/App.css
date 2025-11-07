@@ -8508,7 +8508,8 @@ body {
     flex: 1;
     overflow-y: auto;
     margin-bottom: 1rem;
-    max-height: calc(50vh - 200px);
+    max-height: calc(85vh - 220px);
+    padding: 0 1rem;
   }
 
   .pos-cart h3 {
@@ -8529,6 +8530,173 @@ body {
     font-size: 0.9375rem;
     color: #64748b;
     margin: 0.5rem 0;
+  }
+
+  /* Cart Items - Improved Layout */
+  .cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .cart-item {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.875rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .cart-item-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .cart-item-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1e293b;
+    flex: 1;
+    line-height: 1.4;
+  }
+
+  .cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .quantity-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: #64748b;
+    transition: all 0.15s ease;
+  }
+
+  .quantity-btn:active {
+    transform: scale(0.94);
+    background: #f8fafc;
+  }
+
+  .quantity {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: center;
+    color: #1e293b;
+  }
+
+  .remove-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1.5px solid #fecaca;
+    background: #fef2f2;
+    color: #ef4444;
+    font-size: 1.125rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.15s ease;
+  }
+
+  .remove-btn:active {
+    transform: scale(0.94);
+    background: #fee2e2;
+  }
+
+  /* Discount Controls - Compact */
+  .discount-controls {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.625rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .discount-input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .discount-input-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .discount-input {
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    width: 100%;
+    background: white;
+    font-weight: 500;
+  }
+
+  .discount-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Cart Item Price */
+  .cart-item-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #3b82f6;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    text-align: right;
+    flex: 1;
+  }
+
+  .original-price {
+    text-decoration: line-through;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .discount-amount {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  .final-price {
+    font-weight: 700;
+    color: #10b981;
+    font-size: 1.0625rem;
   }
 
   /* Cart Items */
@@ -8589,27 +8757,62 @@ body {
     text-align: center;
   }
 
-  /* Cart Total */
+  /* Cart Total - Clean & Simple */
+  .cart-total,
   .pos-cart-total {
-    background: #f8fafc;
+    background: white;
     padding: 1rem;
     border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
     margin-bottom: 1rem;
   }
 
+  .total-breakdown,
   .pos-cart-total-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .total-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
   }
 
-  .pos-cart-total-row:last-child {
-    margin-bottom: 0;
+  .total-row span:first-child {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .total-row span:last-child {
+    font-size: 0.875rem;
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  .total-row.gst-row span {
+    color: #6366f1;
+  }
+
+  .total-row.discount-row span:last-child {
+    color: #ef4444;
+  }
+
+  .total-row.final-total {
     padding-top: 0.75rem;
     border-top: 1.5px solid #e2e8f0;
+    margin-top: 0.25rem;
   }
 
+  .total-row.final-total strong {
+    font-size: 1.125rem;
+    color: #1e293b;
+    font-weight: 700;
+  }
+
+  /* Old style compatibility */
   .pos-cart-total-label {
     font-size: 0.875rem;
     color: #64748b;
@@ -8622,58 +8825,67 @@ body {
     font-weight: 600;
   }
 
-  .pos-cart-total-row:last-child .pos-cart-total-label {
-    font-size: 1rem;
-    color: #1e293b;
-    font-weight: 700;
-  }
-
-  .pos-cart-total-row:last-child .pos-cart-total-value {
-    font-size: 1.25rem;
-    color: #3b82f6;
-    font-weight: 700;
-  }
-
-  /* Payment Section - Ultra Simple */
+  /* Payment Section - Clean & Simple */
+  .payment-section,
   .pos-payment {
-    margin-bottom: 1rem;
+    padding: 0 1rem 1rem;
   }
 
+  .payment-section h3,
+  .pos-payment h3,
   .pos-payment h4 {
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.875rem;
   }
 
+  .payment-methods,
   .pos-payment-methods {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.625rem;
     margin-bottom: 1rem;
   }
 
+  .payment-btn,
   .payment-method-btn {
     flex: 1;
-    padding: 0.75rem;
-    border-radius: 8px;
+    padding: 0.875rem;
+    border-radius: 10px;
     border: 1.5px solid #e2e8f0;
     background: white;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     color: #64748b;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     text-align: center;
+    cursor: pointer;
   }
 
+  .payment-btn.selected,
+  .payment-btn.cash.selected,
   .payment-method-btn.active {
-    background: #3b82f6;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    border-color: #10b981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
   }
 
+  .payment-btn.card.selected {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: #ef4444;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+  }
+
+  .payment-btn.upi.selected {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+  }
+
+  .payment-btn:active,
   .payment-method-btn:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
   }
 
   /* Complete Sale Button - Prominent */
