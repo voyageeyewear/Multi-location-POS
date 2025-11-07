@@ -2374,19 +2374,27 @@ function App() {
             ? variant.location_inventory 
             : (variant ? (variant.inventory_quantity || 0) : 0);
           
+          // Return in Shopify format for consistency with display code
           return {
             id: product.id,
-            name: product.title,
-            description: product.body_html ? product.body_html.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : 'Premium eyewear product',
-            price: variant ? parseFloat(variant.price) : 0,
-            image: imageUrl,
+            title: product.title, // Keep as 'title' for display
+            body_html: product.body_html || 'Premium eyewear product',
             vendor: product.vendor || 'Voyage Eyewear',
-            sku: variant ? variant.sku : '',
-            inventory: locationInventory,
-            locationFiltered: shouldFilterByLocation, // Flag to show if filtered by location
+            product_type: product.product_type || productType,
+            variants: [{
+              id: variant?.id || product.id,
+              price: variant ? variant.price : '0', // Keep as string like Shopify
+              sku: variant?.sku || '',
+              inventory_quantity: locationInventory
+            }],
+            image: { src: imageUrl }, // Wrap in object with src property
+            images: [{ src: imageUrl }], // Array format
+            inventory_levels: product.inventory_levels || [],
+            // Custom fields for POS
             productType: productType,
             hsnCode: hsnCode,
-            gstRate: gstRate
+            gstRate: gstRate,
+            locationFiltered: shouldFilterByLocation
           };
         });
 
@@ -2517,13 +2525,22 @@ function App() {
   const addToCart = (product) => {
     // Always add as a new cart item with unique cartItemId
     const cartItemId = `${product.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setCart([...cart, { 
-        ...product, 
+    
+    // Normalize product data for cart (handle both old and new formats)
+    const price = product.price || parseFloat(product.variants?.[0]?.price || 0);
+    const name = product.name || product.title;
+    const image = product.image?.src || product.image;
+    
+    setCart([...cart, { 
+      ...product,
+      name: name, // Ensure name is always present
+      price: price, // Ensure price is a number
+      image: image, // Ensure image is a string URL
       cartItemId: cartItemId, // Unique identifier for this cart entry
-        quantity: 1, 
-        discountAmount: 0,
-        discountPercentage: 0
-      }]);
+      quantity: 1, 
+      discountAmount: 0,
+      discountPercentage: 0
+    }]);
   };
 
   const removeFromCart = (cartItemId) => {
